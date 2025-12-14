@@ -5,20 +5,16 @@
 /* Ensure scrolling works */
 html {
   scroll-behavior: smooth;
-  overflow-y: auto;
-  overflow-x: hidden;
+  height: 100%;
 }
 
 body {
-  overflow-y: auto;
+  min-height: 100%;
   overflow-x: hidden;
-  min-height: 100vh;
 }
 
 #root {
   min-height: 100vh;
-  overflow-y: auto;
-  overflow-x: hidden;
 }
 
 /* Glow helpers */
