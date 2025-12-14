@@ -11,10 +11,10 @@ export default function Hero({ artists = [] }: HeroProps) {
   return (
     <section className="relative overflow-hidden bg-black py-28">
       {/* Overlay */}
-      <div className="absolute inset-0 z-10 bg-gradient-to-b from-black/70 via-black/60 to-black" />
+      <div className="absolute inset-0 z-10 bg-gradient-to-b from-black/50 via-black/40 to-black/90" />
 
       {/* Soundwave */}
-      <div className="absolute inset-0 z-0 flex items-end justify-center gap-1 pb-20 opacity-90">
+      <div className="absolute inset-0 z-0 flex items-end justify-center gap-1 pb-20 opacity-100">
         {Array.from({ length: 50 }).map((_, i) => {
           const heights = ["h-12", "h-20", "h-32", "h-24", "h-40", "h-16", "h-28", "h-36", "h-14", "h-44"];
           const heightClass = heights[i % heights.length];
@@ -22,7 +22,7 @@ export default function Hero({ artists = [] }: HeroProps) {
           return (
             <div
               key={i}
-              className={`w-2 ${heightClass} bg-gradient-to-t from-neon-green via-yellow-400 to-neon-red animate-wave rounded-sm shadow-lg`}
+              className={`w-2 ${heightClass} bg-gradient-to-t from-neon-green via-yellow-400 to-neon-red animate-wave rounded-sm shadow-[0_0_20px_rgba(57,255,20,0.6)]`}
               style={{
                 animationDelay: `${i * 0.08}s`,
                 animationDuration: `${0.6 + (i % 5) * 0.15}s`
@@ -34,13 +34,13 @@ export default function Hero({ artists = [] }: HeroProps) {
 
       {/* Floating artist rows */}
       {Array.isArray(loopArtists) && loopArtists.length > 0 && (
-        <div className="relative z-0 space-y-10 opacity-70">
+        <div className="relative z-0 space-y-10 opacity-90">
           <div className="overflow-hidden">
             <div className="flex animate-marquee-left gap-6">
               {loopArtists.map((artist, index) => (
                 <div
                   key={`hero-row-1-${artist.id}-${index}`}
-                  className="flex-shrink-0 w-64 h-40 rounded-xl border-2 border-neon-green/50 bg-charcoal/80 overflow-hidden relative shadow-lg shadow-neon-green/20"
+                  className="flex-shrink-0 w-64 h-40 rounded-xl border-2 border-neon-green/70 bg-charcoal/80 overflow-hidden relative shadow-xl shadow-neon-green/50"
                 >
                   <img
                     src={artist.imageUrl}
@@ -64,7 +64,7 @@ export default function Hero({ artists = [] }: HeroProps) {
               {loopArtists.map((artist, index) => (
                 <div
                   key={`hero-row-2-${artist.id}-${index}`}
-                  className="flex-shrink-0 w-64 h-40 rounded-xl border-2 border-neon-red/50 bg-charcoal/80 overflow-hidden relative shadow-lg shadow-neon-red/20"
+                  className="flex-shrink-0 w-64 h-40 rounded-xl border-2 border-neon-red/70 bg-charcoal/80 overflow-hidden relative shadow-xl shadow-neon-red/50"
                 >
                   <img
                     src={artist.imageUrl}
