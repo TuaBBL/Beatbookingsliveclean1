@@ -9,29 +9,42 @@ export default function Hero({ artists = [] }: HeroProps) {
   const loopArtists = [...safeArtists, ...safeArtists];
 
   return (
-    <section className="relative overflow-hidden bg-black py-32">
-      {/* Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/70 to-black z-10" />
+    <section className="relative overflow-hidden bg-black py-28">
+      {/* Overlay (keeps everything readable) */}
+      <div className="absolute inset-0 z-10 bg-gradient-to-b from-black/70 via-black/60 to-black" />
 
-      {/* Animated sound bars */}
-      <div className="absolute inset-0 z-0 flex items-end justify-center gap-2 opacity-30">
-        {Array.from({ length: 32 }).map((_, i) => (
-          <div
-            key={i}
-            className="w-1 bg-neon-green animate-wave"
-            style={{ height: `${20 + (i % 5) * 18}px` }}
-          />
-        ))}
+      {/* Soundwave (make sure it's actually visible) */}
+      <div className="absolute inset-0 z-0 flex items-end justify-center gap-2 opacity-40">
+        {Array.from({ length: 30 }).map((_, i) => {
+          const heightClass =
+            i % 6 === 0
+              ? "h-10"
+              : i % 6 === 1
+              ? "h-16"
+              : i % 6 === 2
+              ? "h-24"
+              : i % 6 === 3
+              ? "h-14"
+              : i % 6 === 4
+              ? "h-20"
+              : "h-12";
+
+          return (
+            <div
+              key={i}
+              className={`w-1 ${heightClass} bg-neon-green animate-wave rounded-sm`}
+            />
+          );
+        })}
       </div>
 
       {/* Floating artist rows */}
-      <div className="relative z-0 space-y-10 opacity-40">
-        {/* Row 1 */}
+      <div className="relative z-0 space-y-10 opacity-45">
         <div className="overflow-hidden">
           <div className="flex animate-marquee-left gap-6">
             {loopArtists.map((artist, index) => (
               <div
-                key={`hero-1-${artist.id}-${index}`}
+                key={`hero-row-1-${artist.id}-${index}`}
                 className="w-64 h-40 rounded-xl border border-neon-green/30 bg-charcoal/80 flex items-center justify-center text-white text-sm"
               >
                 {artist.name}
@@ -40,12 +53,11 @@ export default function Hero({ artists = [] }: HeroProps) {
           </div>
         </div>
 
-        {/* Row 2 */}
         <div className="overflow-hidden">
           <div className="flex animate-marquee-right gap-6">
             {loopArtists.map((artist, index) => (
               <div
-                key={`hero-2-${artist.id}-${index}`}
+                key={`hero-row-2-${artist.id}-${index}`}
                 className="w-64 h-40 rounded-xl border border-neon-red/30 bg-charcoal/80 flex items-center justify-center text-white text-sm"
               >
                 {artist.name}
@@ -55,13 +67,11 @@ export default function Hero({ artists = [] }: HeroProps) {
         </div>
       </div>
 
-      {/* Hero content */}
-      <div className="relative z-20 mt-28 text-center px-6">
+      {/* Center content */}
+      <div className="relative z-20 mt-24 px-6 text-center">
         <h1 className="text-5xl md:text-6xl font-extrabold">
-          <span className="text-neon-red">Book the Beat</span>{" "}
-          <span className="text-neon-green glow-text-green">
-            Live the Moment
-          </span>
+          <span className="text-neon-red glow-text-red">Book the Beat</span>{" "}
+          <span className="text-neon-green glow-text-green">Live the Moment</span>
         </h1>
 
         <p className="mt-6 max-w-2xl mx-auto text-gray-300">
