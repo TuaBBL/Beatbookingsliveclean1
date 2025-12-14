@@ -2,73 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  body {
-    @apply bg-black text-white antialiased;
-  }
+/* Glow helpers */
+.glow-text-green {
+  text-shadow: 0 0 14px rgba(57, 255, 20, 0.8), 0 0 28px rgba(57, 255, 20, 0.45);
 }
 
-@layer utilities {
-  .glow-text-green {
-    text-shadow: 0 0 10px #39ff14, 0 0 20px #39ff1480;
-  }
-
-  .glow-text-red {
-    text-shadow: 0 0 10px #ff2d2d, 0 0 20px #ff2d2d80;
-  }
-
-  .glow-border-green {
-    box-shadow: 0 0 15px #39ff1440, 0 0 30px #39ff1420;
-  }
-
-  .glow-border-red {
-    box-shadow: 0 0 15px #ff2d2d40, 0 0 30px #ff2d2d20;
-  }
-
-  .glow-line-red {
-    box-shadow: 0 0 10px #ff2d2d, 0 0 20px #ff2d2d80;
-  }
-
-  .glow-card:hover {
-    box-shadow: 0 0 20px #39ff1430, 0 10px 40px #00000080;
-  }
+.glow-text-red {
+  text-shadow: 0 0 14px rgba(255, 45, 45, 0.8), 0 0 28px rgba(255, 45, 45, 0.45);
 }
 
-@keyframes marquee-left {
-  0% {
-    transform: translate3d(0, 0, 0);
-  }
-  100% {
-    transform: translate3d(-50%, 0, 0);
-  }
+.glow-card {
+  box-shadow: 0 0 22px rgba(57, 255, 20, 0.08);
 }
 
-@keyframes marquee-right {
-  0% {
-    transform: translate3d(-50%, 0, 0);
-  }
-  100% {
-    transform: translate3d(0, 0, 0);
-  }
-}
-
-@keyframes pulse-bar {
-  0%, 100% {
-    height: 30%;
-    opacity: 0.4;
-  }
-  50% {
-    height: 100%;
-    opacity: 0.6;
-  }
-}
-
-.marquee-left {
-  animation: marquee-left 40s linear infinite;
-  will-change: transform;
-}
-
-.marquee-right {
-  animation: marquee-right 45s linear infinite;
-  will-change: transform;
+.glow-border-red {
+  box-shadow: 0 0 18px rgba(255, 45, 45, 0.25);
 }
