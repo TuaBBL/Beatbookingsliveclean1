@@ -14,7 +14,7 @@ export default function Hero({ artists = [] }: HeroProps) {
       <div className="absolute inset-0 z-10 bg-gradient-to-b from-black/70 via-black/60 to-black" />
 
       {/* Soundwave */}
-      <div className="absolute inset-0 z-0 flex items-end justify-center gap-1 pb-20 opacity-60">
+      <div className="absolute inset-0 z-0 flex items-end justify-center gap-1 pb-20 opacity-90">
         {Array.from({ length: 50 }).map((_, i) => {
           const heights = ["h-12", "h-20", "h-32", "h-24", "h-40", "h-16", "h-28", "h-36", "h-14", "h-44"];
           const heightClass = heights[i % heights.length];
@@ -22,10 +22,10 @@ export default function Hero({ artists = [] }: HeroProps) {
           return (
             <div
               key={i}
-              className={`w-2 ${heightClass} bg-gradient-to-t from-neon-green via-yellow-400 to-neon-red animate-wave rounded-sm`}
+              className={`w-2 ${heightClass} bg-gradient-to-t from-neon-green via-yellow-400 to-neon-red animate-wave rounded-sm shadow-lg`}
               style={{
                 animationDelay: `${i * 0.08}s`,
-                animationDuration: `${0.8 + (i % 5) * 0.2}s`
+                animationDuration: `${0.6 + (i % 5) * 0.15}s`
               }}
             />
           );
@@ -34,20 +34,20 @@ export default function Hero({ artists = [] }: HeroProps) {
 
       {/* Floating artist rows */}
       {Array.isArray(loopArtists) && loopArtists.length > 0 && (
-        <div className="relative z-0 space-y-10 opacity-40">
+        <div className="relative z-0 space-y-10 opacity-70">
           <div className="overflow-hidden">
             <div className="flex animate-marquee-left gap-6">
               {loopArtists.map((artist, index) => (
                 <div
                   key={`hero-row-1-${artist.id}-${index}`}
-                  className="flex-shrink-0 w-64 h-40 rounded-xl border border-neon-green/30 bg-charcoal/80 overflow-hidden relative"
+                  className="flex-shrink-0 w-64 h-40 rounded-xl border-2 border-neon-green/50 bg-charcoal/80 overflow-hidden relative shadow-lg shadow-neon-green/20"
                 >
                   <img
                     src={artist.imageUrl}
                     alt={artist.name}
-                    className="w-full h-full object-cover opacity-60"
+                    className="w-full h-full object-cover opacity-90"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
                   <div className="absolute bottom-0 left-0 right-0 p-4">
                     <div className="text-white font-semibold text-sm">{artist.name}</div>
                     <div className="mt-1 inline-block px-2 py-0.5 bg-neon-green/20 border border-neon-green/40 rounded text-neon-green text-xs font-bold">
@@ -64,14 +64,14 @@ export default function Hero({ artists = [] }: HeroProps) {
               {loopArtists.map((artist, index) => (
                 <div
                   key={`hero-row-2-${artist.id}-${index}`}
-                  className="flex-shrink-0 w-64 h-40 rounded-xl border border-neon-red/30 bg-charcoal/80 overflow-hidden relative"
+                  className="flex-shrink-0 w-64 h-40 rounded-xl border-2 border-neon-red/50 bg-charcoal/80 overflow-hidden relative shadow-lg shadow-neon-red/20"
                 >
                   <img
                     src={artist.imageUrl}
                     alt={artist.name}
-                    className="w-full h-full object-cover opacity-60"
+                    className="w-full h-full object-cover opacity-90"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
                   <div className="absolute bottom-0 left-0 right-0 p-4">
                     <div className="text-white font-semibold text-sm">{artist.name}</div>
                     <div className="mt-1 inline-block px-2 py-0.5 bg-neon-red/20 border border-neon-red/40 rounded text-neon-red text-xs font-bold">
