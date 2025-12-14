@@ -10,29 +10,30 @@ export default function Hero({ artists = [] }: HeroProps) {
 
   return (
     <section className="relative overflow-hidden bg-black py-32">
-      {/* Dark overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/70 to-black z-10" />
 
-      {/* Animated sound bars */}
-      <div className="absolute inset-0 z-0 flex items-end justify-center gap-2 opacity-30">
-        {Array.from({ length: 40 }).map((_, i) => (
+      {/* SOUND BARS — BACKGROUND */}
+      <div className="absolute inset-0 z-0 flex items-end justify-center gap-2 opacity-40">
+        {Array.from({ length: 36 }).map((_, i) => (
           <div
             key={i}
-            className={`w-1 bg-neon-green animate-wave delay-${(i % 5) * 100}`}
-            style={{ height: `${20 + (i % 5) * 20}px` }}
+            className="w-1 bg-neon-green animate-wave"
+            style={{
+              height: `${20 + (i % 6) * 18}px`,
+              animationDelay: `${i * 0.08}s`,
+            }}
           />
         ))}
       </div>
 
-      {/* Floating artist cards */}
-      <div className="relative z-0 space-y-10 opacity-40">
+      {/* FLOATING ARTIST CARDS */}
+      <div className="relative z-10 space-y-10 opacity-50">
         {/* Row 1 */}
         <div className="overflow-hidden">
           <div className="flex animate-marquee-left gap-6">
             {loopArtists.map((artist, index) => (
               <div
                 key={`hero-row-1-${artist.id}-${index}`}
-                className="w-64 h-40 rounded-xl border border-neon-green/30 bg-charcoal/80 flex items-center justify-center text-sm text-white"
+                className="w-64 h-40 rounded-xl border border-neon-green/30 bg-charcoal/90 flex items-center justify-center text-sm text-white"
               >
                 {artist.name}
               </div>
@@ -46,7 +47,7 @@ export default function Hero({ artists = [] }: HeroProps) {
             {loopArtists.map((artist, index) => (
               <div
                 key={`hero-row-2-${artist.id}-${index}`}
-                className="w-64 h-40 rounded-xl border border-neon-red/30 bg-charcoal/80 flex items-center justify-center text-sm text-white"
+                className="w-64 h-40 rounded-xl border border-neon-red/30 bg-charcoal/90 flex items-center justify-center text-sm text-white"
               >
                 {artist.name}
               </div>
@@ -55,34 +56,9 @@ export default function Hero({ artists = [] }: HeroProps) {
         </div>
       </div>
 
-      {/* Hero copy */}
-      <div className="relative z-20 mt-28 text-center px-6">
-        <h1 className="text-5xl md:text-6xl font-extrabold">
-          <span className="text-neon-red">Book the Beat</span>{" "}
-          <span className="text-neon-green glow-text-green">
-            Live the Moment
-          </span>
-        </h1>
+      {/* DARK OVERLAY */}
+      <div className="absolute inset-0 bg-black/70 z-20" />
 
-        <p className="mt-6 max-w-2xl mx-auto text-gray-300">
-          Discover, book, and manage live music talent across Australia & New Zealand.
-        </p>
-
-        <div className="mt-10 flex justify-center gap-4">
-          <a
-            href="/login"
-            className="px-6 py-3 rounded-lg bg-neon-green text-black font-semibold hover:opacity-90 transition"
-          >
-            Planner
-          </a>
-          <a
-            href="/login"
-            className="px-6 py-3 rounded-lg border border-neon-red text-white hover:bg-neon-red/10 transition"
-          >
-            Artist
-          </a>
-        </div>
-      </div>
-    </section>
-  );
-}
+      {/* HERO CONTENT */}
+      <div className="relative z-30 mt-28 text-center px-6">
+        <h1 clas
