@@ -14,16 +14,19 @@ export default function Hero({ artists = [] }: HeroProps) {
       <div className="absolute inset-0 z-10 bg-gradient-to-b from-black/70 via-black/60 to-black" />
 
       {/* Soundwave */}
-      <div className="absolute inset-0 z-0 flex items-center justify-center gap-2 opacity-50">
-        {Array.from({ length: 40 }).map((_, i) => {
-          const heights = ["h-8", "h-16", "h-32", "h-20", "h-24", "h-12"];
+      <div className="absolute inset-0 z-0 flex items-end justify-center gap-1 pb-20 opacity-60">
+        {Array.from({ length: 50 }).map((_, i) => {
+          const heights = ["h-12", "h-20", "h-32", "h-24", "h-40", "h-16", "h-28", "h-36", "h-14", "h-44"];
           const heightClass = heights[i % heights.length];
 
           return (
             <div
               key={i}
-              className={`w-1 ${heightClass} bg-neon-green animate-wave rounded-sm`}
-              style={{ animationDelay: `${i * 0.05}s` }}
+              className={`w-2 ${heightClass} bg-gradient-to-t from-neon-green via-yellow-400 to-neon-red animate-wave rounded-sm`}
+              style={{
+                animationDelay: `${i * 0.08}s`,
+                animationDuration: `${0.8 + (i % 5) * 0.2}s`
+              }}
             />
           );
         })}
