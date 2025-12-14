@@ -93,10 +93,14 @@ export default function SearchFilters({ onFilterChange }: SearchFiltersProps) {
                 bg-charcoal/80
                 px-4 py-3
                 text-white
-                border border-white/10
-                focus:border-[#39ff14]/60
+                border border-[#39ff14]/30
+                focus:border-[#39ff14]
                 focus:outline-none
+                shadow-[0_0_12px_rgba(57,255,20,0.2)]
+                hover:shadow-[0_0_16px_rgba(57,255,20,0.3)]
+                focus:shadow-[0_0_18px_rgba(57,255,20,0.35)]
                 transition
+                cursor-pointer
               "
             >
               {genres.map((genre) => (
@@ -113,10 +117,14 @@ export default function SearchFilters({ onFilterChange }: SearchFiltersProps) {
                 bg-charcoal/80
                 px-4 py-3
                 text-white
-                border border-white/10
-                focus:border-[#39ff14]/60
+                border border-[#39ff14]/30
+                focus:border-[#39ff14]
                 focus:outline-none
+                shadow-[0_0_12px_rgba(57,255,20,0.2)]
+                hover:shadow-[0_0_16px_rgba(57,255,20,0.3)]
+                focus:shadow-[0_0_18px_rgba(57,255,20,0.35)]
                 transition
+                cursor-pointer
               "
             >
               {categories.map((category) => (
@@ -133,10 +141,14 @@ export default function SearchFilters({ onFilterChange }: SearchFiltersProps) {
                 bg-charcoal/80
                 px-4 py-3
                 text-white
-                border border-white/10
-                focus:border-[#39ff14]/60
+                border border-[#39ff14]/30
+                focus:border-[#39ff14]
                 focus:outline-none
+                shadow-[0_0_12px_rgba(57,255,20,0.2)]
+                hover:shadow-[0_0_16px_rgba(57,255,20,0.3)]
+                focus:shadow-[0_0_18px_rgba(57,255,20,0.35)]
                 transition
+                cursor-pointer
               "
             >
               {australianStates.map((state) => (
@@ -156,9 +168,12 @@ export default function SearchFilters({ onFilterChange }: SearchFiltersProps) {
                 px-4 py-3
                 text-white
                 placeholder:text-gray-500
-                border border-white/10
-                focus:border-[#39ff14]/60
+                border border-[#39ff14]/30
+                focus:border-[#39ff14]
                 focus:outline-none
+                shadow-[0_0_12px_rgba(57,255,20,0.2)]
+                hover:shadow-[0_0_16px_rgba(57,255,20,0.3)]
+                focus:shadow-[0_0_18px_rgba(57,255,20,0.35)]
                 transition
               "
             />
