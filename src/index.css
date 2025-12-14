@@ -2,6 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Ensure scrolling works */
+html {
+  scroll-behavior: smooth;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+body {
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
 /* Glow helpers */
 .glow-text-green {
   text-shadow: 0 0 14px rgba(57, 255, 20, 0.8), 0 0 28px rgba(57, 255, 20, 0.45);
