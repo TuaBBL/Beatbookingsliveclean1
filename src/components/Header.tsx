@@ -9,7 +9,7 @@ export default function Header() {
           <img
             src={logo}
             alt="BeatBookingsLive"
-            className="h-28 md:h-32 object-contain cursor-pointer drop-shadow-[0_0_22px_rgba(57,255,20,0.75)]"
+            className="h-56 md:h-64 object-contain cursor-pointer drop-shadow-[0_0_22px_rgba(57,255,20,0.75)]"
           />
         </a>
 
