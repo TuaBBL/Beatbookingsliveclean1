@@ -20,4 +20,7 @@ export default function Header() {
       </div>
 
       {/* Red divider */}
-      <div className="h-px w-full bg-neon-red shadow-
+      <div className="h-px w-full bg-neon-red shadow-[0_0_10px_rgba(255,45,45,0.7)]" />
+    </header>
+  );
+}
