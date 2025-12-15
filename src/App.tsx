@@ -2,10 +2,6 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { supabase } from './lib/supabase';
 
-// route wrappers
-import PublicRoutes from './components/PublicRoutes';
-import AuthenticatedRoutes from './components/AuthenticatedRoutes';
-
 // pages / components
 import HomePage from './components/HomePage';
 import Login from './components/Login';

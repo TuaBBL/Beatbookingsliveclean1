@@ -165,4 +165,43 @@ export default function CreateProfile() {
                 placeholder="State"
                 value={state}
                 onChange={(e) => setState(e.target.value)}
-                className="w-full px-4 py-3 bg-bla
+                className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white"
+              />
+
+              <input
+                type="text"
+                placeholder="City"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white"
+              />
+
+              {error && (
+                <div className="text-red-400 text-sm bg-red-950/30 border border-red-800 rounded-lg p-3">
+                  {error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full bg-neon-red text-white py-3 rounded-lg font-semibold hover:bg-neon-red/90 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                {submitting ? 'Creating profile…' : 'Complete profile'}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setStep('role')}
+                disabled={submitting}
+                className="w-full border border-gray-700 text-white py-3 rounded-lg font-semibold hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                Back
+              </button>
+            </form>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
