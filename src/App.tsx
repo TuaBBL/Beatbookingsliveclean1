@@ -52,30 +52,28 @@ export default function App() {
   }
 
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Public routes */}
-        <Route element={<PublicRoutes isAuthenticated={!!session} />}>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/terms" element={<Terms />} />
-        </Route>
+   <BrowserRouter>
+  <Routes>
+    {/* Public */}
+    <Route path="/" element={<HomePage />} />
+    <Route path="/login" element={<Login />} />
+    <Route path="/terms" element={<Terms />} />
 
-        {/* Magic link callback (PUBLIC) */}
-        <Route path="/auth-callback" element={<AuthCallback />} />
+    {/* Auth plumbing */}
+    <Route path="/auth-callback" element={<AuthCallback />} />
+    <Route path="/auth-gate" element={<AuthGate />} />
 
-        {/* Auth decision gate (PUBLIC) */}
-        <Route path="/auth-gate" element={<AuthGate />} />
+    {/* Mandatory onboarding */}
+    <Route path="/create-profile" element={<CreateProfile />} />
 
-        {/* Protected app routes */}
-        <Route element={<AuthenticatedRoutes isAuthenticated={!!session} />}>
-          <Route path="/create-profile" element={<CreateProfile />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-        </Route>
+    {/* Protected */}
+    <Route path="/dashboard" element={<Dashboard />} />
+    {/* later */}
+    {/* <Route path="/admin" element={<AdminDashboard />} /> */}
 
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
+    {/* Fallback */}
+    <Route path="*" element={<Navigate to="/" replace />} />
+  </Routes>
+</BrowserRouter>
   );
 }
