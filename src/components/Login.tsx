@@ -15,21 +15,37 @@ export default function Login() {
     try {
       setLoading(true);
 
+      const redirectUrl = `${window.location.origin}/auth-callback`;
+
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
           shouldCreateUser: true,
-          emailRedirectTo: `${window.location.origin}/auth-callback`,
+          emailRedirectTo: redirectUrl,
         },
       });
 
       if (error) {
-        setError(error.message);
+        if (error.message.includes('Error sending magic link email') ||
+            error.message.includes('unexpected_failure')) {
+          setError(
+            `Unable to send magic link. The redirect URL needs to be whitelisted in your Supabase project settings.\n\n` +
+            `Current redirect URL: ${redirectUrl}\n\n` +
+            `To fix this:\n` +
+            `1. Go to your Supabase Dashboard (https://supabase.com/dashboard)\n` +
+            `2. Navigate to Authentication → URL Configuration\n` +
+            `3. Add "${redirectUrl}" to the "Redirect URLs" list\n` +
+            `4. Save and try again`
+          );
+        } else {
+          setError(error.message);
+        }
         return;
       }
 
       setLinkSent(true);
-    } catch {
+    } catch (err) {
+      console.error('Magic link error:', err);
       setError('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
@@ -67,9 +83,9 @@ export default function Login() {
             />
 
             {error && (
-              <p className="text-sm text-red-400 mb-4">
+              <div className="text-sm text-red-400 mb-4 whitespace-pre-wrap bg-red-950/30 border border-red-800 rounded-lg p-4">
                 {error}
-              </p>
+              </div>
             )}
 
             <button
