@@ -300,9 +300,9 @@ export default function CreateEventModal({ event, profile, onClose, onSuccess }:
   const states = formData.country === 'NZ' ? NZ_REGIONS : AUSTRALIAN_STATES;
 
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-charcoal rounded-xl max-w-4xl w-full border border-gray-800 my-8">
-        <div className="flex items-center justify-between p-6 border-b border-gray-800">
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+      <div className="bg-charcoal rounded-xl max-w-4xl w-full border border-gray-800 max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between p-6 border-b border-gray-800 flex-shrink-0">
           <h2 className="text-2xl font-bold text-white">
             {event ? 'Edit Event' : 'Create Event'}
           </h2>
@@ -314,7 +314,7 @@ export default function CreateEventModal({ event, profile, onClose, onSuccess }:
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form id="event-form" onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto flex-1">
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
               Event Title *
@@ -590,24 +590,25 @@ export default function CreateEventModal({ event, profile, onClose, onSuccess }:
               placeholder="https://example.com/event"
             />
           </div>
-
-          <div className="flex gap-4 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-6 py-3 bg-gray-800 text-white rounded-lg font-semibold hover:bg-gray-700 transition"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 px-6 py-3 bg-neon-green text-black rounded-lg font-bold hover:bg-neon-green/90 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_25px_rgba(57,255,20,0.5)] hover:shadow-[0_0_35px_rgba(57,255,20,0.7)]"
-            >
-              {loading ? 'Saving...' : event ? 'Update Event' : 'Create Event'}
-            </button>
-          </div>
         </form>
+
+        <div className="flex gap-4 p-6 border-t border-gray-800 flex-shrink-0">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 px-6 py-3 bg-gray-800 text-white rounded-lg font-semibold hover:bg-gray-700 transition"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            form="event-form"
+            disabled={loading}
+            className="flex-1 px-6 py-3 bg-neon-green text-black rounded-lg font-bold hover:bg-neon-green/90 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_25px_rgba(57,255,20,0.5)] hover:shadow-[0_0_35px_rgba(57,255,20,0.7)]"
+          >
+            {loading ? 'Saving...' : event ? 'Update Event' : 'Create Event'}
+          </button>
+        </div>
       </div>
     </div>
   );
