@@ -8,10 +8,12 @@ export default function AuthGate() {
 
   useEffect(() => {
     const checkProfile = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-      if (!user) {
-        setRedirect('/login');
+      // Session not ready yet — wait
+      if (!session?.user) {
         setLoading(false);
         return;
       }
@@ -19,10 +21,12 @@ export default function AuthGate() {
       const { data: profile } = await supabase
         .from('profiles')
         .select('agreed_terms')
-        .eq('id', user.id)
+        .eq('id', session.user.id)
         .maybeSingle();
 
-      if (!profile || !profile.agreed_terms) {
+      if (!profile) {
+        setRedirect('/create-profile');
+      } else if (!profile.agreed_terms) {
         setRedirect('/terms');
       } else {
         setRedirect('/dashboard');
@@ -34,7 +38,7 @@ export default function AuthGate() {
     checkProfile();
   }, []);
 
-  if (loading) {
+  if (loading || !redirect) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <p className="text-white">Loading...</p>
@@ -42,5 +46,5 @@ export default function AuthGate() {
     );
   }
 
-  return <Navigate to={redirect!} replace />;
+  return <Navigate to={redirect} replace />;
 }
