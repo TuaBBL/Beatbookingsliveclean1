@@ -99,7 +99,7 @@ export default function Login() {
 
             <button
               onClick={() => setLinkSent(false)}
-              className="text-sm text-gray-400 hover:text-white transition"
+              className="w-full border border-gray-700 text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition"
             >
               Use a different email
             </button>
