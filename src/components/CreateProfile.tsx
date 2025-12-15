@@ -37,7 +37,7 @@ export default function CreateProfile() {
         .maybeSingle();
 
       if (profile) {
-        navigate('/dashboard', { replace: true });
+        navigate('/auth-gate', { replace: true });
         return;
       }
 

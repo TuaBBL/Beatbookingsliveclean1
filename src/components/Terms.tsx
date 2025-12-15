@@ -47,8 +47,7 @@ export default function Terms() {
         return;
       }
 
-      console.log('Terms accepted successfully, redirecting to /dashboard');
-      navigate('/dashboard');
+      navigate('/auth-gate');
     } catch (err) {
       console.error('Unexpected error:', err);
     } finally {
