@@ -34,6 +34,15 @@ export default function Privacy() {
           <p className="text-gray-400 text-base mt-8">
             We are committed to transparency and protecting your privacy. Full details will be available soon.
           </p>
+
+          <div className="mt-12 flex justify-center">
+            <a
+              href="/"
+              className="px-10 py-4 rounded-lg bg-neon-green text-black font-bold text-lg hover:bg-neon-green/90 transition shadow-[0_0_25px_rgba(57,255,20,0.5)] hover:shadow-[0_0_35px_rgba(57,255,20,0.7)]"
+            >
+              Explore Artists
+            </a>
+          </div>
         </div>
       </div>
 
