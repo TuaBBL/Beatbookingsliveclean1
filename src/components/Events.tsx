@@ -95,17 +95,11 @@ export default function Events() {
 
   async function fetchAllEvents(profile: Profile) {
     try {
-      let query = supabase
+      const { data, error } = await supabase
         .from('events')
         .select('*')
         .eq('status', 'published')
         .order('event_date', { ascending: true });
-
-      if (profile.country) {
-        query = query.eq('country', profile.country);
-      }
-
-      const { data, error } = await query;
 
       if (error) throw error;
       setAllEvents(data || []);
@@ -357,7 +351,7 @@ export default function Events() {
           </div>
 
           <p className="text-sm text-gray-500 mt-4">
-            Currently showing events from: {profile.country || 'your country'}
+            Showing all published events worldwide
           </p>
         </div>
 
