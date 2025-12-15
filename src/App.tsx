@@ -6,7 +6,7 @@ import { supabase } from './lib/supabase';
 import PublicRoutes from './components/PublicRoutes';
 import AuthenticatedRoutes from './components/AuthenticatedRoutes';
 
-// pages (from components)
+// pages / components
 import HomePage from './components/HomePage';
 import Login from './components/Login';
 import Terms from './components/Terms';
@@ -20,56 +20,8 @@ export default function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      setLoading(false);
-    }, 3000);
+    let mounted = true;
 
+    // Initial session check
     supabase.auth.getSession().then(({ data }) => {
-      clearTimeout(timeout);
-      setSession(data.session);
-      setLoading(false);
-    }).catch(() => {
-      clearTimeout(timeout);
-      setLoading(false);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-
-    return () => {
-      clearTimeout(timeout);
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  if (loading) return <div>Loading...</div>;
-
-  return (
-    <BrowserRouter>
-      <Routes>
-        {/* Public */}
-        <Route element={<PublicRoutes isAuthenticated={!!session} />}>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/terms" element={<Terms />} />
-        </Route>
-
-        {/* Auth Callback (no auth required, handles magic link) */}
-        <Route path="/auth-callback" element={<AuthCallback />} />
-
-        {/* Authenticated */}
-        <Route element={<AuthenticatedRoutes isAuthenticated={!!session} />}>
-          <Route path="/auth-gate" element={<AuthGate />} />
-          <Route path="/create-profile" element={<CreateProfile />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-        </Route>
-
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
-  );
-}
+      if (!mounte
