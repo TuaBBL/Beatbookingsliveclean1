@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, MapPin, Clock, Search, Plus, Edit2, Trash2, User } from 'lucide-react';
+import { Calendar, MapPin, Clock, Plus, Edit2, Trash2, User } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import CreateEventModal from './CreateEventModal';
 
@@ -14,10 +14,11 @@ interface Event {
   state: string;
   city: string;
   event_date: string;
+  event_end_date: string | null;
   start_time: string;
   end_time: string;
-  budget_min: number | null;
-  budget_max: number | null;
+  cost: number | null;
+  ticket_link: string | null;
   cover_image: string | null;
   description: string | null;
   external_link: string | null;
