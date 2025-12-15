@@ -11,6 +11,7 @@ import TermsAgreement from './components/TermsAgreement';
 import Privacy from './components/Privacy';
 import Dashboard from './components/Dashboard';
 import Events from './components/Events';
+import EventDetail from './components/EventDetail';
 import CreateProfile from './components/CreateProfile';
 import AuthGate from './components/AuthGate';
 import AuthCallback from './components/AuthCallback';
@@ -72,6 +73,7 @@ export default function App() {
     {/* Protected */}
     <Route path="/dashboard" element={<Dashboard />} />
     <Route path="/events" element={<Events />} />
+    <Route path="/events/:id" element={<EventDetail />} />
     {/* later */}
     {/* <Route path="/admin" element={<AdminDashboard />} /> */}
 

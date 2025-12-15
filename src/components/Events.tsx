@@ -424,8 +424,13 @@ export default function Events() {
 }
 
 function EventCard({ event }: { event: Event }) {
+  const navigate = useNavigate();
+
   return (
-    <div className="bg-charcoal rounded-lg overflow-hidden border border-gray-800 hover:border-neon-green/50 transition group">
+    <div
+      onClick={() => navigate(`/events/${event.id}`)}
+      className="bg-charcoal rounded-lg overflow-hidden border border-gray-800 hover:border-neon-green/50 transition group cursor-pointer"
+    >
       {event.cover_image ? (
         <div className="h-48 bg-gray-900 overflow-hidden">
           <img
@@ -470,17 +475,6 @@ function EventCard({ event }: { event: Event }) {
             {event.description}
           </p>
         )}
-
-        {event.external_link && (
-          <a
-            href={event.external_link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-neon-green hover:underline"
-          >
-            Event Details →
-          </a>
-        )}
       </div>
     </div>
   );
@@ -495,6 +489,8 @@ function MyEventCard({
   onEdit: (event: Event) => void;
   onDelete: (id: string) => void;
 }) {
+  const navigate = useNavigate();
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'published':
@@ -510,24 +506,34 @@ function MyEventCard({
 
   return (
     <div className="bg-charcoal rounded-lg overflow-hidden border border-gray-800">
-      {event.cover_image ? (
-        <div className="h-48 bg-gray-900 overflow-hidden">
-          <img
-            src={event.cover_image}
-            alt={event.title}
-            className="w-full h-full object-cover"
-          />
-        </div>
-      ) : (
-        <div className="h-48 bg-gradient-to-br from-gray-900 to-charcoal flex items-center justify-center">
-          <Calendar className="w-16 h-16 text-gray-700" />
-        </div>
-      )}
+      <div
+        onClick={() => navigate(`/events/${event.id}`)}
+        className="cursor-pointer"
+      >
+        {event.cover_image ? (
+          <div className="h-48 bg-gray-900 overflow-hidden">
+            <img
+              src={event.cover_image}
+              alt={event.title}
+              className="w-full h-full object-cover hover:scale-105 transition duration-300"
+            />
+          </div>
+        ) : (
+          <div className="h-48 bg-gradient-to-br from-gray-900 to-charcoal flex items-center justify-center">
+            <Calendar className="w-16 h-16 text-gray-700" />
+          </div>
+        )}
+      </div>
 
       <div className="p-6">
         <div className="flex items-start justify-between mb-3">
           <div>
-            <h3 className="text-xl font-bold text-white mb-1">{event.title}</h3>
+            <h3
+              onClick={() => navigate(`/events/${event.id}`)}
+              className="text-xl font-bold text-white mb-1 cursor-pointer hover:text-neon-green transition"
+            >
+              {event.title}
+            </h3>
             <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded">
               {event.type}
             </span>
@@ -556,14 +562,20 @@ function MyEventCard({
 
         <div className="flex gap-2">
           <button
-            onClick={() => onEdit(event)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(event);
+            }}
             className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition"
           >
             <Edit2 className="w-4 h-4" />
             Edit
           </button>
           <button
-            onClick={() => onDelete(event.id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(event.id);
+            }}
             className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-neon-red text-white rounded-lg hover:bg-neon-red/90 transition"
           >
             <Trash2 className="w-4 h-4" />
