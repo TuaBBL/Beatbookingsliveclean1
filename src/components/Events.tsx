@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, MapPin, Clock, Search, Plus, Edit2, Trash2, User } from 'lucide-react';
+import { Calendar, MapPin, Clock, Search, Plus, Edit2, Trash2, User, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import CreateEventModal from './CreateEventModal';
 
@@ -241,6 +241,14 @@ export default function Events() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <button
+          onClick={() => navigate('/dashboard')}
+          className="flex items-center gap-2 text-gray-400 hover:text-neon-green transition mb-6"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span className="font-medium">Back to Dashboard</span>
+        </button>
+
         <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h2 className="text-4xl font-bold text-white mb-2">Events</h2>
