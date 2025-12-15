@@ -4,6 +4,7 @@ import Header from './Header';
 import Hero from './Hero';
 import SearchFilters, { FilterState } from './SearchFilters';
 import { ArtistGrid } from './ArtistGrid';
+import EventsSection from './EventsSection';
 import Footer from './Footer';
 
 import { mockArtists, Artist } from '../data/mockArtists';
@@ -88,6 +89,9 @@ export default function HomePage() {
           showRank
         />
       </section>
+
+      {/* EVENTS SECTION */}
+      <EventsSection />
 
       {/* ALL ARTISTS */}
       <section className="relative z-10 px-6 py-16">
