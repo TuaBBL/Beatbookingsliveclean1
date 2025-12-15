@@ -14,6 +14,7 @@ import Dashboard from './components/Dashboard';
 import CreateProfile from './components/CreateProfile';
 import AuthGate from './components/AuthGate';
 import AuthCallback from './components/AuthCallback';
+import SubscriptionModal from './components/SubscriptionModal';
 
 export default function App() {
   const [session, setSession] = useState<any>(null);
@@ -70,6 +71,7 @@ export default function App() {
         {/* Protected app routes */}
         <Route element={<AuthenticatedRoutes isAuthenticated={!!session} />}>
           <Route path="/create-profile" element={<CreateProfile />} />
+          <Route path="/subscription" element={<SubscriptionModal />} />
           <Route path="/dashboard" element={<Dashboard />} />
         </Route>
 
