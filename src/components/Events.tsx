@@ -42,7 +42,12 @@ export default function Events() {
   const [allEvents, setAllEvents] = useState<Event[]>([]);
   const [myEvents, setMyEvents] = useState<Event[]>([]);
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchFilters, setSearchFilters] = useState({
+    city: '',
+    country: '',
+    category: '',
+    artist: ''
+  });
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
 
@@ -52,7 +57,7 @@ export default function Events() {
 
   useEffect(() => {
     filterEvents();
-  }, [searchQuery, allEvents]);
+  }, [searchFilters, allEvents]);
 
   async function loadData() {
     try {
@@ -129,20 +134,43 @@ export default function Events() {
   }
 
   function filterEvents() {
-    if (!searchQuery.trim()) {
+    const hasFilters = Object.values(searchFilters).some(val => val.trim());
+
+    if (!hasFilters) {
       setFilteredEvents(allEvents);
       return;
     }
 
-    const query = searchQuery.toLowerCase();
-    const filtered = allEvents.filter(event =>
-      event.type.toLowerCase().includes(query) ||
-      event.city.toLowerCase().includes(query) ||
-      event.state.toLowerCase().includes(query) ||
-      event.title.toLowerCase().includes(query)
-    );
+    const filtered = allEvents.filter(event => {
+      const matchesCity = !searchFilters.city.trim() ||
+        event.city.toLowerCase().includes(searchFilters.city.toLowerCase());
+
+      const matchesCountry = !searchFilters.country.trim() ||
+        event.country.toLowerCase().includes(searchFilters.country.toLowerCase());
+
+      const matchesCategory = !searchFilters.category.trim() ||
+        event.type.toLowerCase().includes(searchFilters.category.toLowerCase());
+
+      const matchesArtist = !searchFilters.artist.trim() ||
+        event.title.toLowerCase().includes(searchFilters.artist.toLowerCase());
+
+      return matchesCity && matchesCountry && matchesCategory && matchesArtist;
+    });
 
     setFilteredEvents(filtered);
+  }
+
+  function handleSearchClick() {
+    filterEvents();
+  }
+
+  function handleClearFilters() {
+    setSearchFilters({
+      city: '',
+      country: '',
+      category: '',
+      artist: ''
+    });
   }
 
   function formatDate(dateString: string) {
@@ -267,21 +295,74 @@ export default function Events() {
         </div>
 
         <div className="mb-12 bg-charcoal rounded-xl p-6 border border-gray-800">
-          <div className="flex flex-col gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" />
+          <h3 className="text-lg font-semibold text-white mb-4">Search Events</h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+            <div>
+              <label className="block text-sm text-gray-400 mb-2">City</label>
               <input
                 type="text"
-                placeholder="Search by genre or location"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-11 pr-4 py-3 bg-black border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon-green transition"
+                placeholder="Enter city..."
+                value={searchFilters.city}
+                onChange={(e) => setSearchFilters({ ...searchFilters, city: e.target.value })}
+                className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon-green transition"
               />
             </div>
-            <p className="text-sm text-gray-500">
-              Showing events near: {profile.city || 'your area'}, {profile.state || profile.country || 'your region'}
-            </p>
+
+            <div>
+              <label className="block text-sm text-gray-400 mb-2">Country</label>
+              <input
+                type="text"
+                placeholder="Enter country..."
+                value={searchFilters.country}
+                onChange={(e) => setSearchFilters({ ...searchFilters, country: e.target.value })}
+                className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon-green transition"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm text-gray-400 mb-2">Category</label>
+              <input
+                type="text"
+                placeholder="Enter category..."
+                value={searchFilters.category}
+                onChange={(e) => setSearchFilters({ ...searchFilters, category: e.target.value })}
+                className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon-green transition"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm text-gray-400 mb-2">Artist</label>
+              <input
+                type="text"
+                placeholder="Enter artist name..."
+                value={searchFilters.artist}
+                onChange={(e) => setSearchFilters({ ...searchFilters, artist: e.target.value })}
+                className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon-green transition"
+              />
+            </div>
           </div>
+
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              onClick={handleSearchClick}
+              className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-neon-green text-black font-bold hover:bg-neon-green/90 transition shadow-[0_0_25px_rgba(57,255,20,0.5)] hover:shadow-[0_0_35px_rgba(57,255,20,0.7)]"
+            >
+              <Search className="w-5 h-5" />
+              Search Events
+            </button>
+
+            <button
+              onClick={handleClearFilters}
+              className="px-6 py-3 rounded-lg bg-gray-800 text-white font-semibold hover:bg-gray-700 transition"
+            >
+              Clear Filters
+            </button>
+          </div>
+
+          <p className="text-sm text-gray-500 mt-4">
+            Currently showing events from: {profile.city || 'your area'}, {profile.state || profile.country || 'your region'}
+          </p>
         </div>
 
         <section className="mb-16">
@@ -291,7 +372,9 @@ export default function Events() {
             <div className="text-center py-16 bg-charcoal rounded-xl border border-gray-800">
               <Calendar className="w-16 h-16 text-gray-600 mx-auto mb-4" />
               <p className="text-xl text-gray-400">
-                {searchQuery ? 'No events found matching your search' : 'No events available in your area'}
+                {Object.values(searchFilters).some(val => val.trim())
+                  ? 'No events found matching your search'
+                  : 'No events available in your area'}
               </p>
             </div>
           ) : (
