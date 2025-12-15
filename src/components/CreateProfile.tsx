@@ -20,6 +20,8 @@ export default function CreateProfile() {
   const [state, setState] = useState('');
   const [city, setCity] = useState('');
 
+  const isStateRequired = country === 'AU';
+
   // Guard: authenticated + no existing profile
   useEffect(() => {
     const run = async () => {
@@ -56,8 +58,13 @@ export default function CreateProfile() {
       return;
     }
 
-    if (!name.trim() || !country || !state.trim() || !city.trim()) {
-      setError('All fields are required');
+    if (!name.trim() || !country || !city.trim()) {
+      setError('Please fill in all required fields');
+      return;
+    }
+
+    if (isStateRequired && !state.trim()) {
+      setError('State is required for Australia');
       return;
     }
 
@@ -79,7 +86,7 @@ export default function CreateProfile() {
           name: name.trim(),
           email: user.email,
           country,
-          state: state.trim(),
+          state: isStateRequired ? state.trim() : null,
           city: city.trim(),
         });
 
@@ -152,7 +159,13 @@ export default function CreateProfile() {
 
               <select
                 value={country}
-                onChange={(e) => setCountry(e.target.value)}
+                onChange={(e) => {
+                  const newCountry = e.target.value;
+                  setCountry(newCountry);
+                  if (newCountry === 'NZ') {
+                    setState('');
+                  }
+                }}
                 className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white"
               >
                 <option value="">Select country</option>
@@ -162,10 +175,11 @@ export default function CreateProfile() {
 
               <input
                 type="text"
-                placeholder="State"
+                placeholder={isStateRequired ? "State *" : "State (not applicable for NZ)"}
                 value={state}
                 onChange={(e) => setState(e.target.value)}
-                className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white"
+                disabled={!isStateRequired}
+                className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-900"
               />
 
               <input
