@@ -25,29 +25,7 @@ A platform connecting artists with venues and booking opportunities.
 
 ### Supabase Configuration
 
-#### Required: Configure Redirect URLs for Magic Link Authentication
-
-The application uses magic link authentication. You **must** whitelist your redirect URLs in Supabase:
-
-1. Go to your [Supabase Dashboard](https://supabase.com/dashboard)
-2. Select your project
-3. Navigate to **Authentication → URL Configuration**
-4. Add the following URLs to the **Redirect URLs** list:
-   - For local development: `http://localhost:5173/auth-callback`
-   - For local development (alt): `http://127.0.0.1:5173/auth-callback`
-   - For WebContainer: Your current WebContainer URL + `/auth-callback`
-   - For production: Your production domain + `/auth-callback`
-
-5. Set the **Site URL** to your main application URL
-6. Click **Save**
-
-**Note:** WebContainer URLs change each session and include random identifiers. You'll need to update the redirect URL when starting a new development session in WebContainer environments.
-
-#### Example Redirect URL Patterns
-
-- Local: `http://localhost:5173/auth-callback`
-- WebContainer: `https://[random-id].local-credentialless.webcontainer-api.io/auth-callback`
-- Production: `https://yourdomain.com/auth-callback`
+The application uses custom OTP authentication via Supabase Edge Functions. No additional redirect URL configuration is required.
 
 ### Running the Application
 
@@ -60,17 +38,13 @@ The application will be available at `http://localhost:5173`
 
 ## Troubleshooting
 
-### "Error sending magic link email" (500 error)
+### OTP code not received
 
-This occurs when the redirect URL is not whitelisted in Supabase. The error message will display the current redirect URL that needs to be added. Follow the Supabase Configuration steps above to resolve this.
-
-### Magic link doesn't redirect properly
-
-Ensure your Site URL is configured in Supabase Authentication settings and matches your application's base URL.
+Check your spam folder or verify that the Resend API key is configured correctly in your Supabase Edge Functions environment.
 
 ## Features
 
-- Magic link authentication (passwordless)
+- OTP authentication (6-digit code via email)
 - Artist profiles and discovery
 - Venue listings
 - Booking management
