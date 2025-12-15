@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
 export default function Login() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [loading, setLoading] = useState(false);
@@ -10,13 +12,16 @@ export default function Login() {
   const handleSendOtp = async () => {
     try {
       setLoading(true);
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
+      const { data, error } = await supabase.functions.invoke('auth-request-otp', {
+        body: { email },
       });
 
       if (error) {
         console.error('Error sending OTP:', error.message);
         alert(`Error: ${error.message}`);
+      } else if (data?.error) {
+        console.error('Error sending OTP:', data.error);
+        alert(`Error: ${data.error}`);
       } else {
         console.log('OTP sent successfully to:', email);
         setOtpSent(true);
@@ -24,6 +29,7 @@ export default function Login() {
       }
     } catch (err) {
       console.error('Unexpected error:', err);
+      alert('Failed to send OTP. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -32,21 +38,47 @@ export default function Login() {
   const handleVerifyOtp = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase.auth.verifyOtp({
-        email,
-        token: otpCode,
-        type: 'email',
+      const { data, error } = await supabase.functions.invoke('auth-verify-otp', {
+        body: { email, otp: otpCode },
       });
 
       if (error) {
         console.error('Error verifying OTP:', error.message);
         alert(`Error: ${error.message}`);
+        return;
+      }
+
+      if (data?.error) {
+        console.error('Error verifying OTP:', data.error);
+        alert(`Error: ${data.error}`);
+        return;
+      }
+
+      if (!data?.session) {
+        console.error('No session returned from Edge Function');
+        alert('Login failed. Please try again.');
+        return;
+      }
+
+      await supabase.auth.setSession({
+        access_token: data.session.access_token,
+        refresh_token: data.session.refresh_token,
+      });
+
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', data.user.id)
+        .maybeSingle();
+
+      if (profileData) {
+        navigate('/dashboard');
       } else {
-        console.log('OTP verified successfully:', data);
-        alert('Login successful!');
+        navigate('/create-profile');
       }
     } catch (err) {
       console.error('Unexpected error:', err);
+      alert('Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
