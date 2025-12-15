@@ -9,6 +9,7 @@ interface Event {
   country: string;
   state: string;
   city: string;
+  venue: string | null;
   event_date: string;
   event_end_date: string | null;
   start_time: string;
@@ -107,6 +108,7 @@ export default function CreateEventModal({ event, profile, onClose, onSuccess }:
     country: profile.country || 'AU',
     state: profile.state || '',
     city: profile.city || '',
+    venue: '',
     event_date: '',
     event_end_date: '',
     start_time: '',
@@ -129,6 +131,7 @@ export default function CreateEventModal({ event, profile, onClose, onSuccess }:
         country: event.country,
         state: event.state,
         city: event.city,
+        venue: event.venue || '',
         event_date: event.event_date,
         event_end_date: event.event_end_date || '',
         start_time: event.start_time,
@@ -251,6 +254,7 @@ export default function CreateEventModal({ event, profile, onClose, onSuccess }:
         country: formData.country,
         state: formData.state,
         city: formData.city,
+        venue: formData.venue || null,
         event_date: formData.event_date,
         event_end_date: formData.event_end_date || null,
         start_time: formData.start_time,
@@ -381,6 +385,19 @@ export default function CreateEventModal({ event, profile, onClose, onSuccess }:
                 placeholder="e.g., Sydney"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Venue (optional)
+            </label>
+            <input
+              type="text"
+              value={formData.venue}
+              onChange={(e) => setFormData({ ...formData, venue: e.target.value })}
+              className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon-green transition"
+              placeholder="e.g., The Opera House"
+            />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
