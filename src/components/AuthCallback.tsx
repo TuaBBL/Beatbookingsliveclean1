@@ -6,10 +6,15 @@ export default function AuthCallback() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Supabase processes the magic link automatically
-    supabase.auth.getSession().then(() => {
+    const run = async () => {
+      // Supabase finalises the session from the magic link automatically
+      await supabase.auth.getSession();
+
+      // Hand off to the auth gate to decide where to go next
       navigate('/auth-gate', { replace: true });
-    });
+    };
+
+    run();
   }, [navigate]);
 
   return (
