@@ -1,3 +1,4 @@
+// src/components/AuthGate.tsx
 import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
@@ -7,41 +8,64 @@ export default function AuthGate() {
   const [redirect, setRedirect] = useState<string | null>(null);
 
   useEffect(() => {
-    const checkProfile = async () => {
+    const run = async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
 
-      // Session not ready yet — wait
+      // 1. Not authenticated
       if (!session?.user) {
+        setRedirect('/login');
         setLoading(false);
         return;
       }
 
-      const { data: profile } = await supabase
+      // 2. Check profile
+      const { data: profile, error } = await supabase
         .from('profiles')
-        .select('agreed_terms')
+        .select('role')
         .eq('id', session.user.id)
         .maybeSingle();
 
+      if (error) {
+        console.error('Profile check failed:', error);
+        setRedirect('/login');
+        setLoading(false);
+        return;
+      }
+
+      // 3. No profile → force creation
       if (!profile) {
         setRedirect('/create-profile');
-      } else if (!profile.agreed_terms) {
-        setRedirect('/terms');
-      } else {
-        setRedirect('/dashboard');
+        setLoading(false);
+        return;
+      }
+
+      // 4. Route by role
+      switch (profile.role) {
+        case 'planner':
+          setRedirect('/dashboard');
+          break;
+        case 'artist':
+          setRedirect('/dashboard'); // subscriptions later
+          break;
+        case 'admin':
+          setRedirect('/admin');
+          break;
+        default:
+          setRedirect('/login');
       }
 
       setLoading(false);
     };
 
-    checkProfile();
+    run();
   }, []);
 
   if (loading || !redirect) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <p className="text-white">Loading...</p>
+        <p className="text-white">Checking account…</p>
       </div>
     );
   }
