@@ -105,10 +105,6 @@ export default function Events() {
         query = query.eq('country', profile.country);
       }
 
-      if (profile.state) {
-        query = query.eq('state', profile.state);
-      }
-
       const { data, error } = await query;
 
       if (error) throw error;
@@ -361,7 +357,7 @@ export default function Events() {
           </div>
 
           <p className="text-sm text-gray-500 mt-4">
-            Currently showing events from: {profile.city || 'your area'}, {profile.state || profile.country || 'your region'}
+            Currently showing events from: {profile.country || 'your country'}
           </p>
         </div>
 
