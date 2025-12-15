@@ -7,6 +7,7 @@ import HomePage from './components/HomePage';
 import Login from './components/Login';
 import About from './components/About';
 import Terms from './components/Terms';
+import TermsAgreement from './components/TermsAgreement';
 import Privacy from './components/Privacy';
 import Dashboard from './components/Dashboard';
 import Events from './components/Events';
@@ -66,6 +67,7 @@ export default function App() {
 
     {/* Mandatory onboarding */}
     <Route path="/create-profile" element={<CreateProfile />} />
+    <Route path="/terms-agreement" element={<TermsAgreement />} />
 
     {/* Protected */}
     <Route path="/dashboard" element={<Dashboard />} />

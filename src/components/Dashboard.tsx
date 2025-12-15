@@ -43,7 +43,7 @@ export default function Dashboard() {
         }
 
         if (!profileData.agreed_terms) {
-          navigate('/terms');
+          navigate('/terms-agreement');
           return;
         }
 
