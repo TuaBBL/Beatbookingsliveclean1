@@ -122,6 +122,8 @@ export default function CreateEventModal({ event, profile, onClose, onSuccess }:
   });
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const [existingMedia, setExistingMedia] = useState<MediaFile[]>([]);
+  const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
+  const [coverImagePreview, setCoverImagePreview] = useState<string>('');
 
   useEffect(() => {
     if (event) {
@@ -143,6 +145,8 @@ export default function CreateEventModal({ event, profile, onClose, onSuccess }:
         external_link: event.external_link || '',
         status: event.status
       });
+      setCoverImageFile(null);
+      setCoverImagePreview('');
       loadExistingMedia(event.id);
     }
   }, [event]);
@@ -210,6 +214,48 @@ export default function CreateEventModal({ event, profile, onClose, onSuccess }:
     }
   };
 
+  const handleCoverImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      setCoverImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCoverImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+      setFormData({ ...formData, cover_image: '' });
+    }
+  };
+
+  const removeCoverImage = () => {
+    setCoverImageFile(null);
+    setCoverImagePreview('');
+    setFormData({ ...formData, cover_image: '' });
+  };
+
+  const uploadCoverImage = async (): Promise<string | null> => {
+    if (!coverImageFile) return null;
+
+    const fileExt = coverImageFile.name.split('.').pop();
+    const fileName = `cover-${Date.now()}.${fileExt}`;
+    const filePath = `event-covers/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('media')
+      .upload(filePath, coverImageFile);
+
+    if (uploadError) {
+      console.error('Cover image upload error:', uploadError);
+      throw uploadError;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('media')
+      .getPublicUrl(filePath);
+
+    return publicUrl;
+  };
+
   const uploadMediaFiles = async (eventId: string) => {
     for (const media of mediaFiles) {
       if (media.file) {
@@ -246,6 +292,15 @@ export default function CreateEventModal({ event, profile, onClose, onSuccess }:
     setLoading(true);
 
     try {
+      let coverImageUrl = formData.cover_image;
+
+      if (coverImageFile) {
+        const uploadedUrl = await uploadCoverImage();
+        if (uploadedUrl) {
+          coverImageUrl = uploadedUrl;
+        }
+      }
+
       const eventData = {
         creator_id: profile.id,
         creator_role: profile.role,
@@ -261,7 +316,7 @@ export default function CreateEventModal({ event, profile, onClose, onSuccess }:
         end_time: formData.end_time,
         cost: formData.cost ? parseFloat(formData.cost) : null,
         ticket_link: formData.ticket_link || null,
-        cover_image: formData.cover_image || null,
+        cover_image: coverImageUrl || null,
         description: formData.description || null,
         external_link: formData.external_link || null,
         status: formData.status
@@ -488,15 +543,65 @@ export default function CreateEventModal({ event, profile, onClose, onSuccess }:
 
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              Cover Image URL (optional)
+              Cover Image (optional)
             </label>
-            <input
-              type="url"
-              value={formData.cover_image}
-              onChange={(e) => setFormData({ ...formData, cover_image: e.target.value })}
-              className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon-green transition"
-              placeholder="https://example.com/image.jpg"
-            />
+
+            {(coverImagePreview || formData.cover_image) && (
+              <div className="mb-3 relative inline-block">
+                <img
+                  src={coverImagePreview || formData.cover_image}
+                  alt="Cover preview"
+                  className="w-full h-48 object-cover rounded-lg"
+                />
+                <button
+                  type="button"
+                  onClick={removeCoverImage}
+                  className="absolute top-2 right-2 bg-red-600 text-white p-2 rounded-lg hover:bg-red-700 transition"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <div className="flex gap-3">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleCoverImageSelect}
+                  className="hidden"
+                  id="cover-image-upload"
+                />
+                <label
+                  htmlFor="cover-image-upload"
+                  className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white text-center cursor-pointer hover:bg-gray-700 hover:border-neon-green transition"
+                >
+                  <Upload className="w-5 h-5 inline-block mr-2" />
+                  Upload from Device
+                </label>
+              </div>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-700"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-gray-900 text-gray-500">or</span>
+                </div>
+              </div>
+
+              <input
+                type="url"
+                value={formData.cover_image}
+                onChange={(e) => {
+                  setFormData({ ...formData, cover_image: e.target.value });
+                  setCoverImageFile(null);
+                  setCoverImagePreview('');
+                }}
+                className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon-green transition"
+                placeholder="Enter image URL"
+              />
+            </div>
           </div>
 
           <div>
