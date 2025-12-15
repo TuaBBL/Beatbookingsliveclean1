@@ -99,3 +99,13 @@ export default function Login() {
 
             <button
               onClick={() => setLinkSent(false)}
+              className="text-sm text-gray-400 hover:text-white transition"
+            >
+              Use a different email
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}

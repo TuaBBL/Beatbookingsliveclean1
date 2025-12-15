@@ -13,6 +13,7 @@ import Terms from './components/Terms';
 import Dashboard from './components/Dashboard';
 import CreateProfile from './components/CreateProfile';
 import AuthGate from './components/AuthGate';
+import AuthCallback from './components/AuthCallback';
 
 export default function App() {
   const [session, setSession] = useState<any>(null);
@@ -55,6 +56,9 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/terms" element={<Terms />} />
         </Route>
+
+        {/* Auth Callback (no auth required, handles magic link) */}
+        <Route path="/auth-callback" element={<AuthCallback />} />
 
         {/* Authenticated */}
         <Route element={<AuthenticatedRoutes isAuthenticated={!!session} />}>
