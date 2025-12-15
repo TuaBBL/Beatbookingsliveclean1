@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
 export default function Login() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [loading, setLoading] = useState(false);
@@ -43,7 +45,7 @@ export default function Login() {
         alert(`Error: ${error.message}`);
       } else {
         console.log('OTP verified successfully:', data);
-        alert('Login successful!');
+        navigate('/auth-gate');
       }
     } catch (err) {
       console.error('Unexpected error:', err);
