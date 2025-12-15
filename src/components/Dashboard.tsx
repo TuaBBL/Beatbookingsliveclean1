@@ -109,6 +109,8 @@ export default function Dashboard() {
 }
 
 function PlannerDashboard({ profile }: { profile: Profile }) {
+  const navigate = useNavigate();
+
   return (
     <div>
       <div className="mb-8">
@@ -121,9 +123,10 @@ function PlannerDashboard({ profile }: { profile: Profile }) {
           title="Events"
           description="Browse and discover upcoming events"
           footer="View events • Mark Going/Not Going • Comment"
+          onClick={() => navigate('/events')}
         >
           <p className="text-gray-400 text-sm">
-            Event browsing and interaction coming soon
+            Discover events in your area and mark your attendance
           </p>
         </DashboardCard>
 
@@ -150,6 +153,8 @@ function PlannerDashboard({ profile }: { profile: Profile }) {
 }
 
 function ArtistDashboard({ profile }: { profile: Profile }) {
+  const navigate = useNavigate();
+
   return (
     <div>
       <div className="mb-8">
@@ -171,9 +176,10 @@ function ArtistDashboard({ profile }: { profile: Profile }) {
           title="Events"
           description="Create and manage your events"
           footer="Create events • Manage your listings"
+          onClick={() => navigate('/events')}
         >
           <p className="text-gray-400 text-sm">
-            Event creation and management coming soon
+            Create events and manage your event listings
           </p>
         </DashboardCard>
 
@@ -204,14 +210,21 @@ function DashboardCard({
   description,
   footer,
   children,
+  onClick,
 }: {
   title: string;
   description: string;
   footer?: string;
   children: React.ReactNode;
+  onClick?: () => void;
 }) {
   return (
-    <div className="bg-charcoal rounded-xl p-6 border border-gray-800 flex flex-col">
+    <div
+      onClick={onClick}
+      className={`bg-charcoal rounded-xl p-6 border border-gray-800 flex flex-col ${
+        onClick ? 'cursor-pointer hover:border-neon-green/50 transition' : ''
+      }`}
+    >
       <div className="mb-4">
         <h3 className="text-xl font-bold text-white mb-2">{title}</h3>
         <p className="text-gray-400 text-sm">{description}</p>
