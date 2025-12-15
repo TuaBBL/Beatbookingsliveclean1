@@ -97,19 +97,12 @@ export default function Hero({ artists = [] }: HeroProps) {
           Discover, book, and manage live music talent across Australia & New Zealand.
         </p>
 
-        <div className="mt-10 flex justify-center gap-4">
+        <div className="mt-10 flex justify-center">
           <a
-            href="/login"
-            className="px-8 py-4 rounded-lg bg-neon-green text-black font-semibold hover:opacity-90 transition shadow-[0_0_20px_rgba(57,255,20,0.4)] hover:shadow-[0_0_30px_rgba(57,255,20,0.6)]"
+            href="/auth-gate"
+            className="px-10 py-4 rounded-lg bg-neon-red text-white font-bold text-lg hover:bg-neon-red/90 transition shadow-[0_0_25px_rgba(255,45,45,0.5)] hover:shadow-[0_0_35px_rgba(255,45,45,0.7)]"
           >
-            Planner
-          </a>
-
-          <a
-            href="/login"
-            className="px-8 py-4 rounded-lg border-2 border-neon-red text-neon-red font-semibold hover:bg-neon-red/10 transition shadow-[0_0_20px_rgba(255,45,45,0.3)] hover:shadow-[0_0_30px_rgba(255,45,45,0.5)]"
-          >
-            Artist
+            Check it out
           </a>
         </div>
       </div>

@@ -6,10 +6,13 @@ export default function Footer() {
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex gap-6 text-sm">
-            <a href="#" className="text-gray-400 hover:text-neon-green transition-colors">
+            <a href="/about" className="text-gray-400 hover:text-neon-green transition-colors">
+              About
+            </a>
+            <a href="/terms" className="text-gray-400 hover:text-neon-green transition-colors">
               Terms & Conditions
             </a>
-            <a href="#" className="text-gray-400 hover:text-neon-green transition-colors">
+            <a href="/privacy" className="text-gray-400 hover:text-neon-green transition-colors">
               Privacy Policy
             </a>
           </div>

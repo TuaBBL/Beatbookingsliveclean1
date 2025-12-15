@@ -5,7 +5,9 @@ import { supabase } from './lib/supabase';
 // pages / components
 import HomePage from './components/HomePage';
 import Login from './components/Login';
+import About from './components/About';
 import Terms from './components/Terms';
+import Privacy from './components/Privacy';
 import Dashboard from './components/Dashboard';
 import CreateProfile from './components/CreateProfile';
 import AuthGate from './components/AuthGate';
@@ -52,8 +54,10 @@ export default function App() {
   <Routes>
     {/* Public */}
     <Route path="/" element={<HomePage />} />
-    <Route path="/login" element={<Login />} />
+    <Route path="/about" element={<About />} />
     <Route path="/terms" element={<Terms />} />
+    <Route path="/privacy" element={<Privacy />} />
+    <Route path="/login" element={<Login />} />
 
     {/* Auth plumbing */}
     <Route path="/auth-callback" element={<AuthCallback />} />

@@ -25,8 +25,8 @@ export default function Header() {
       `}
     >
       <div className="flex items-center justify-between px-6 py-6">
-        {/* Logo (Home Button) */}
-        <a href="/" className="flex items-center">
+        {/* Logo (About Button) */}
+        <a href="/about" className="flex items-center">
           <img
             src={logo}
             alt="BeatBookingsLive"
