@@ -1,76 +1,63 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
-type Role = 'planner' | 'artist' | null;
+type Role = 'planner' | 'artist' | 'admin';
+type Step = 'role' | 'details';
 
 export default function CreateProfile() {
   const navigate = useNavigate();
+
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
-  const [role, setRole] = useState<Role>(null);
+  const [step, setStep] = useState<Step>('role');
+  const [role, setRole] = useState<Role | null>(null);
+
   const [name, setName] = useState('');
   const [country, setCountry] = useState('');
   const [state, setState] = useState('');
   const [city, setCity] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
 
+  // Guard: authenticated + no existing profile
   useEffect(() => {
-    const checkExistingProfile = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          navigate('/login');
-          return;
-        }
+    const run = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
 
-        const { data: profile, error: fetchError } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('id', user.id)
-          .maybeSingle();
-
-        if (fetchError) {
-          console.error('Error checking profile:', fetchError.message);
-          setError(`Error loading profile: ${fetchError.message}`);
-          setLoading(false);
-          return;
-        }
-
-        if (profile) {
-          navigate('/dashboard');
-          return;
-        }
-
-        setLoading(false);
-      } catch (err) {
-        console.error('Unexpected error:', err);
-        setError('An unexpected error occurred');
-        setLoading(false);
+      if (!session?.user) {
+        navigate('/login', { replace: true });
+        return;
       }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', session.user.id)
+        .maybeSingle();
+
+      if (profile) {
+        navigate('/dashboard', { replace: true });
+        return;
+      }
+
+      setLoading(false);
     };
 
-    checkExistingProfile();
+    run();
   }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError(null);
 
     if (!role) {
       setError('Please select a role');
       return;
     }
 
-    if (!name.trim()) {
-      setError('Name is required');
-      return;
-    }
-
-    if (!country) {
-      setError('Country is required');
+    if (!name.trim() || !country || !state.trim() || !city.trim()) {
+      setError('All fields are required');
       return;
     }
 
@@ -78,37 +65,36 @@ export default function CreateProfile() {
       setSubmitting(true);
 
       const { data: { user } } = await supabase.auth.getUser();
+
       if (!user) {
-        setError('Not authenticated');
-        navigate('/login');
+        navigate('/login', { replace: true });
         return;
       }
 
-      const { error: insertError } = await supabase
+      const { error } = await supabase
         .from('profiles')
         .insert({
           id: user.id,
           role,
           name: name.trim(),
-          email: user.email || '',
+          email: user.email,
           country,
-          state: state.trim() || null,
-          city: city.trim() || null,
-          image_url: imageUrl.trim() || null,
-          agreed_terms: true,
+          state: state.trim(),
+          city: city.trim(),
         });
 
-      if (insertError) {
-        console.error('Error creating profile:', insertError.message);
-        setError(`Error creating profile: ${insertError.message}`);
+      if (error) {
+        console.error(error);
+        setError(error.message);
         return;
       }
 
-      console.log('Profile created successfully');
-      navigate('/dashboard');
+      // IMPORTANT: let AuthGate decide
+      navigate('/auth-gate', { replace: true });
+
     } catch (err) {
-      console.error('Unexpected error:', err);
-      setError('An unexpected error occurred');
+      console.error(err);
+      setError('Something went wrong. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -117,138 +103,66 @@ export default function CreateProfile() {
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <p className="text-white">Loading...</p>
+        <p className="text-white">Preparing profile setup…</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center px-4 py-8">
-      <div className="w-full max-w-2xl bg-charcoal rounded-xl p-8 border border-gray-800">
-        <h1 className="text-3xl font-bold text-white mb-6">Create Your Profile</h1>
+    <div className="min-h-screen bg-black flex items-center justify-center px-4">
+      <div className="w-full max-w-xl bg-charcoal border border-gray-800 rounded-xl p-8">
+        {step === 'role' && (
+          <>
+            <h1 className="text-3xl font-bold text-white mb-6">
+              Choose your role
+            </h1>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-white font-semibold mb-3">
-              I am a... <span className="text-neon-red">*</span>
-            </label>
-            <div className="flex gap-4">
+            <div className="flex flex-col gap-4">
               <button
-                type="button"
-                onClick={() => setRole('planner')}
-                className={`flex-1 py-3 px-6 rounded-lg font-semibold transition ${
-                  role === 'planner'
-                    ? 'bg-neon-green text-black'
-                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                }`}
+                onClick={() => { setRole('planner'); setStep('details'); }}
+                className="w-full py-4 rounded-lg bg-gray-900 border border-gray-700 text-white hover:border-neon-green"
               >
                 Planner
               </button>
+
               <button
-                type="button"
-                onClick={() => setRole('artist')}
-                className={`flex-1 py-3 px-6 rounded-lg font-semibold transition ${
-                  role === 'artist'
-                    ? 'bg-neon-green text-black'
-                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                }`}
+                onClick={() => { setRole('artist'); setStep('details'); }}
+                className="w-full py-4 rounded-lg bg-gray-900 border border-gray-700 text-white hover:border-neon-red"
               >
                 Artist
               </button>
             </div>
-          </div>
+          </>
+        )}
 
-          <div>
-            <label htmlFor="name" className="block text-white font-semibold mb-2">
-              Name <span className="text-neon-red">*</span>
-            </label>
-            <input
-              type="text"
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-neon-green"
-              placeholder="Your name or stage name"
-              required
-            />
-          </div>
+        {step === 'details' && (
+          <>
+            <h1 className="text-3xl font-bold text-white mb-6">
+              Complete your profile
+            </h1>
 
-          <div>
-            <label htmlFor="country" className="block text-white font-semibold mb-2">
-              Country <span className="text-neon-red">*</span>
-            </label>
-            <select
-              id="country"
-              value={country}
-              onChange={(e) => setCountry(e.target.value)}
-              className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-neon-green"
-              required
-            >
-              <option value="">Select country</option>
-              <option value="Australia">Australia</option>
-              <option value="New Zealand">New Zealand</option>
-            </select>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="state" className="block text-white font-semibold mb-2">
-                State
-              </label>
+            <form onSubmit={handleSubmit} className="space-y-4">
               <input
                 type="text"
-                id="state"
+                placeholder="Name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white"
+              />
+
+              <select
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white"
+              >
+                <option value="">Select country</option>
+                <option value="AU">Australia</option>
+                <option value="NZ">New Zealand</option>
+              </select>
+
+              <input
+                type="text"
+                placeholder="State"
                 value={state}
                 onChange={(e) => setState(e.target.value)}
-                className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-neon-green"
-                placeholder="e.g., NSW, VIC"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="city" className="block text-white font-semibold mb-2">
-                City
-              </label>
-              <input
-                type="text"
-                id="city"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-neon-green"
-                placeholder="e.g., Sydney, Auckland"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label htmlFor="imageUrl" className="block text-white font-semibold mb-2">
-              Profile Image URL
-            </label>
-            <input
-              type="text"
-              id="imageUrl"
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-neon-green"
-              placeholder="https://example.com/image.jpg"
-            />
-          </div>
-
-          {error && (
-            <div className="bg-neon-red/10 border border-neon-red rounded-lg p-4">
-              <p className="text-neon-red text-sm">{error}</p>
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full bg-neon-green text-black py-3 rounded-lg font-semibold hover:bg-neon-green/90 disabled:opacity-50 disabled:cursor-not-allowed transition"
-          >
-            {submitting ? 'Creating Profile...' : 'Create Profile'}
-          </button>
-        </form>
-      </div>
-    </div>
-  );
-}
+                className="w-full px-4 py-3 bg-bla
