@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, MapPin, Clock, Search, Plus, Edit2, Trash2, User, ArrowLeft } from 'lucide-react';
+import { Calendar, MapPin, Clock, Search, Plus, CreditCard as Edit2, Trash2, User, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import CreateEventModal from './CreateEventModal';
 
