@@ -4,30 +4,23 @@
 
 html {
   scroll-behavior: smooth;
-  overflow-y: scroll;
+  overflow-y: auto;
   overflow-x: hidden;
-  min-height: 100%;
-  height: auto;
+  height: 100%;
 }
 
 body {
-  overflow-y: scroll;
+  overflow-y: auto;
   overflow-x: hidden;
-  min-height: 100vh;
-  height: auto;
+  height: 100%;
   position: relative;
-  margin: 0;
-  padding: 0;
 }
 
 #root {
+  overflow-y: auto;
   overflow-x: hidden;
-  overflow-y: visible;
-  min-height: 100vh;
-  height: auto;
+  height: 100%;
   position: relative;
-  display: flex;
-  flex-direction: column;
 }
 
 /* Glow helpers */

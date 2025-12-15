@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
 export default function Login() {
@@ -7,22 +6,17 @@ export default function Login() {
   const [otpCode, setOtpCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
-  const navigate = useNavigate();
 
   const handleSendOtp = async () => {
     try {
       setLoading(true);
-
-      const { data, error } = await supabase.functions.invoke('auth-request-otp', {
-        body: { email },
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
       });
 
       if (error) {
         console.error('Error sending OTP:', error.message);
         alert(`Error: ${error.message}`);
-      } else if (data?.error) {
-        console.error('Error sending OTP:', data.error);
-        alert(`Error: ${data.error}`);
       } else {
         console.log('OTP sent successfully to:', email);
         setOtpSent(true);
@@ -30,7 +24,6 @@ export default function Login() {
       }
     } catch (err) {
       console.error('Unexpected error:', err);
-      alert('Failed to send OTP. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -39,49 +32,21 @@ export default function Login() {
   const handleVerifyOtp = async () => {
     try {
       setLoading(true);
-
-      const { data, error } = await supabase.functions.invoke('auth-verify-otp', {
-        body: { email, otp: otpCode },
+      const { data, error } = await supabase.auth.verifyOtp({
+        email,
+        token: otpCode,
+        type: 'email',
       });
 
       if (error) {
         console.error('Error verifying OTP:', error.message);
         alert(`Error: ${error.message}`);
-        return;
-      }
-
-      if (data?.error) {
-        console.error('Error verifying OTP:', data.error);
-        alert(`Error: ${data.error}`);
-        return;
-      }
-
-      if (!data?.session) {
-        console.error('No session returned');
-        alert('Login failed. Please try again.');
-        return;
-      }
-
-      const { session } = data;
-      await supabase.auth.setSession({
-        access_token: session.access_token,
-        refresh_token: session.refresh_token,
-      });
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', data.user.id)
-        .maybeSingle();
-
-      if (!profile) {
-        navigate('/create-profile');
       } else {
-        navigate('/dashboard');
+        console.log('OTP verified successfully:', data);
+        alert('Login successful!');
       }
     } catch (err) {
       console.error('Unexpected error:', err);
-      alert('Failed to verify OTP. Please try again.');
     } finally {
       setLoading(false);
     }
