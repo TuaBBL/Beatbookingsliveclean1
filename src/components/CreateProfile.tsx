@@ -105,12 +105,7 @@ export default function CreateProfile() {
       }
 
       console.log('Profile created successfully');
-
-      if (role === 'artist') {
-        navigate('/subscription');
-      } else {
-        navigate('/dashboard');
-      }
+      navigate('/dashboard');
     } catch (err) {
       console.error('Unexpected error:', err);
       setError('An unexpected error occurred');
