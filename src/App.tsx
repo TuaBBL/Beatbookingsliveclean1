@@ -17,6 +17,13 @@ import AuthGate from './components/AuthGate';
 import AuthCallback from './components/AuthCallback';
 import PublishSuccess from './components/PublishSuccess';
 import PublishCancel from './components/PublishCancel';
+import PlannerDashboard from './components/planner/PlannerDashboard';
+import PlannerArtists from './components/planner/PlannerArtists';
+import PlannerArtistProfile from './components/planner/PlannerArtistProfile';
+import PlannerBookingInbox from './components/planner/PlannerBookingInbox';
+import PlannerConfirmedBookings from './components/planner/PlannerConfirmedBookings';
+import PlannerFavourites from './components/planner/PlannerFavourites';
+import PlannerCalendar from './components/planner/PlannerCalendar';
 
 export default function App() {
   const [session, setSession] = useState<any>(null);
@@ -83,6 +90,16 @@ export default function App() {
     <Route path="/events/:id" element={session ? <EventDetail /> : <Navigate to="/login" replace />} />
     <Route path="/publish/success" element={<PublishSuccess />} />
     <Route path="/publish/cancel" element={<PublishCancel />} />
+
+    {/* Planner Dashboard */}
+    <Route path="/planner/dashboard" element={session ? <PlannerDashboard /> : <Navigate to="/login" replace />} />
+    <Route path="/planner/artists" element={session ? <PlannerArtists /> : <Navigate to="/login" replace />} />
+    <Route path="/planner/artists/:id" element={session ? <PlannerArtistProfile /> : <Navigate to="/login" replace />} />
+    <Route path="/planner/bookings" element={session ? <PlannerBookingInbox /> : <Navigate to="/login" replace />} />
+    <Route path="/planner/confirmed" element={session ? <PlannerConfirmedBookings /> : <Navigate to="/login" replace />} />
+    <Route path="/planner/favourites" element={session ? <PlannerFavourites /> : <Navigate to="/login" replace />} />
+    <Route path="/planner/calendar" element={session ? <PlannerCalendar /> : <Navigate to="/login" replace />} />
+
     {/* later */}
     {/* <Route path="/admin" element={<AdminDashboard />} /> */}
 

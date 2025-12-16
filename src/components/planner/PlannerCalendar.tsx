@@ -1,0 +1,303 @@
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { supabase } from "../../lib/supabase";
+import Header from "../Header";
+import Footer from "../Footer";
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock } from "lucide-react";
+
+interface Booking {
+  id: string;
+  event_date: string;
+  start_time: string;
+  end_time: string;
+  artist_profiles: {
+    stage_name: string;
+  };
+}
+
+interface Event {
+  id: string;
+  title: string;
+  event_date: string;
+  start_time: string;
+}
+
+export default function PlannerCalendar() {
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+
+  useEffect(() => {
+    loadData();
+  }, [currentDate]);
+
+  async function loadData() {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const startOfMonth = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth(),
+        1
+      );
+      const endOfMonth = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth() + 1,
+        0
+      );
+
+      const [bookingsRes, eventsRes] = await Promise.all([
+        supabase
+          .from("bookings")
+          .select("*, artist_profiles(stage_name)")
+          .eq("planner_id", user.id)
+          .eq("status", "accepted")
+          .gte("event_date", startOfMonth.toISOString().split("T")[0])
+          .lte("event_date", endOfMonth.toISOString().split("T")[0]),
+        supabase
+          .from("events")
+          .select("id, title, event_date, start_time")
+          .eq("creator_id", user.id)
+          .eq("status", "published")
+          .gte("event_date", startOfMonth.toISOString().split("T")[0])
+          .lte("event_date", endOfMonth.toISOString().split("T")[0]),
+      ]);
+
+      setBookings(bookingsRes.data || []);
+      setEvents(eventsRes.data || []);
+    } catch (error) {
+      console.error("Error loading calendar data:", error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function getDaysInMonth() {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
+
+    const days: (Date | null)[] = [];
+
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      days.push(null);
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      days.push(new Date(year, month, day));
+    }
+
+    return days;
+  }
+
+  function getItemsForDate(date: Date) {
+    const dateStr = date.toISOString().split("T")[0];
+    const dayBookings = bookings.filter((b) => b.event_date === dateStr);
+    const dayEvents = events.filter((e) => e.event_date === dateStr);
+    return { bookings: dayBookings, events: dayEvents };
+  }
+
+  function previousMonth() {
+    setCurrentDate(
+      new Date(currentDate.getFullYear(), currentDate.getMonth() - 1)
+    );
+  }
+
+  function nextMonth() {
+    setCurrentDate(
+      new Date(currentDate.getFullYear(), currentDate.getMonth() + 1)
+    );
+  }
+
+  const days = getDaysInMonth();
+  const monthName = currentDate.toLocaleDateString("en-US", { month: "long" });
+  const year = currentDate.getFullYear();
+
+  const selectedDateItems = selectedDate ? getItemsForDate(selectedDate) : null;
+
+  return (
+    <div className="min-h-screen bg-black text-white flex flex-col">
+      <Header />
+
+      <main className="flex-1 px-6 py-12">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center justify-between mb-8">
+            <h1 className="text-4xl font-bold flex items-center gap-3">
+              <CalendarIcon className="w-10 h-10 text-orange-500" />
+              Calendar
+            </h1>
+            <Link
+              to="/planner/dashboard"
+              className="text-gray-400 hover:text-white transition"
+            >
+              Back to Dashboard
+            </Link>
+          </div>
+
+          <div className="bg-neutral-900 rounded-lg border border-neutral-800 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <button
+                onClick={previousMonth}
+                className="p-2 hover:bg-neutral-800 rounded-lg transition"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+              <h2 className="text-2xl font-bold">
+                {monthName} {year}
+              </h2>
+              <button
+                onClick={nextMonth}
+                className="p-2 hover:bg-neutral-800 rounded-lg transition"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
+            </div>
+
+            {loading ? (
+              <p className="text-gray-400 text-center">Loading...</p>
+            ) : (
+              <>
+                <div className="grid grid-cols-7 gap-2 mb-2">
+                  {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+                    <div
+                      key={day}
+                      className="text-center text-sm font-semibold text-gray-400 py-2"
+                    >
+                      {day}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-7 gap-2">
+                  {days.map((day, index) => {
+                    if (!day) {
+                      return <div key={`empty-${index}`} className="aspect-square" />;
+                    }
+
+                    const { bookings: dayBookings, events: dayEvents } =
+                      getItemsForDate(day);
+                    const hasItems = dayBookings.length > 0 || dayEvents.length > 0;
+                    const isToday =
+                      day.toDateString() === new Date().toDateString();
+
+                    return (
+                      <button
+                        key={day.toISOString()}
+                        onClick={() => setSelectedDate(day)}
+                        className={`aspect-square p-2 rounded-lg transition flex flex-col ${
+                          isToday
+                            ? "bg-orange-900/30 border border-orange-500"
+                            : "bg-neutral-800 border border-neutral-700 hover:border-neutral-600"
+                        }`}
+                      >
+                        <span className="text-sm font-semibold mb-1">
+                          {day.getDate()}
+                        </span>
+                        {hasItems && (
+                          <div className="flex-1 flex flex-col gap-1">
+                            {dayBookings.slice(0, 2).map((booking) => (
+                              <div
+                                key={booking.id}
+                                className="text-xs bg-green-900/40 px-1 py-0.5 rounded truncate"
+                              >
+                                {booking.artist_profiles.stage_name}
+                              </div>
+                            ))}
+                            {dayEvents.slice(0, 2).map((event) => (
+                              <div
+                                key={event.id}
+                                className="text-xs bg-blue-900/40 px-1 py-0.5 rounded truncate"
+                              >
+                                {event.title}
+                              </div>
+                            ))}
+                            {dayBookings.length + dayEvents.length > 2 && (
+                              <div className="text-xs text-gray-400">
+                                +{dayBookings.length + dayEvents.length - 2} more
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+
+          {selectedDate && selectedDateItems && (
+            <div className="mt-6 bg-neutral-900 rounded-lg border border-neutral-800 p-6">
+              <h3 className="text-xl font-bold mb-4">
+                {selectedDate.toLocaleDateString("en-US", {
+                  weekday: "long",
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </h3>
+
+              {selectedDateItems.bookings.length === 0 &&
+              selectedDateItems.events.length === 0 ? (
+                <p className="text-gray-400">No bookings or events on this date</p>
+              ) : (
+                <div className="space-y-4">
+                  {selectedDateItems.bookings.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold text-green-500 mb-2">
+                        Confirmed Bookings
+                      </h4>
+                      {selectedDateItems.bookings.map((booking) => (
+                        <div
+                          key={booking.id}
+                          className="bg-neutral-800 rounded-lg p-4 mb-2"
+                        >
+                          <p className="font-semibold">
+                            {booking.artist_profiles.stage_name}
+                          </p>
+                          <div className="flex items-center gap-2 text-sm text-gray-400 mt-1">
+                            <Clock className="w-4 h-4" />
+                            {booking.start_time} - {booking.end_time}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {selectedDateItems.events.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold text-blue-500 mb-2">
+                        Your Events
+                      </h4>
+                      {selectedDateItems.events.map((event) => (
+                        <Link
+                          key={event.id}
+                          to={`/events/${event.id}`}
+                          className="block bg-neutral-800 rounded-lg p-4 mb-2 hover:bg-neutral-700 transition"
+                        >
+                          <p className="font-semibold">{event.title}</p>
+                          <div className="flex items-center gap-2 text-sm text-gray-400 mt-1">
+                            <Clock className="w-4 h-4" />
+                            {event.start_time}
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </main>
+
+      <Footer />
+    </div>
+  );
+}
