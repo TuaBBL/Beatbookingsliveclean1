@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Calendar, MapPin, Clock, ArrowLeft, ExternalLink, Users, Check, Plus, X } from 'lucide-react';
+import { Calendar, MapPin, Clock, ArrowLeft, ExternalLink, Users, Check, Plus, X, MessageCircle, Trash2, Reply } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import Header from './Header';
 import Footer from './Footer';
@@ -35,6 +35,18 @@ interface Attendee {
   role: string;
 }
 
+interface Comment {
+  id: string;
+  event_id: string;
+  user_id: string;
+  content: string;
+  parent_id: string | null;
+  created_at: string;
+  user_name: string;
+  user_role: string;
+  replies?: Comment[];
+}
+
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -45,10 +57,68 @@ export default function EventDetail() {
   const [isAttending, setIsAttending] = useState(false);
   const [attendanceStatus, setAttendanceStatus] = useState<string | null>(null);
   const [attendanceLoading, setAttendanceLoading] = useState(false);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [newComment, setNewComment] = useState('');
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyContent, setReplyContent] = useState('');
+  const [commentLoading, setCommentLoading] = useState(false);
 
   useEffect(() => {
     loadEventData();
+    loadComments();
   }, [id]);
+
+  async function loadComments() {
+    if (!id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('event_comments')
+        .select(`
+          id,
+          event_id,
+          user_id,
+          content,
+          parent_id,
+          created_at,
+          profiles!inner(
+            name,
+            role
+          )
+        `)
+        .eq('event_id', id)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      const formattedComments = data.map((c: any) => ({
+        id: c.id,
+        event_id: c.event_id,
+        user_id: c.user_id,
+        content: c.content,
+        parent_id: c.parent_id,
+        created_at: c.created_at,
+        user_name: c.profiles.name,
+        user_role: c.profiles.role,
+        replies: []
+      }));
+
+      const topLevelComments = formattedComments.filter((c: Comment) => !c.parent_id);
+      const replies = formattedComments.filter((c: Comment) => c.parent_id);
+
+      replies.forEach((reply: Comment) => {
+        const parent = topLevelComments.find((c: Comment) => c.id === reply.parent_id);
+        if (parent) {
+          parent.replies = parent.replies || [];
+          parent.replies.push(reply);
+        }
+      });
+
+      setComments(topLevelComments);
+    } catch (error) {
+      console.error('Error loading comments:', error);
+    }
+  }
 
   async function loadEventData() {
     if (!id) return;
@@ -148,6 +218,75 @@ export default function EventDetail() {
     }
   }
 
+  async function postComment() {
+    if (!currentUserId || !id || !newComment.trim() || commentLoading) return;
+
+    setCommentLoading(true);
+    try {
+      const { error } = await supabase
+        .from('event_comments')
+        .insert({
+          event_id: id,
+          user_id: currentUserId,
+          content: newComment.trim(),
+          parent_id: null
+        });
+
+      if (error) throw error;
+
+      setNewComment('');
+      await loadComments();
+    } catch (error) {
+      console.error('Error posting comment:', error);
+    } finally {
+      setCommentLoading(false);
+    }
+  }
+
+  async function postReply(parentId: string) {
+    if (!currentUserId || !id || !replyContent.trim() || commentLoading) return;
+    if (!event || event.creator_id !== currentUserId) return;
+
+    setCommentLoading(true);
+    try {
+      const { error } = await supabase
+        .from('event_comments')
+        .insert({
+          event_id: id,
+          user_id: currentUserId,
+          content: replyContent.trim(),
+          parent_id: parentId
+        });
+
+      if (error) throw error;
+
+      setReplyContent('');
+      setReplyingTo(null);
+      await loadComments();
+    } catch (error) {
+      console.error('Error posting reply:', error);
+    } finally {
+      setCommentLoading(false);
+    }
+  }
+
+  async function deleteComment(commentId: string) {
+    if (!currentUserId || !event || event.creator_id !== currentUserId) return;
+
+    try {
+      const { error } = await supabase
+        .from('event_comments')
+        .delete()
+        .eq('id', commentId);
+
+      if (error) throw error;
+
+      await loadComments();
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -180,6 +319,22 @@ export default function EventDetail() {
     const ampm = hour >= 12 ? 'PM' : 'AM';
     const displayHour = hour % 12 || 12;
     return `${displayHour}:${minutes} ${ampm}`;
+  };
+
+  const formatCommentDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   return (
@@ -347,6 +502,141 @@ export default function EventDetail() {
               ))}
             </div>
           )}
+        </div>
+
+        <div className="bg-charcoal rounded-xl border border-gray-800 p-8 mt-8">
+          <div className="flex items-center gap-3 mb-6">
+            <MessageCircle className="w-6 h-6 text-blue-400" />
+            <h2 className="text-2xl font-bold">Comments</h2>
+          </div>
+
+          <div className="mb-6">
+            <textarea
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              placeholder="Add a comment..."
+              className="w-full px-4 py-3 bg-black/30 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"
+              rows={3}
+            />
+            <button
+              onClick={postComment}
+              disabled={commentLoading || !newComment.trim()}
+              className="mt-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {commentLoading ? 'Posting...' : 'Post Comment'}
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            {comments.length === 0 ? (
+              <p className="text-gray-400 text-center py-8">No comments yet. Be the first to comment!</p>
+            ) : (
+              comments.map((comment) => (
+                <div key={comment.id} className="border-l-2 border-gray-700 pl-4">
+                  <div className="flex items-start gap-3 mb-2">
+                    <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
+                      <span className="text-white font-semibold">
+                        {comment.user_name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-semibold text-white">{comment.user_name}</span>
+                        <span className="px-2 py-0.5 bg-purple-500/20 text-purple-400 rounded text-xs capitalize">
+                          {comment.user_role}
+                        </span>
+                        <span className="text-sm text-gray-500">{formatCommentDate(comment.created_at)}</span>
+                      </div>
+                      <p className="text-gray-300">{comment.content}</p>
+                      <div className="flex items-center gap-3 mt-2">
+                        {event && event.creator_id === currentUserId && (
+                          <>
+                            <button
+                              onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+                              className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1"
+                            >
+                              <Reply className="w-3 h-3" />
+                              Reply
+                            </button>
+                            <button
+                              onClick={() => deleteComment(comment.id)}
+                              className="text-sm text-red-400 hover:text-red-300 flex items-center gap-1"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                              Delete
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {replyingTo === comment.id && (
+                    <div className="ml-13 mt-3 mb-3">
+                      <textarea
+                        value={replyContent}
+                        onChange={(e) => setReplyContent(e.target.value)}
+                        placeholder="Write a reply..."
+                        className="w-full px-4 py-2 bg-black/30 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"
+                        rows={2}
+                      />
+                      <div className="flex gap-2 mt-2">
+                        <button
+                          onClick={() => postReply(comment.id)}
+                          disabled={commentLoading || !replyContent.trim()}
+                          className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {commentLoading ? 'Posting...' : 'Reply'}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setReplyingTo(null);
+                            setReplyContent('');
+                          }}
+                          className="px-4 py-1.5 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm font-semibold transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {comment.replies && comment.replies.length > 0 && (
+                    <div className="ml-13 mt-3 space-y-3">
+                      {comment.replies.map((reply) => (
+                        <div key={reply.id} className="flex items-start gap-3 border-l-2 border-gray-800 pl-4">
+                          <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center flex-shrink-0">
+                            <span className="text-white text-sm font-semibold">
+                              {reply.user_name.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-semibold text-white text-sm">{reply.user_name}</span>
+                              <span className="px-2 py-0.5 bg-purple-500/20 text-purple-400 rounded text-xs capitalize">
+                                {reply.user_role}
+                              </span>
+                              <span className="text-xs text-gray-500">{formatCommentDate(reply.created_at)}</span>
+                            </div>
+                            <p className="text-gray-300 text-sm">{reply.content}</p>
+                            {event && event.creator_id === currentUserId && (
+                              <button
+                                onClick={() => deleteComment(reply.id)}
+                                className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1 mt-1"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                                Delete
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </main>
 
