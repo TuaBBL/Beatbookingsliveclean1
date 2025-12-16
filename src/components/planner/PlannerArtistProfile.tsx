@@ -5,20 +5,12 @@ import Header from "../Header";
 import Footer from "../Footer";
 import PlannerProfileMenu from "./PlannerProfileMenu";
 import { Music, Heart, MessageSquare, X } from "lucide-react";
-
-interface ArtistProfile {
-  id: string;
-  stage_name: string;
-  genre: string;
-  location: string;
-  category: string;
-  user_id: string;
-}
+import { mockArtists, Artist } from "../../data/mockArtists";
 
 export default function PlannerArtistProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [artist, setArtist] = useState<ArtistProfile | null>(null);
+  const [artist, setArtist] = useState<Artist | null>(null);
   const [loading, setLoading] = useState(true);
   const [isFavourite, setIsFavourite] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
@@ -35,14 +27,8 @@ export default function PlannerArtistProfile() {
 
   async function loadArtist() {
     try {
-      const { data, error } = await supabase
-        .from("artist_profiles")
-        .select("*")
-        .eq("id", id)
-        .maybeSingle();
-
-      if (error) throw error;
-      setArtist(data);
+      const foundArtist = mockArtists.find((a) => a.id === id);
+      setArtist(foundArtist || null);
     } catch (error) {
       console.error("Error loading artist:", error);
     } finally {
@@ -97,42 +83,8 @@ export default function PlannerArtistProfile() {
       return;
     }
 
-    setSubmitting(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user || !artist) return;
-
-      const { data: booking, error: bookingError } = await supabase
-        .from("bookings")
-        .insert({
-          planner_id: user.id,
-          artist_id: artist.id,
-          status: "pending",
-          event_date: eventDate,
-          start_time: startTime,
-          end_time: endTime,
-        })
-        .select()
-        .single();
-
-      if (bookingError) throw bookingError;
-
-      await supabase.from("messages").insert({
-        sender_id: user.id,
-        recipient_id: artist.user_id,
-        booking_id: booking.id,
-        content: bookingMessage,
-      });
-
-      alert("Booking request sent!");
-      setShowBookingModal(false);
-      navigate("/planner/bookings");
-    } catch (error) {
-      console.error("Error sending booking request:", error);
-      alert("Failed to send booking request");
-    } finally {
-      setSubmitting(false);
-    }
+    alert("Booking functionality is available for real artist profiles. These are demo artists for browsing.");
+    setShowBookingModal(false);
   }
 
   if (loading) {
@@ -176,16 +128,24 @@ export default function PlannerArtistProfile() {
           </div>
 
           <div className="bg-neutral-900 rounded-lg border border-neutral-800 overflow-hidden">
-            <div className="h-64 bg-neutral-800 flex items-center justify-center">
-              <Music className="w-24 h-24 text-neutral-700" />
+            <div className="h-64 bg-neutral-800 flex items-center justify-center overflow-hidden">
+              {artist.imageUrl ? (
+                <img
+                  src={artist.imageUrl}
+                  alt={artist.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <Music className="w-24 h-24 text-neutral-700" />
+              )}
             </div>
 
             <div className="p-8">
               <div className="flex items-start justify-between mb-6">
                 <div>
-                  <h1 className="text-4xl font-bold mb-2">{artist.stage_name}</h1>
+                  <h1 className="text-4xl font-bold mb-2">{artist.name}</h1>
                   <p className="text-xl text-gray-400 mb-2">{artist.genre}</p>
-                  <p className="text-gray-500">{artist.location}</p>
+                  <p className="text-gray-500">{artist.city}, {artist.state}, {artist.country}</p>
                 </div>
                 <button
                   onClick={toggleFavourite}

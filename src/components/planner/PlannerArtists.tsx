@@ -1,55 +1,26 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { supabase } from "../../lib/supabase";
 import Header from "../Header";
 import Footer from "../Footer";
 import PlannerProfileMenu from "./PlannerProfileMenu";
 import { Music, Search } from "lucide-react";
-
-interface ArtistProfile {
-  id: string;
-  stage_name: string;
-  genre: string;
-  location: string;
-  category: string;
-  user_id: string;
-}
+import { mockArtists, Artist } from "../../data/mockArtists";
 
 export default function PlannerArtists() {
-  const [artists, setArtists] = useState<ArtistProfile[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [genreFilter, setGenreFilter] = useState("");
 
-  useEffect(() => {
-    loadArtists();
-  }, []);
+  const allArtists: Artist[] = Array.isArray(mockArtists) ? mockArtists : [];
 
-  async function loadArtists() {
-    try {
-      const { data, error } = await supabase
-        .from("artist_profiles")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setArtists(data || []);
-    } catch (error) {
-      console.error("Error loading artists:", error);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  const filteredArtists = artists.filter((artist) => {
-    const matchesSearch = artist.stage_name
+  const filteredArtists = allArtists.filter((artist) => {
+    const matchesSearch = artist.name
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
     const matchesGenre = !genreFilter || artist.genre === genreFilter;
     return matchesSearch && matchesGenre;
   });
 
-  const genres = Array.from(new Set(artists.map((a) => a.genre)));
+  const genres = Array.from(new Set(allArtists.map((a) => a.genre)));
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
@@ -96,9 +67,7 @@ export default function PlannerArtists() {
             </select>
           </div>
 
-          {loading ? (
-            <p className="text-gray-400">Loading artists...</p>
-          ) : filteredArtists.length === 0 ? (
+          {filteredArtists.length === 0 ? (
             <p className="text-gray-400">No artists found</p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -108,15 +77,23 @@ export default function PlannerArtists() {
                   to={`/planner/artists/${artist.id}`}
                   className="bg-neutral-900 rounded-lg border border-neutral-800 hover:border-orange-500 transition overflow-hidden group"
                 >
-                  <div className="h-48 bg-neutral-800 flex items-center justify-center">
-                    <Music className="w-16 h-16 text-neutral-700" />
+                  <div className="h-48 bg-neutral-800 flex items-center justify-center overflow-hidden">
+                    {artist.imageUrl ? (
+                      <img
+                        src={artist.imageUrl}
+                        alt={artist.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Music className="w-16 h-16 text-neutral-700" />
+                    )}
                   </div>
                   <div className="p-4">
                     <h3 className="text-xl font-bold mb-1 group-hover:text-orange-500 transition">
-                      {artist.stage_name}
+                      {artist.name}
                     </h3>
                     <p className="text-sm text-gray-400 mb-2">{artist.genre}</p>
-                    <p className="text-sm text-gray-500">{artist.location}</p>
+                    <p className="text-sm text-gray-500">{artist.city}, {artist.state}</p>
                   </div>
                 </Link>
               ))}
