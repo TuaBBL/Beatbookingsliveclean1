@@ -579,11 +579,11 @@ export default function EventDetail() {
                     1 free publish remaining
                   </p>
                 )}
-                <div className="flex gap-3">
+                <div className="flex flex-col sm:flex-row gap-3 w-full">
                   <button
                     onClick={handlePublishEvent}
                     disabled={publishLoading}
-                    className="flex items-center gap-2 px-6 py-3 bg-neon-green hover:bg-neon-green/90 text-black rounded-lg font-bold transition shadow-[0_0_25px_rgba(57,255,20,0.5)] hover:shadow-[0_0_35px_rgba(57,255,20,0.7)] disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-neon-green hover:bg-neon-green/90 text-black rounded-lg font-bold transition shadow-[0_0_25px_rgba(57,255,20,0.5)] hover:shadow-[0_0_35px_rgba(57,255,20,0.7)] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Check className="w-4 h-4" />
                     {publishLoading ? 'Publishing...' : (
@@ -597,7 +597,7 @@ export default function EventDetail() {
                   <button
                     onClick={handlePromo}
                     disabled={publishLoading}
-                    className="flex items-center gap-2 px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-bold transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-bold transition disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Promo Test ($0.05)
                   </button>
