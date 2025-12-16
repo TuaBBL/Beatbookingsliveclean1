@@ -11,10 +11,12 @@ export default function PublishCancel() {
   const [loading, setLoading] = useState(true);
   const [eventTitle, setEventTitle] = useState<string>('');
   const [retrying, setRetrying] = useState(false);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     if (!eventId) {
-      navigate('/events');
+      setLoading(false);
+      setError(true);
       return;
     }
 
@@ -23,22 +25,23 @@ export default function PublishCancel() {
 
   async function loadEventDetails() {
     try {
-      const { data: event, error } = await supabase
+      const { data: event, error: queryError } = await supabase
         .from('events')
         .select('id, title, status')
         .eq('id', eventId)
         .maybeSingle();
 
-      if (error) throw error;
+      if (queryError) throw queryError;
       if (!event) {
-        navigate('/events');
+        setError(true);
+        setLoading(false);
         return;
       }
 
       setEventTitle(event.title);
       setLoading(false);
-    } catch (error) {
-      console.error('Error loading event:', error);
+    } catch (err) {
+      setError(true);
       setLoading(false);
     }
   }
@@ -92,6 +95,34 @@ export default function PublishCancel() {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <p className="text-white">Loading...</p>
+      </div>
+    );
+  }
+
+  if (error || !eventId) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center px-4">
+        <div className="max-w-2xl w-full bg-charcoal rounded-xl p-8 border border-gray-800 text-center">
+          <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+            <XCircle className="w-12 h-12 text-red-500" />
+          </div>
+          <h1 className="text-3xl font-bold text-white mb-4">
+            Payment Cancelled
+          </h1>
+          <p className="text-xl text-gray-300 mb-8">
+            No charges were made.
+          </p>
+          <p className="text-gray-400 mb-8">
+            You can return to your events and try again when you're ready.
+          </p>
+          <button
+            onClick={() => navigate('/events')}
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-neon-green text-black rounded-lg font-bold hover:bg-neon-green/90 transition shadow-[0_0_25px_rgba(57,255,20,0.5)] hover:shadow-[0_0_35px_rgba(57,255,20,0.7)]"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            View Events
+          </button>
+        </div>
       </div>
     );
   }

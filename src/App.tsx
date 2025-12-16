@@ -25,19 +25,24 @@ export default function App() {
   useEffect(() => {
     let mounted = true;
 
-    // Initial session check
-    supabase.auth.getSession().then(({ data }) => {
-      if (!mounted) return;
-      setSession(data.session);
-      setLoading(false);
-    });
+    supabase.auth.getSession()
+      .then(({ data }) => {
+        if (!mounted) return;
+        setSession(data.session);
+        setLoading(false);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setLoading(false);
+      });
 
-    // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!mounted) return;
-      setSession(session);
+      (async () => {
+        if (!mounted) return;
+        setSession(session);
+      })();
     });
 
     return () => {
@@ -76,8 +81,8 @@ export default function App() {
     <Route path="/dashboard" element={session ? <Dashboard /> : <Navigate to="/login" replace />} />
     <Route path="/events" element={session ? <Events /> : <Navigate to="/login" replace />} />
     <Route path="/events/:id" element={session ? <EventDetail /> : <Navigate to="/login" replace />} />
-    <Route path="/publish/success" element={session ? <PublishSuccess /> : <Navigate to="/login" replace />} />
-    <Route path="/publish/cancel" element={session ? <PublishCancel /> : <Navigate to="/login" replace />} />
+    <Route path="/publish/success" element={<PublishSuccess />} />
+    <Route path="/publish/cancel" element={<PublishCancel />} />
     {/* later */}
     {/* <Route path="/admin" element={<AdminDashboard />} /> */}
 

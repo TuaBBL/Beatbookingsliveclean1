@@ -12,10 +12,12 @@ export default function PublishSuccess() {
   const [eventStatus, setEventStatus] = useState<string | null>(null);
   const [eventTitle, setEventTitle] = useState<string>('');
   const [checkCount, setCheckCount] = useState(0);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     if (!eventId) {
-      navigate('/events');
+      setLoading(false);
+      setError(true);
       return;
     }
 
@@ -34,23 +36,24 @@ export default function PublishSuccess() {
 
   async function checkEventStatus() {
     try {
-      const { data: event, error } = await supabase
+      const { data: event, error: queryError } = await supabase
         .from('events')
         .select('id, title, status')
         .eq('id', eventId)
         .maybeSingle();
 
-      if (error) throw error;
+      if (queryError) throw queryError;
       if (!event) {
-        navigate('/events');
+        setError(true);
+        setLoading(false);
         return;
       }
 
       setEventTitle(event.title);
       setEventStatus(event.status);
       setLoading(false);
-    } catch (error) {
-      console.error('Error checking event status:', error);
+    } catch (err) {
+      setError(true);
       setLoading(false);
     }
   }
@@ -61,6 +64,34 @@ export default function PublishSuccess() {
         <div className="text-center">
           <Loader className="w-12 h-12 text-neon-green mx-auto mb-4 animate-spin" />
           <p className="text-white text-lg">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !eventId) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center px-4">
+        <div className="max-w-2xl w-full bg-charcoal rounded-xl p-8 border border-gray-800 text-center">
+          <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle className="w-12 h-12 text-green-500" />
+          </div>
+          <h1 className="text-3xl font-bold text-white mb-4">
+            Payment Successful!
+          </h1>
+          <p className="text-xl text-gray-300 mb-8">
+            Your payment has been processed successfully.
+          </p>
+          <p className="text-gray-400 mb-8">
+            Your event will be published shortly. You can view your events from your dashboard.
+          </p>
+          <button
+            onClick={() => navigate('/events')}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-neon-green text-black rounded-lg font-bold hover:bg-neon-green/90 transition shadow-[0_0_25px_rgba(57,255,20,0.5)] hover:shadow-[0_0_35px_rgba(57,255,20,0.7)]"
+          >
+            View Events
+            <ArrowRight className="w-5 h-5" />
+          </button>
         </div>
       </div>
     );
