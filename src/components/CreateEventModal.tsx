@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Upload, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { createEvent, updateEvent } from '../lib/queries/events';
 
 interface Event {
   id: string;
@@ -325,19 +326,12 @@ export default function CreateEventModal({ event, profile, onClose, onSuccess }:
       let eventId: string;
 
       if (event) {
-        const { error } = await supabase
-          .from('events')
-          .update(eventData)
-          .eq('id', event.id);
+        const { error } = await updateEvent(event.id, eventData);
 
         if (error) throw error;
         eventId = event.id;
       } else {
-        const { data, error } = await supabase
-          .from('events')
-          .insert([eventData])
-          .select()
-          .single();
+        const { data, error } = await createEvent(eventData);
 
         if (error) throw error;
         eventId = data.id;

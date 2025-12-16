@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Calendar, MapPin, Clock } from 'lucide-react';
-import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
+import { fetchEventsInDateRange } from '../lib/queries/events';
 
 interface Event {
   id: string;
@@ -34,28 +34,11 @@ export default function EventsSection() {
       const nextWeek = new Date(today);
       nextWeek.setDate(today.getDate() + 7);
 
-      const { data, error } = await supabase
-        .from('events')
-        .select(`
-          id,
-          type,
-          location,
-          country,
-          event_date,
-          start_time,
-          end_time,
-          cover_image,
-          external_link,
-          profiles:creator_id (
-            display_name,
-            role
-          )
-        `)
-        .eq('status', 'published')
-        .gte('event_date', today.toISOString().split('T')[0])
-        .lte('event_date', nextWeek.toISOString().split('T')[0])
-        .order('event_date', { ascending: true })
-        .limit(6);
+      const { data, error } = await fetchEventsInDateRange({
+        startDate: today.toISOString().split('T')[0],
+        endDate: nextWeek.toISOString().split('T')[0],
+        limit: 6
+      });
 
       if (error) throw error;
 

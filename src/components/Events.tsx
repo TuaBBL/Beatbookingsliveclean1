@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, MapPin, Clock, Search, Plus, CreditCard as Edit2, Trash2, User, ArrowLeft, Check, X, ExternalLink } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { fetchPublishedEvents, fetchEventsByCreator, deleteEvent } from '../lib/queries/events';
 import CreateEventModal from './CreateEventModal';
 
 interface Event {
@@ -96,11 +97,7 @@ export default function Events() {
 
   async function fetchAllEvents(profile: Profile) {
     try {
-      const { data, error } = await supabase
-        .from('events')
-        .select('*')
-        .eq('status', 'published')
-        .order('event_date', { ascending: true });
+      const { data, error } = await fetchPublishedEvents({ limit: 1000 });
 
       if (error) throw error;
       setAllEvents(data || []);
@@ -111,11 +108,7 @@ export default function Events() {
 
   async function fetchMyEvents(userId: string) {
     try {
-      const { data, error } = await supabase
-        .from('events')
-        .select('*')
-        .eq('creator_id', userId)
-        .order('event_date', { ascending: true });
+      const { data, error } = await fetchEventsByCreator(userId);
 
       if (error) throw error;
       setMyEvents(data || []);
@@ -189,10 +182,7 @@ export default function Events() {
     if (!confirm('Are you sure you want to delete this event?')) return;
 
     try {
-      const { error } = await supabase
-        .from('events')
-        .delete()
-        .eq('id', eventId);
+      const { error } = await deleteEvent(eventId);
 
       if (error) throw error;
 

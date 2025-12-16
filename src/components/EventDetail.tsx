@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Calendar, MapPin, Clock, ArrowLeft, ExternalLink, Users, Check, Plus, X, MessageCircle, Trash2, Reply } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { fetchEventById, countPublishedEventsByUser } from '../lib/queries/events';
 import Header from './Header';
 import Footer from './Footer';
 
@@ -144,21 +145,12 @@ export default function EventDetail() {
       if (profileData) {
         setUserRole(profileData.role);
 
-        const { data: eventsData } = await supabase
-          .from('events')
-          .select('id')
-          .eq('creator_id', user.id)
-          .eq('status', 'published');
-
-        setPublishedCount(eventsData?.length || 0);
+        const { count } = await countPublishedEventsByUser(user.id);
+        setPublishedCount(count || 0);
       }
 
       const [eventResult, attendeesResult, attendanceResult] = await Promise.all([
-        supabase
-          .from('events')
-          .select('*')
-          .eq('id', id)
-          .maybeSingle(),
+        fetchEventById(id),
         supabase
           .from('event_attendance')
           .select(`
