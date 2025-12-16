@@ -427,6 +427,7 @@ export default function Events() {
 function EventCard({ event, userId }: { event: Event; userId: string }) {
   const navigate = useNavigate();
   const [isAttending, setIsAttending] = useState(false);
+  const [attendanceStatus, setAttendanceStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -436,31 +437,43 @@ function EventCard({ event, userId }: { event: Event; userId: string }) {
   async function checkAttendance() {
     const { data } = await supabase
       .from('event_attendance')
-      .select('id')
+      .select('id, status')
       .eq('event_id', event.id)
       .eq('user_id', userId)
-      .eq('status', 'going')
       .maybeSingle();
 
-    setIsAttending(!!data);
+    setAttendanceStatus(data?.status || null);
+    setIsAttending(data?.status === 'going');
   }
 
-  async function handleRSVP(e: React.MouseEvent) {
+  async function toggleAttendance(e: React.MouseEvent) {
     e.stopPropagation();
-    if (loading || isAttending) return;
+    if (loading) return;
 
     setLoading(true);
     try {
-      await supabase
-        .from('event_attendance')
-        .insert({
-          event_id: event.id,
-          user_id: userId,
-          status: 'going'
-        });
-      setIsAttending(true);
+      if (!attendanceStatus) {
+        await supabase
+          .from('event_attendance')
+          .insert({
+            event_id: event.id,
+            user_id: userId,
+            status: 'going'
+          });
+        setAttendanceStatus('going');
+        setIsAttending(true);
+      } else {
+        const newStatus = attendanceStatus === 'going' ? 'not_going' : 'going';
+        await supabase
+          .from('event_attendance')
+          .update({ status: newStatus })
+          .eq('event_id', event.id)
+          .eq('user_id', userId);
+        setAttendanceStatus(newStatus);
+        setIsAttending(newStatus === 'going');
+      }
     } catch (error) {
-      console.error('Error RSVPing to event:', error);
+      console.error('Error toggling attendance:', error);
     } finally {
       setLoading(false);
     }
@@ -520,21 +533,27 @@ function EventCard({ event, userId }: { event: Event; userId: string }) {
       </div>
 
       <div className="px-6 pb-6">
-        {isAttending ? (
-          <div className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-neon-green text-black rounded-lg font-semibold">
-            <Check className="w-4 h-4" />
-            You're attending
-          </div>
-        ) : (
-          <button
-            onClick={handleRSVP}
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-800 text-white hover:bg-gray-700 rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Plus className="w-4 h-4" />
-            Attend
-          </button>
-        )}
+        <button
+          onClick={toggleAttendance}
+          disabled={loading}
+          className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed ${
+            isAttending
+              ? 'bg-red-600 hover:bg-red-700 text-white'
+              : 'bg-gray-800 text-white hover:bg-gray-700'
+          }`}
+        >
+          {isAttending ? (
+            <>
+              <X className="w-4 h-4" />
+              Cancel
+            </>
+          ) : (
+            <>
+              <Plus className="w-4 h-4" />
+              Attend
+            </>
+          )}
+        </button>
       </div>
     </div>
   );
@@ -553,6 +572,7 @@ function MyEventCard({
 }) {
   const navigate = useNavigate();
   const [isAttending, setIsAttending] = useState(false);
+  const [attendanceStatus, setAttendanceStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -562,31 +582,43 @@ function MyEventCard({
   async function checkAttendance() {
     const { data } = await supabase
       .from('event_attendance')
-      .select('id')
+      .select('id, status')
       .eq('event_id', event.id)
       .eq('user_id', userId)
-      .eq('status', 'going')
       .maybeSingle();
 
-    setIsAttending(!!data);
+    setAttendanceStatus(data?.status || null);
+    setIsAttending(data?.status === 'going');
   }
 
-  async function handleRSVP(e: React.MouseEvent) {
+  async function toggleAttendance(e: React.MouseEvent) {
     e.stopPropagation();
-    if (loading || isAttending) return;
+    if (loading) return;
 
     setLoading(true);
     try {
-      await supabase
-        .from('event_attendance')
-        .insert({
-          event_id: event.id,
-          user_id: userId,
-          status: 'going'
-        });
-      setIsAttending(true);
+      if (!attendanceStatus) {
+        await supabase
+          .from('event_attendance')
+          .insert({
+            event_id: event.id,
+            user_id: userId,
+            status: 'going'
+          });
+        setAttendanceStatus('going');
+        setIsAttending(true);
+      } else {
+        const newStatus = attendanceStatus === 'going' ? 'not_going' : 'going';
+        await supabase
+          .from('event_attendance')
+          .update({ status: newStatus })
+          .eq('event_id', event.id)
+          .eq('user_id', userId);
+        setAttendanceStatus(newStatus);
+        setIsAttending(newStatus === 'going');
+      }
     } catch (error) {
-      console.error('Error RSVPing to event:', error);
+      console.error('Error toggling attendance:', error);
     } finally {
       setLoading(false);
     }
@@ -661,21 +693,27 @@ function MyEventCard({
           </div>
         </div>
 
-        {isAttending ? (
-          <div className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-neon-green text-black rounded-lg font-semibold mb-3">
-            <Check className="w-4 h-4" />
-            You're attending
-          </div>
-        ) : (
-          <button
-            onClick={handleRSVP}
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-800 text-white hover:bg-gray-700 rounded-lg font-semibold transition mb-3 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Plus className="w-4 h-4" />
-            Attend
-          </button>
-        )}
+        <button
+          onClick={toggleAttendance}
+          disabled={loading}
+          className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold transition mb-3 disabled:opacity-50 disabled:cursor-not-allowed ${
+            isAttending
+              ? 'bg-red-600 hover:bg-red-700 text-white'
+              : 'bg-gray-800 text-white hover:bg-gray-700'
+          }`}
+        >
+          {isAttending ? (
+            <>
+              <X className="w-4 h-4" />
+              Cancel
+            </>
+          ) : (
+            <>
+              <Plus className="w-4 h-4" />
+              Attend
+            </>
+          )}
+        </button>
 
         <div className="flex gap-2">
           <button

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Calendar, MapPin, Clock, ArrowLeft, ExternalLink, Users, Check, Plus } from 'lucide-react';
+import { Calendar, MapPin, Clock, ArrowLeft, ExternalLink, Users, Check, Plus, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import Header from './Header';
 import Footer from './Footer';
@@ -43,6 +43,7 @@ export default function EventDetail() {
   const [attendees, setAttendees] = useState<Attendee[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isAttending, setIsAttending] = useState(false);
+  const [attendanceStatus, setAttendanceStatus] = useState<string | null>(null);
   const [attendanceLoading, setAttendanceLoading] = useState(false);
 
   useEffect(() => {
@@ -81,10 +82,9 @@ export default function EventDetail() {
           .eq('status', 'going'),
         supabase
           .from('event_attendance')
-          .select('id')
+          .select('id, status')
           .eq('event_id', id)
           .eq('user_id', user.id)
-          .eq('status', 'going')
           .maybeSingle()
       ]);
 
@@ -95,7 +95,8 @@ export default function EventDetail() {
       }
 
       setEvent(eventResult.data);
-      setIsAttending(!!attendanceResult.data);
+      setAttendanceStatus(attendanceResult.data?.status || null);
+      setIsAttending(attendanceResult.data?.status === 'going');
 
       if (attendeesResult.data) {
         const formattedAttendees = attendeesResult.data.map((a: any) => ({
@@ -114,22 +115,34 @@ export default function EventDetail() {
     }
   }
 
-  async function handleRSVP() {
-    if (!currentUserId || !id || attendanceLoading || isAttending) return;
+  async function toggleAttendance() {
+    if (!currentUserId || !id || attendanceLoading) return;
 
     setAttendanceLoading(true);
     try {
-      await supabase
-        .from('event_attendance')
-        .insert({
-          event_id: id,
-          user_id: currentUserId,
-          status: 'going'
-        });
-      setIsAttending(true);
+      if (!attendanceStatus) {
+        await supabase
+          .from('event_attendance')
+          .insert({
+            event_id: id,
+            user_id: currentUserId,
+            status: 'going'
+          });
+        setAttendanceStatus('going');
+        setIsAttending(true);
+      } else {
+        const newStatus = attendanceStatus === 'going' ? 'not_going' : 'going';
+        await supabase
+          .from('event_attendance')
+          .update({ status: newStatus })
+          .eq('event_id', id)
+          .eq('user_id', currentUserId);
+        setAttendanceStatus(newStatus);
+        setIsAttending(newStatus === 'going');
+      }
       await loadEventData();
     } catch (error) {
-      console.error('Error RSVPing to event:', error);
+      console.error('Error toggling attendance:', error);
     } finally {
       setAttendanceLoading(false);
     }
@@ -260,21 +273,27 @@ export default function EventDetail() {
           )}
 
           <div className="flex flex-wrap gap-4">
-            {isAttending ? (
-              <div className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg font-semibold">
-                <Check className="w-4 h-4" />
-                You're attending
-              </div>
-            ) : (
-              <button
-                onClick={handleRSVP}
-                disabled={attendanceLoading}
-                className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Plus className="w-4 h-4" />
-                Attend Event
-              </button>
-            )}
+            <button
+              onClick={toggleAttendance}
+              disabled={attendanceLoading}
+              className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                isAttending
+                  ? 'bg-red-600 hover:bg-red-700 text-white'
+                  : 'bg-blue-600 hover:bg-blue-700 text-white'
+              }`}
+            >
+              {isAttending ? (
+                <>
+                  <X className="w-4 h-4" />
+                  Cancel Attendance
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4" />
+                  Attend Event
+                </>
+              )}
+            </button>
             {event.ticket_link && (
               <a
                 href={event.ticket_link}
