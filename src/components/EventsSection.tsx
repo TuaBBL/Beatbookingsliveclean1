@@ -14,7 +14,7 @@ interface Event {
   cover_image: string | null;
   external_link: string | null;
   profiles: {
-    display_name: string;
+    name: string;
     role: string;
   };
 }
@@ -134,7 +134,7 @@ export default function EventsSection() {
                           {event.type}
                         </h3>
                         <p className="text-neon-green text-sm font-semibold">
-                          {event.profiles.display_name}
+                          {event.profiles.name}
                         </p>
                       </div>
                       <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded capitalize">

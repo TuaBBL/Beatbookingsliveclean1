@@ -26,9 +26,9 @@ const EVENT_SELECT = `
 
   profiles:creator_id (
     id,
-    display_name,
+    name,
     role,
-    avatar_url
+    image_url
   )
 `;
 
