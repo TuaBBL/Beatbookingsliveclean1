@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Calendar, MapPin, Clock, Search, Plus, CreditCard as Edit2, Trash2, User, ArrowLeft, Check, X, ExternalLink } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { fetchPublishedEvents, fetchEventsByCreator, deleteEvent } from '../lib/queries/events';
+import { canPublishEvent } from '../lib/logic/publishEligibility';
 import CreateEventModal from './CreateEventModal';
 
 interface Event {
@@ -209,7 +210,11 @@ export default function Events() {
         return;
       }
 
-      if (profile.role === 'planner' && publishedCount >= 1) {
+      const eligibility = await canPublishEvent({
+        creatorRole: profile.role as "artist" | "planner",
+      });
+
+      if (eligibility.requiresPayment) {
         const response = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout-session`,
           {
@@ -818,9 +823,9 @@ function MyEventCard({
 
         {event.status === 'draft' && (
           <div className="mb-3">
-            {userRole === 'planner' && publishedCount < 5 && (
+            {userRole === 'planner' && publishedCount === 0 && (
               <p className="text-sm text-blue-400 mb-2 text-center">
-                {5 - publishedCount} free publish{5 - publishedCount === 1 ? '' : 'es'} remaining
+                1 free publish remaining
               </p>
             )}
             <button

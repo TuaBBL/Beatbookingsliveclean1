@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Calendar, MapPin, Clock, ArrowLeft, ExternalLink, Users, Check, Plus, X, MessageCircle, Trash2, Reply } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { fetchEventById, countPublishedEventsByUser } from '../lib/queries/events';
+import { canPublishEvent } from '../lib/logic/publishEligibility';
 import Header from './Header';
 import Footer from './Footer';
 
@@ -312,7 +313,11 @@ export default function EventDetail() {
         return;
       }
 
-      if (userRole === 'planner' && publishedCount >= 1) {
+      const eligibility = await canPublishEvent({
+        creatorRole: userRole as "artist" | "planner",
+      });
+
+      if (eligibility.requiresPayment) {
         const response = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout-session`,
           {
@@ -526,7 +531,7 @@ export default function EventDetail() {
           <div className="flex flex-wrap gap-4">
             {event.status === 'draft' && event.creator_id === currentUserId ? (
               <div className="w-full">
-                {userRole === 'planner' && publishedCount < 1 && (
+                {userRole === 'planner' && publishedCount === 0 && (
                   <p className="text-sm text-blue-400 mb-3">
                     1 free publish remaining
                   </p>

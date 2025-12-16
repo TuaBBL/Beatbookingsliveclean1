@@ -92,34 +92,52 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const { count, error: countError } = await supabaseClient
-      .from("events")
-      .select("id", { count: "exact", head: true })
-      .eq("creator_id", user.id)
-      .eq("status", "published");
+    const { data: profile, error: profileError } = await supabaseClient
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
 
-    if (countError) {
+    if (profileError || !profile) {
       return new Response(
-        JSON.stringify({ error: "Failed to check published events count" }),
+        JSON.stringify({ error: "Profile not found" }),
         {
-          status: 500,
+          status: 404,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );
     }
 
-    if (count && count >= 1) {
-      return new Response(
-        JSON.stringify({
-          error: "Free publish limit reached",
-          requires_payment: true,
-          published_count: count
-        }),
-        {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+    if (profile.role !== "artist") {
+      const { count, error: countError } = await supabaseClient
+        .from("events")
+        .select("id", { count: "exact", head: true })
+        .eq("creator_id", user.id)
+        .eq("status", "published");
+
+      if (countError) {
+        return new Response(
+          JSON.stringify({ error: "Failed to check published events count" }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      if (count && count >= 1) {
+        return new Response(
+          JSON.stringify({
+            error: "Free publish limit reached",
+            requires_payment: true,
+            published_count: count
+          }),
+          {
+            status: 402,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
     }
 
     const { error: updateError } = await supabaseClient
