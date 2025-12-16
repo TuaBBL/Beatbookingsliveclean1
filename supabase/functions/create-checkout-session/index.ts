@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
     currency,
   });
 
-  return new Response(JSON.stringify({ url: session.url }), {
+  return new Response(JSON.stringify({ checkout_url: session.url }), {
     headers: { "Content-Type": "application/json" },
     status: 200,
   });

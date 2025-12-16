@@ -15,6 +15,8 @@ import EventDetail from './components/EventDetail';
 import CreateProfile from './components/CreateProfile';
 import AuthGate from './components/AuthGate';
 import AuthCallback from './components/AuthCallback';
+import PublishSuccess from './components/PublishSuccess';
+import PublishCancel from './components/PublishCancel';
 
 export default function App() {
   const [session, setSession] = useState<any>(null);
@@ -74,6 +76,8 @@ export default function App() {
     <Route path="/dashboard" element={<Dashboard />} />
     <Route path="/events" element={<Events />} />
     <Route path="/events/:id" element={<EventDetail />} />
+    <Route path="/publish/success" element={<PublishSuccess />} />
+    <Route path="/publish/cancel" element={<PublishCancel />} />
     {/* later */}
     {/* <Route path="/admin" element={<AdminDashboard />} /> */}
 
