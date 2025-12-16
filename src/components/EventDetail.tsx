@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Calendar, MapPin, Clock, ArrowLeft, ExternalLink, Users } from 'lucide-react';
+import { Calendar, MapPin, Clock, ArrowLeft, ExternalLink, Users, Check, Plus } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import Header from './Header';
 import Footer from './Footer';
@@ -41,6 +41,9 @@ export default function EventDetail() {
   const [loading, setLoading] = useState(true);
   const [event, setEvent] = useState<Event | null>(null);
   const [attendees, setAttendees] = useState<Attendee[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [isAttending, setIsAttending] = useState(false);
+  const [attendanceLoading, setAttendanceLoading] = useState(false);
 
   useEffect(() => {
     loadEventData();
@@ -56,7 +59,9 @@ export default function EventDetail() {
         return;
       }
 
-      const [eventResult, attendeesResult] = await Promise.all([
+      setCurrentUserId(user.id);
+
+      const [eventResult, attendeesResult, attendanceResult] = await Promise.all([
         supabase
           .from('events')
           .select('*')
@@ -73,7 +78,14 @@ export default function EventDetail() {
             )
           `)
           .eq('event_id', id)
+          .eq('status', 'going'),
+        supabase
+          .from('event_attendance')
+          .select('id')
+          .eq('event_id', id)
+          .eq('user_id', user.id)
           .eq('status', 'going')
+          .maybeSingle()
       ]);
 
       if (eventResult.error) throw eventResult.error;
@@ -83,6 +95,7 @@ export default function EventDetail() {
       }
 
       setEvent(eventResult.data);
+      setIsAttending(!!attendanceResult.data);
 
       if (attendeesResult.data) {
         const formattedAttendees = attendeesResult.data.map((a: any) => ({
@@ -98,6 +111,37 @@ export default function EventDetail() {
     } catch (error) {
       console.error('Error loading event data:', error);
       setLoading(false);
+    }
+  }
+
+  async function toggleAttendance() {
+    if (!currentUserId || !id || attendanceLoading) return;
+
+    setAttendanceLoading(true);
+    try {
+      if (isAttending) {
+        await supabase
+          .from('event_attendance')
+          .delete()
+          .eq('event_id', id)
+          .eq('user_id', currentUserId);
+        setIsAttending(false);
+        setAttendees(prev => prev.filter(a => a.user_id !== currentUserId));
+      } else {
+        await supabase
+          .from('event_attendance')
+          .insert({
+            event_id: id,
+            user_id: currentUserId,
+            status: 'going'
+          });
+        setIsAttending(true);
+        await loadEventData();
+      }
+    } catch (error) {
+      console.error('Error toggling attendance:', error);
+    } finally {
+      setAttendanceLoading(false);
     }
   }
 
@@ -226,12 +270,33 @@ export default function EventDetail() {
           )}
 
           <div className="flex flex-wrap gap-4">
+            <button
+              onClick={toggleAttendance}
+              disabled={attendanceLoading}
+              className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-colors ${
+                isAttending
+                  ? 'bg-green-600 hover:bg-green-700 text-white'
+                  : 'bg-blue-600 hover:bg-blue-700 text-white'
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              {isAttending ? (
+                <>
+                  <Check className="w-4 h-4" />
+                  Attending
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4" />
+                  Attend Event
+                </>
+              )}
+            </button>
             {event.ticket_link && (
               <a
                 href={event.ticket_link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                className="flex items-center gap-2 px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
               >
                 Get Tickets
                 <ExternalLink className="w-4 h-4" />

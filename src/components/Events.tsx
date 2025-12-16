@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, MapPin, Clock, Search, Plus, CreditCard as Edit2, Trash2, User, ArrowLeft } from 'lucide-react';
+import { Calendar, MapPin, Clock, Search, Plus, CreditCard as Edit2, Trash2, User, ArrowLeft, Check, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import CreateEventModal from './CreateEventModal';
 
@@ -370,7 +370,7 @@ export default function Events() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredEvents.map((event) => (
-                <EventCard key={event.id} event={event} />
+                <EventCard key={event.id} event={event} userId={profile.id} />
               ))}
             </div>
           )}
@@ -399,6 +399,7 @@ export default function Events() {
                 <MyEventCard
                   key={event.id}
                   event={event}
+                  userId={profile.id}
                   onEdit={handleEditEvent}
                   onDelete={handleDeleteEvent}
                 />
@@ -423,58 +424,132 @@ export default function Events() {
   );
 }
 
-function EventCard({ event }: { event: Event }) {
+function EventCard({ event, userId }: { event: Event; userId: string }) {
   const navigate = useNavigate();
+  const [isAttending, setIsAttending] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    checkAttendance();
+  }, [event.id, userId]);
+
+  async function checkAttendance() {
+    const { data } = await supabase
+      .from('event_attendance')
+      .select('id')
+      .eq('event_id', event.id)
+      .eq('user_id', userId)
+      .eq('status', 'going')
+      .maybeSingle();
+
+    setIsAttending(!!data);
+  }
+
+  async function toggleAttendance(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (loading) return;
+
+    setLoading(true);
+    try {
+      if (isAttending) {
+        await supabase
+          .from('event_attendance')
+          .delete()
+          .eq('event_id', event.id)
+          .eq('user_id', userId);
+        setIsAttending(false);
+      } else {
+        await supabase
+          .from('event_attendance')
+          .insert({
+            event_id: event.id,
+            user_id: userId,
+            status: 'going'
+          });
+        setIsAttending(true);
+      }
+    } catch (error) {
+      console.error('Error toggling attendance:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
-    <div
-      onClick={() => navigate(`/events/${event.id}`)}
-      className="bg-charcoal rounded-lg overflow-hidden border border-gray-800 hover:border-neon-green/50 transition group cursor-pointer"
-    >
-      {event.cover_image ? (
-        <div className="h-48 bg-gray-900 overflow-hidden">
-          <img
-            src={event.cover_image}
-            alt={event.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-          />
-        </div>
-      ) : (
-        <div className="h-48 bg-gradient-to-br from-gray-900 to-charcoal flex items-center justify-center">
-          <Calendar className="w-16 h-16 text-gray-700" />
-        </div>
-      )}
-
-      <div className="p-6">
-        <div className="mb-3">
-          <h3 className="text-xl font-bold text-white mb-1">{event.title}</h3>
-          <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded">
-            {event.type}
-          </span>
-        </div>
-
-        <div className="space-y-2 text-sm text-gray-400 mb-4">
-          <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-neon-green" />
-            <span>{formatDate(event.event_date)}</span>
+    <div className="bg-charcoal rounded-lg overflow-hidden border border-gray-800 hover:border-neon-green/50 transition group">
+      <div
+        onClick={() => navigate(`/events/${event.id}`)}
+        className="cursor-pointer"
+      >
+        {event.cover_image ? (
+          <div className="h-48 bg-gray-900 overflow-hidden">
+            <img
+              src={event.cover_image}
+              alt={event.title}
+              className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+            />
           </div>
-          <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-neon-green" />
-            <span>
-              {formatTime(event.start_time)} - {formatTime(event.end_time)}
+        ) : (
+          <div className="h-48 bg-gradient-to-br from-gray-900 to-charcoal flex items-center justify-center">
+            <Calendar className="w-16 h-16 text-gray-700" />
+          </div>
+        )}
+
+        <div className="p-6">
+          <div className="mb-3">
+            <h3 className="text-xl font-bold text-white mb-1">{event.title}</h3>
+            <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded">
+              {event.type}
             </span>
           </div>
-          <div className="flex items-center gap-2">
-            <MapPin className="w-4 h-4 text-neon-green" />
-            <span>{event.city}, {event.state}</span>
-          </div>
-        </div>
 
-        {event.description && (
-          <p className="text-sm text-gray-400 mb-4 line-clamp-2">
-            {event.description}
-          </p>
-        )}
+          <div className="space-y-2 text-sm text-gray-400 mb-4">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-neon-green" />
+              <span>{formatDate(event.event_date)}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-neon-green" />
+              <span>
+                {formatTime(event.start_time)} - {formatTime(event.end_time)}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-neon-green" />
+              <span>{event.city}, {event.state}</span>
+            </div>
+          </div>
+
+          {event.description && (
+            <p className="text-sm text-gray-400 mb-4 line-clamp-2">
+              {event.description}
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="px-6 pb-6">
+        <button
+          onClick={toggleAttendance}
+          disabled={loading}
+          className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold transition ${
+            isAttending
+              ? 'bg-neon-green text-black hover:bg-neon-green/90'
+              : 'bg-gray-800 text-white hover:bg-gray-700'
+          } disabled:opacity-50 disabled:cursor-not-allowed`}
+        >
+          {isAttending ? (
+            <>
+              <Check className="w-4 h-4" />
+              Attending
+            </>
+          ) : (
+            <>
+              <Plus className="w-4 h-4" />
+              Attend
+            </>
+          )}
+        </button>
       </div>
     </div>
   );
@@ -482,14 +557,64 @@ function EventCard({ event }: { event: Event }) {
 
 function MyEventCard({
   event,
+  userId,
   onEdit,
   onDelete,
 }: {
   event: Event;
+  userId: string;
   onEdit: (event: Event) => void;
   onDelete: (id: string) => void;
 }) {
   const navigate = useNavigate();
+  const [isAttending, setIsAttending] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    checkAttendance();
+  }, [event.id, userId]);
+
+  async function checkAttendance() {
+    const { data } = await supabase
+      .from('event_attendance')
+      .select('id')
+      .eq('event_id', event.id)
+      .eq('user_id', userId)
+      .eq('status', 'going')
+      .maybeSingle();
+
+    setIsAttending(!!data);
+  }
+
+  async function toggleAttendance(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (loading) return;
+
+    setLoading(true);
+    try {
+      if (isAttending) {
+        await supabase
+          .from('event_attendance')
+          .delete()
+          .eq('event_id', event.id)
+          .eq('user_id', userId);
+        setIsAttending(false);
+      } else {
+        await supabase
+          .from('event_attendance')
+          .insert({
+            event_id: event.id,
+            user_id: userId,
+            status: 'going'
+          });
+        setIsAttending(true);
+      }
+    } catch (error) {
+      console.error('Error toggling attendance:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -559,6 +684,28 @@ function MyEventCard({
             <span>{event.city}, {event.state}</span>
           </div>
         </div>
+
+        <button
+          onClick={toggleAttendance}
+          disabled={loading}
+          className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold transition mb-3 ${
+            isAttending
+              ? 'bg-neon-green text-black hover:bg-neon-green/90'
+              : 'bg-gray-800 text-white hover:bg-gray-700'
+          } disabled:opacity-50 disabled:cursor-not-allowed`}
+        >
+          {isAttending ? (
+            <>
+              <Check className="w-4 h-4" />
+              Attending
+            </>
+          ) : (
+            <>
+              <Plus className="w-4 h-4" />
+              Attend
+            </>
+          )}
+        </button>
 
         <div className="flex gap-2">
           <button
