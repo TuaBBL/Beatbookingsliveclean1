@@ -311,19 +311,65 @@ export default function EventDetail() {
   async function handlePublishEvent() {
     if (!currentUserId || !event || publishLoading) return;
 
-    if (userRole === 'planner' && publishedCount >= 1) {
-      alert("You've used your 1 free event publish.\nPublish this event for $30.");
-      return;
-    }
-
     setPublishLoading(true);
     try {
-      const { error } = await supabase
-        .from('events')
-        .update({ status: 'published' })
-        .eq('id', event.id);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        alert('Please log in to publish events');
+        setPublishLoading(false);
+        return;
+      }
 
-      if (error) throw error;
+      if (userRole === 'planner' && publishedCount >= 1) {
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout-session`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ event_id: event.id }),
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          alert(data.error || 'Failed to create checkout session');
+          setPublishLoading(false);
+          return;
+        }
+
+        if (data.checkout_url) {
+          window.location.href = data.checkout_url;
+        }
+        return;
+      }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/publish-free-event`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ event_id: event.id }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 402 && data.requires_payment) {
+          alert("You've used your 1 free event publish.\nPublish this event for $30.");
+        } else {
+          alert(data.error || 'Failed to publish event');
+        }
+        setPublishLoading(false);
+        return;
+      }
 
       const message = userRole === 'planner' && publishedCount < 1
         ? 'Your first event has been published for free!'
