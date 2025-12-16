@@ -383,6 +383,49 @@ export default function EventDetail() {
     }
   }
 
+  async function handlePromo() {
+    if (!currentUserId || !event || publishLoading) return;
+
+    setPublishLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        alert('Please log in');
+        setPublishLoading(false);
+        return;
+      }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-promo-checkout`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ event_id: event.id }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || 'Failed to create promo checkout');
+        setPublishLoading(false);
+        return;
+      }
+
+      if (data.checkout_url) {
+        window.location.href = data.checkout_url;
+      }
+    } catch (error) {
+      console.error('Error in promo test:', error);
+      alert('Failed to create promo checkout');
+    } finally {
+      setPublishLoading(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -536,20 +579,29 @@ export default function EventDetail() {
                     1 free publish remaining
                   </p>
                 )}
-                <button
-                  onClick={handlePublishEvent}
-                  disabled={publishLoading}
-                  className="flex items-center gap-2 px-6 py-3 bg-neon-green hover:bg-neon-green/90 text-black rounded-lg font-bold transition shadow-[0_0_25px_rgba(57,255,20,0.5)] hover:shadow-[0_0_35px_rgba(57,255,20,0.7)] disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Check className="w-4 h-4" />
-                  {publishLoading ? 'Publishing...' : (
-                    userRole === 'planner' && publishedCount >= 1
-                      ? 'Publish ($30)'
-                      : userRole === 'planner'
-                      ? 'Publish (Free)'
-                      : 'Publish'
-                  )}
-                </button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={handlePublishEvent}
+                    disabled={publishLoading}
+                    className="flex items-center gap-2 px-6 py-3 bg-neon-green hover:bg-neon-green/90 text-black rounded-lg font-bold transition shadow-[0_0_25px_rgba(57,255,20,0.5)] hover:shadow-[0_0_35px_rgba(57,255,20,0.7)] disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Check className="w-4 h-4" />
+                    {publishLoading ? 'Publishing...' : (
+                      userRole === 'planner' && publishedCount >= 1
+                        ? 'Publish ($30)'
+                        : userRole === 'planner'
+                        ? 'Publish (Free)'
+                        : 'Publish'
+                    )}
+                  </button>
+                  <button
+                    onClick={handlePromo}
+                    disabled={publishLoading}
+                    className="flex items-center gap-2 px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-bold transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Promo Test ($0.05)
+                  </button>
+                </div>
               </div>
             ) : event.status === 'published' && (
               <>

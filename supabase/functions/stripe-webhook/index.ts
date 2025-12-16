@@ -62,12 +62,15 @@ Deno.serve(async (req) => {
         })
         .eq("stripe_session_id", session.id);
 
-      // Publish the event (service role bypasses RLS)
-      await supabaseAdmin
-        .from("events")
-        .update({ status: "published" })
-        .eq("id", eventId)
-        .eq("creator_id", creatorId);
+      // Only publish event if NOT a promo test
+      const isPromoTest = session.metadata?.promo_test === "true";
+      if (!isPromoTest) {
+        await supabaseAdmin
+          .from("events")
+          .update({ status: "published" })
+          .eq("id", eventId)
+          .eq("creator_id", creatorId);
+      }
 
       return new Response("OK", { status: 200 });
     }

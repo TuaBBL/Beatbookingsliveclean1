@@ -7,6 +7,7 @@ export default function PublishCancel() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const eventId = searchParams.get('event_id');
+  const isPromo = searchParams.get('promo') === 'true';
   const [loading, setLoading] = useState(true);
   const [eventTitle, setEventTitle] = useState<string>('');
   const [retrying, setRetrying] = useState(false);
@@ -53,8 +54,12 @@ export default function PublishCancel() {
         return;
       }
 
+      const endpoint = isPromo
+        ? 'create-promo-checkout'
+        : 'create-checkout-session';
+
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout-session`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${endpoint}`,
         {
           method: 'POST',
           headers: {
@@ -99,11 +104,11 @@ export default function PublishCancel() {
         </div>
 
         <h1 className="text-3xl font-bold text-white mb-4">
-          Payment Cancelled
+          {isPromo ? 'Promo Test Cancelled' : 'Payment Cancelled'}
         </h1>
 
         <p className="text-xl text-gray-300 mb-2">
-          You cancelled the payment process
+          {isPromo ? 'You cancelled the test payment' : 'You cancelled the payment process'}
         </p>
 
         <p className="text-lg text-gray-400 font-semibold mb-8">
@@ -111,7 +116,9 @@ export default function PublishCancel() {
         </p>
 
         <p className="text-gray-400 mb-8">
-          No charges were made. Your event remains in draft status and has not been published. You can try again when you're ready.
+          {isPromo
+            ? 'No charges were made. You can test the payment flow again anytime.'
+            : 'No charges were made. Your event remains in draft status and has not been published. You can try again when you\'re ready.'}
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
