@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 import Header from "../Header";
 import Footer from "../Footer";
+import PlannerProfileMenu from "./PlannerProfileMenu";
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock } from "lucide-react";
 
 interface Booking {
@@ -132,12 +133,15 @@ export default function PlannerCalendar() {
               <CalendarIcon className="w-10 h-10 text-orange-500" />
               Calendar
             </h1>
-            <Link
-              to="/planner/dashboard"
-              className="text-gray-400 hover:text-white transition"
-            >
-              Back to Dashboard
-            </Link>
+            <div className="flex items-center gap-4">
+              <Link
+                to="/planner/dashboard"
+                className="text-gray-400 hover:text-white transition"
+              >
+                Back to Dashboard
+              </Link>
+              <PlannerProfileMenu />
+            </div>
           </div>
 
           <div className="bg-neutral-900 rounded-lg border border-neutral-800 p-6">

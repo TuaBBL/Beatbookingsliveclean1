@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 import Header from "../Header";
 import Footer from "../Footer";
+import PlannerProfileMenu from "./PlannerProfileMenu";
 import { Music, Search } from "lucide-react";
 
 interface ArtistProfile {
@@ -58,12 +59,15 @@ export default function PlannerArtists() {
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-8">
             <h1 className="text-4xl font-bold">Browse Artists</h1>
-            <Link
-              to="/planner/dashboard"
-              className="text-gray-400 hover:text-white transition"
-            >
-              Back to Dashboard
-            </Link>
+            <div className="flex items-center gap-4">
+              <Link
+                to="/planner/dashboard"
+                className="text-gray-400 hover:text-white transition"
+              >
+                Back to Dashboard
+              </Link>
+              <PlannerProfileMenu />
+            </div>
           </div>
 
           <div className="mb-8 flex gap-4 flex-wrap">

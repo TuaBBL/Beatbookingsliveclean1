@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 import Header from "../Header";
 import Footer from "../Footer";
-import { Calendar, Users, MessageSquare, Heart } from "lucide-react";
+import EditProfileModal from "./EditProfileModal";
+import { Calendar, Users, MessageSquare, Heart, User, Settings } from "lucide-react";
 
 export default function PlannerDashboard() {
   const [stats, setStats] = useState({
@@ -11,18 +12,29 @@ export default function PlannerDashboard() {
     confirmedBookings: 0,
     favouriteArtists: 0,
   });
+  const [profile, setProfile] = useState<{
+    name: string;
+    email: string;
+    image_url: string | null;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
-    loadStats();
+    loadData();
   }, []);
 
-  async function loadStats() {
+  async function loadData() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const [bookingsRes, favouritesRes] = await Promise.all([
+      const [profileRes, bookingsRes, favouritesRes] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("name, email, image_url")
+          .eq("id", user.id)
+          .maybeSingle(),
         supabase
           .from("bookings")
           .select("status")
@@ -32,6 +44,10 @@ export default function PlannerDashboard() {
           .select("id")
           .eq("planner_id", user.id),
       ]);
+
+      if (profileRes.data) {
+        setProfile(profileRes.data);
+      }
 
       const bookings = bookingsRes.data || [];
       const pending = bookings.filter((b) => b.status === "pending").length;
@@ -44,7 +60,7 @@ export default function PlannerDashboard() {
         favouriteArtists: favourites,
       });
     } catch (error) {
-      console.error("Error loading stats:", error);
+      console.error("Error loading data:", error);
     } finally {
       setLoading(false);
     }
@@ -56,7 +72,35 @@ export default function PlannerDashboard() {
 
       <main className="flex-1 px-6 py-12">
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-4xl font-bold mb-8">Planner Dashboard</h1>
+          <div className="flex items-center justify-between mb-8">
+            <h1 className="text-4xl font-bold">Planner Dashboard</h1>
+            {profile && (
+              <div className="flex items-center gap-4">
+                <div className="text-right">
+                  <p className="font-semibold">{profile.name}</p>
+                  <p className="text-sm text-gray-400">{profile.email}</p>
+                </div>
+                <div className="w-12 h-12 rounded-full bg-neutral-800 flex items-center justify-center overflow-hidden border-2 border-neutral-700">
+                  {profile.image_url ? (
+                    <img
+                      src={profile.image_url}
+                      alt={profile.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <User className="w-6 h-6 text-gray-600" />
+                  )}
+                </div>
+                <button
+                  onClick={() => setShowEditModal(true)}
+                  className="p-2 bg-neutral-800 hover:bg-neutral-700 rounded-lg transition"
+                  title="Edit Profile"
+                >
+                  <Settings className="w-5 h-5" />
+                </button>
+              </div>
+            )}
+          </div>
 
           {loading ? (
             <p className="text-gray-400">Loading...</p>
@@ -129,6 +173,14 @@ export default function PlannerDashboard() {
           )}
         </div>
       </main>
+
+      <EditProfileModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        onSave={() => {
+          loadData();
+        }}
+      />
 
       <Footer />
     </div>

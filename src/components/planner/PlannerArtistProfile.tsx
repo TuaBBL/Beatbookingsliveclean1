@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 import Header from "../Header";
 import Footer from "../Footer";
+import PlannerProfileMenu from "./PlannerProfileMenu";
 import { Music, Heart, MessageSquare, X } from "lucide-react";
 
 interface ArtistProfile {
@@ -164,12 +165,15 @@ export default function PlannerArtistProfile() {
 
       <main className="flex-1 px-6 py-12">
         <div className="max-w-4xl mx-auto">
-          <Link
-            to="/planner/artists"
-            className="text-gray-400 hover:text-white transition mb-6 inline-block"
-          >
-            ← Back to Artists
-          </Link>
+          <div className="flex items-center justify-between mb-6">
+            <Link
+              to="/planner/artists"
+              className="text-gray-400 hover:text-white transition"
+            >
+              ← Back to Artists
+            </Link>
+            <PlannerProfileMenu />
+          </div>
 
           <div className="bg-neutral-900 rounded-lg border border-neutral-800 overflow-hidden">
             <div className="h-64 bg-neutral-800 flex items-center justify-center">

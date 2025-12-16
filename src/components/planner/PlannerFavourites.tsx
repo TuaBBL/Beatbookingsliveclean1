@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 import Header from "../Header";
 import Footer from "../Footer";
+import PlannerProfileMenu from "./PlannerProfileMenu";
 import { Heart, Music, X } from "lucide-react";
 
 interface Favourite {
@@ -69,12 +70,15 @@ export default function PlannerFavourites() {
               <Heart className="w-10 h-10 text-pink-500 fill-current" />
               Favourite Artists
             </h1>
-            <Link
-              to="/planner/dashboard"
-              className="text-gray-400 hover:text-white transition"
-            >
-              Back to Dashboard
-            </Link>
+            <div className="flex items-center gap-4">
+              <Link
+                to="/planner/dashboard"
+                className="text-gray-400 hover:text-white transition"
+              >
+                Back to Dashboard
+              </Link>
+              <PlannerProfileMenu />
+            </div>
           </div>
 
           {loading ? (
