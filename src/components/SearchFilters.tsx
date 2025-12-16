@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Youtube, Instagram, Facebook, Music, Radio } from 'lucide-react';
 import { genres, categories, australianStates } from '../data/mockArtists';
 
 interface SearchFiltersProps {
   onFilterChange: (filters: FilterState) => void;
+  initialSearch?: string;
 }
 
 export interface FilterState {
@@ -21,9 +22,9 @@ export interface FilterState {
   };
 }
 
-export default function SearchFilters({ onFilterChange }: SearchFiltersProps) {
+export default function SearchFilters({ onFilterChange, initialSearch = '' }: SearchFiltersProps) {
   const [filters, setFilters] = useState<FilterState>({
-    search: '',
+    search: initialSearch,
     genre: 'All Genres',
     category: 'All Categories',
     state: 'All States',
@@ -36,6 +37,12 @@ export default function SearchFilters({ onFilterChange }: SearchFiltersProps) {
       spotify: false
     }
   });
+
+  useEffect(() => {
+    if (initialSearch) {
+      updateFilters({ search: initialSearch });
+    }
+  }, [initialSearch]);
 
   const updateFilters = (updates: Partial<FilterState>) => {
     const newFilters = { ...filters, ...updates };

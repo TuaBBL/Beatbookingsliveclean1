@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import Header from "../Header";
 import Footer from "../Footer";
 import PlannerProfileMenu from "./PlannerProfileMenu";
@@ -8,8 +8,17 @@ import { Music } from "lucide-react";
 import { mockArtists, Artist } from "../../data/mockArtists";
 
 export default function PlannerArtists() {
+  const [searchParams] = useSearchParams();
   const allArtists: Artist[] = Array.isArray(mockArtists) ? mockArtists : [];
   const [filteredArtists, setFilteredArtists] = useState<Artist[]>(allArtists);
+  const [initialSearch, setInitialSearch] = useState("");
+
+  useEffect(() => {
+    const search = searchParams.get("search");
+    if (search) {
+      setInitialSearch(search);
+    }
+  }, [searchParams]);
 
   const handleFilterChange = (filters: FilterState) => {
     let results = [...allArtists];
@@ -73,43 +82,50 @@ export default function PlannerArtists() {
         </div>
       </div>
 
-      <SearchFilters onFilterChange={handleFilterChange} />
+      <SearchFilters onFilterChange={handleFilterChange} initialSearch={initialSearch} />
 
       <main className="flex-1 px-6 py-12">
         <div className="max-w-6xl mx-auto">
           <h1 className="text-4xl font-bold mb-8">Browse Artists</h1>
 
           {filteredArtists.length === 0 ? (
-            <p className="text-gray-400">No artists found</p>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredArtists.map((artist) => (
-                <Link
-                  key={artist.id}
-                  to={`/planner/artists/${artist.id}`}
-                  className="bg-neutral-900 rounded-lg border border-neutral-800 hover:border-orange-500 transition overflow-hidden group"
-                >
-                  <div className="h-48 bg-neutral-800 flex items-center justify-center overflow-hidden">
-                    {artist.imageUrl ? (
-                      <img
-                        src={artist.imageUrl}
-                        alt={artist.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <Music className="w-16 h-16 text-neutral-700" />
-                    )}
-                  </div>
-                  <div className="p-4">
-                    <h3 className="text-xl font-bold mb-1 group-hover:text-orange-500 transition">
-                      {artist.name}
-                    </h3>
-                    <p className="text-sm text-gray-400 mb-2">{artist.genre}</p>
-                    <p className="text-sm text-gray-500">{artist.city}, {artist.state}</p>
-                  </div>
-                </Link>
-              ))}
+            <div className="bg-neutral-900 rounded-lg border border-neutral-800 p-12 text-center">
+              <Music className="w-16 h-16 text-neutral-700 mx-auto mb-4" />
+              <p className="text-gray-400 text-lg">No artists found</p>
+              <p className="text-gray-600 text-sm mt-2">Try adjusting your filters</p>
             </div>
+          ) : (
+            <>
+              <p className="text-gray-400 mb-6">{filteredArtists.length} artist{filteredArtists.length !== 1 ? 's' : ''} found</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredArtists.map((artist) => (
+                  <Link
+                    key={artist.id}
+                    to={`/planner/artists/${artist.id}`}
+                    className="bg-neutral-900 rounded-lg border-2 border-neutral-700 hover:border-orange-500 hover:shadow-xl hover:shadow-orange-500/20 transition-all duration-200 overflow-hidden group"
+                  >
+                    <div className="h-56 bg-neutral-800 flex items-center justify-center overflow-hidden">
+                      {artist.imageUrl ? (
+                        <img
+                          src={artist.imageUrl}
+                          alt={artist.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                        />
+                      ) : (
+                        <Music className="w-16 h-16 text-neutral-700" />
+                      )}
+                    </div>
+                    <div className="p-5 bg-neutral-900">
+                      <h3 className="text-xl font-bold mb-2 text-white group-hover:text-orange-500 transition">
+                        {artist.name}
+                      </h3>
+                      <p className="text-sm text-orange-400 font-medium mb-2">{artist.genre}</p>
+                      <p className="text-sm text-gray-400">{artist.city}, {artist.state}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </>
           )}
         </div>
       </main>

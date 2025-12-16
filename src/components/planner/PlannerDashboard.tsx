@@ -74,32 +74,35 @@ export default function PlannerDashboard() {
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-8">
             <h1 className="text-4xl font-bold">Planner Dashboard</h1>
-            {profile && (
-              <div className="flex items-center gap-4">
-                <div className="text-right">
-                  <p className="font-semibold">{profile.name}</p>
-                  <p className="text-sm text-gray-400">{profile.email}</p>
-                </div>
-                <div className="w-12 h-12 rounded-full bg-neutral-800 flex items-center justify-center overflow-hidden border-2 border-neutral-700">
-                  {profile.image_url ? (
-                    <img
-                      src={profile.image_url}
-                      alt={profile.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <User className="w-6 h-6 text-gray-600" />
-                  )}
-                </div>
-                <button
-                  onClick={() => setShowEditModal(true)}
-                  className="p-2 bg-neutral-800 hover:bg-neutral-700 rounded-lg transition"
-                  title="Edit Profile"
-                >
-                  <Settings className="w-5 h-5" />
-                </button>
-              </div>
-            )}
+            <div className="flex items-center gap-4">
+              {profile && (
+                <>
+                  <div className="text-right">
+                    <p className="font-semibold">{profile.name}</p>
+                    <p className="text-sm text-gray-400">{profile.email}</p>
+                  </div>
+                  <div className="w-12 h-12 rounded-full bg-neutral-800 flex items-center justify-center overflow-hidden border-2 border-neutral-700">
+                    {profile.image_url ? (
+                      <img
+                        src={profile.image_url}
+                        alt={profile.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User className="w-6 h-6 text-gray-600" />
+                    )}
+                  </div>
+                </>
+              )}
+              <button
+                onClick={() => setShowEditModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded-lg transition text-white font-medium"
+                title="Edit Profile"
+              >
+                <Settings className="w-5 h-5" />
+                <span>Edit Profile</span>
+              </button>
+            </div>
           </div>
 
           {loading ? (
