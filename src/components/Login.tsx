@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { X } from 'lucide-react';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -94,7 +95,15 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center px-4">
-      <div className="w-full max-w-md bg-charcoal rounded-xl p-8 border border-gray-800">
+      <div className="w-full max-w-md bg-charcoal rounded-xl p-8 border border-gray-800 relative">
+        <button
+          onClick={() => navigate('/')}
+          className="absolute top-4 right-4 p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition"
+          title="Close"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
         {!otpSent ? (
           <>
             <h1 className="text-3xl font-bold text-white mb-4">
