@@ -47,6 +47,11 @@ export default function Dashboard() {
           return;
         }
 
+        if (profileData.role === 'planner') {
+          navigate('/planner/dashboard');
+          return;
+        }
+
         setProfile(profileData);
         setLoading(false);
       } catch (err) {
@@ -98,11 +103,11 @@ export default function Dashboard() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {profile.role === 'planner' ? (
-          <PlannerDashboard profile={profile} />
-        ) : (
-          <ArtistDashboard profile={profile} />
-        )}
+        <div className="bg-neutral-900 rounded-lg border border-neutral-800 p-8">
+          <h2 className="text-2xl font-bold mb-4">Artist Dashboard</h2>
+          <p className="text-gray-400 mb-6">Welcome, {profile.name}!</p>
+          <p className="text-gray-500">Artist dashboard features coming soon...</p>
+        </div>
       </main>
     </div>
   );

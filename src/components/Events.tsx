@@ -347,7 +347,7 @@ export default function Events() {
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-6">
               <h1
-                onClick={() => navigate('/dashboard')}
+                onClick={() => navigate(profile?.role === 'planner' ? '/planner/dashboard' : '/dashboard')}
                 className="text-2xl font-bold text-neon-green cursor-pointer hover:opacity-80 transition"
               >
                 BeatBookingsLive
@@ -369,7 +369,7 @@ export default function Events() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <button
-          onClick={() => navigate('/dashboard')}
+          onClick={() => navigate(profile?.role === 'planner' ? '/planner/dashboard' : '/dashboard')}
           className="flex items-center gap-2 text-gray-400 hover:text-neon-green transition mb-6"
         >
           <ArrowLeft className="w-5 h-5" />

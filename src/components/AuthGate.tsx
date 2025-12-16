@@ -44,10 +44,10 @@ export default function AuthGate() {
       // 4. Route by role
       switch (profile.role) {
         case 'planner':
-          setRedirect('/dashboard');
+          setRedirect('/planner/dashboard');
           break;
         case 'artist':
-          setRedirect('/dashboard'); // subscriptions later
+          setRedirect('/dashboard');
           break;
         case 'admin':
           setRedirect('/admin');
