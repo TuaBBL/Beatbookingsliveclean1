@@ -212,8 +212,8 @@ export default function Events() {
   async function handlePublishEvent(eventId: string) {
     if (!profile) return;
 
-    if (profile.role === 'planner' && publishedCount >= 5) {
-      alert('You have used all 5 free publishes. Please pay $30 to publish this event.');
+    if (profile.role === 'planner' && publishedCount >= 1) {
+      alert("You've used your 1 free event publish.\nPublish this event for $30.");
       return;
     }
 
@@ -225,8 +225,8 @@ export default function Events() {
 
       if (error) throw error;
 
-      const message = profile.role === 'planner' && publishedCount < 5
-        ? `Event published for free! You have ${4 - publishedCount} free publishes remaining.`
+      const message = profile.role === 'planner' && publishedCount < 1
+        ? 'Your first event has been published for free!'
         : 'Event published successfully!';
 
       alert(message);
@@ -798,7 +798,7 @@ function MyEventCard({
               className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-neon-green hover:bg-neon-green/90 text-black rounded-lg font-semibold transition shadow-[0_0_25px_rgba(57,255,20,0.5)] hover:shadow-[0_0_35px_rgba(57,255,20,0.7)]"
             >
               <Check className="w-4 h-4" />
-              {userRole === 'planner' && publishedCount >= 5
+              {userRole === 'planner' && publishedCount >= 1
                 ? 'Publish ($30)'
                 : userRole === 'planner'
                 ? 'Publish (Free)'

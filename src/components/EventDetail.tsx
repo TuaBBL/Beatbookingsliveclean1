@@ -62,6 +62,9 @@ export default function EventDetail() {
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState('');
   const [commentLoading, setCommentLoading] = useState(false);
+  const [userRole, setUserRole] = useState<string>('');
+  const [publishedCount, setPublishedCount] = useState(0);
+  const [publishLoading, setPublishLoading] = useState(false);
 
   useEffect(() => {
     loadEventData();
@@ -131,6 +134,24 @@ export default function EventDetail() {
       }
 
       setCurrentUserId(user.id);
+
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (profileData) {
+        setUserRole(profileData.role);
+
+        const { data: eventsData } = await supabase
+          .from('events')
+          .select('id')
+          .eq('creator_id', user.id)
+          .eq('status', 'published');
+
+        setPublishedCount(eventsData?.length || 0);
+      }
 
       const [eventResult, attendeesResult, attendanceResult] = await Promise.all([
         supabase
@@ -287,6 +308,38 @@ export default function EventDetail() {
     }
   }
 
+  async function handlePublishEvent() {
+    if (!currentUserId || !event || publishLoading) return;
+
+    if (userRole === 'planner' && publishedCount >= 1) {
+      alert("You've used your 1 free event publish.\nPublish this event for $30.");
+      return;
+    }
+
+    setPublishLoading(true);
+    try {
+      const { error } = await supabase
+        .from('events')
+        .update({ status: 'published' })
+        .eq('id', event.id);
+
+      if (error) throw error;
+
+      const message = userRole === 'planner' && publishedCount < 1
+        ? 'Your first event has been published for free!'
+        : 'Event published successfully!';
+
+      alert(message);
+      await loadEventData();
+      await loadComments();
+    } catch (error) {
+      console.error('Error publishing event:', error);
+      alert('Failed to publish event');
+    } finally {
+      setPublishLoading(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -370,6 +423,11 @@ export default function EventDetail() {
             <span className="px-3 py-1 bg-purple-500/20 text-purple-400 rounded-full text-sm capitalize">
               {event.creator_role}
             </span>
+            {event.status === 'draft' && (
+              <span className="px-3 py-1 bg-yellow-500/20 text-yellow-400 rounded-full text-sm font-semibold">
+                Draft – Not visible to the public
+              </span>
+            )}
           </div>
 
           <div className="grid md:grid-cols-2 gap-6 mb-6">
@@ -428,48 +486,74 @@ export default function EventDetail() {
           )}
 
           <div className="flex flex-wrap gap-4">
-            <button
-              onClick={toggleAttendance}
-              disabled={attendanceLoading}
-              className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                isAttending
-                  ? 'bg-red-600 hover:bg-red-700 text-white'
-                  : 'bg-blue-600 hover:bg-blue-700 text-white'
-              }`}
-            >
-              {isAttending ? (
-                <>
-                  <X className="w-4 h-4" />
-                  Cancel Attendance
-                </>
-              ) : (
-                <>
-                  <Plus className="w-4 h-4" />
-                  Attend Event
-                </>
-              )}
-            </button>
-            {event.ticket_link && (
-              <a
-                href={event.ticket_link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
-              >
-                Get Tickets
-                <ExternalLink className="w-4 h-4" />
-              </a>
-            )}
-            {event.external_link && (
-              <a
-                href={event.external_link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
-              >
-                Buy Tickets
-                <ExternalLink className="w-4 h-4" />
-              </a>
+            {event.status === 'draft' && event.creator_id === currentUserId ? (
+              <div className="w-full">
+                {userRole === 'planner' && publishedCount < 1 && (
+                  <p className="text-sm text-blue-400 mb-3">
+                    1 free publish remaining
+                  </p>
+                )}
+                <button
+                  onClick={handlePublishEvent}
+                  disabled={publishLoading}
+                  className="flex items-center gap-2 px-6 py-3 bg-neon-green hover:bg-neon-green/90 text-black rounded-lg font-bold transition shadow-[0_0_25px_rgba(57,255,20,0.5)] hover:shadow-[0_0_35px_rgba(57,255,20,0.7)] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Check className="w-4 h-4" />
+                  {publishLoading ? 'Publishing...' : (
+                    userRole === 'planner' && publishedCount >= 1
+                      ? 'Publish ($30)'
+                      : userRole === 'planner'
+                      ? 'Publish (Free)'
+                      : 'Publish'
+                  )}
+                </button>
+              </div>
+            ) : event.status === 'published' && (
+              <>
+                <button
+                  onClick={toggleAttendance}
+                  disabled={attendanceLoading}
+                  className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                    isAttending
+                      ? 'bg-red-600 hover:bg-red-700 text-white'
+                      : 'bg-blue-600 hover:bg-blue-700 text-white'
+                  }`}
+                >
+                  {isAttending ? (
+                    <>
+                      <X className="w-4 h-4" />
+                      Cancel Attendance
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4" />
+                      Attend Event
+                    </>
+                  )}
+                </button>
+                {event.ticket_link && (
+                  <a
+                    href={event.ticket_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                  >
+                    Get Tickets
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                )}
+                {event.external_link && (
+                  <a
+                    href={event.external_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                  >
+                    Buy Tickets
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                )}
+              </>
             )}
           </div>
         </div>
