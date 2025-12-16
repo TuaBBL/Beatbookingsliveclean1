@@ -35,32 +35,32 @@ export default function Header() {
         }
       `}
     >
-      <div className="flex items-center justify-between gap-6 px-6 py-6">
+      <div className="flex items-center justify-between gap-2 md:gap-6 px-4 md:px-6 py-4 md:py-6">
         {/* Logo */}
         <a href="/about" className="flex items-center flex-shrink-0">
           <img
             src={logo}
             alt="BeatBookingsLive"
-            className="h-20 md:h-28 object-contain cursor-pointer drop-shadow-[0_0_22px_rgba(57,255,20,0.75)] transition-transform hover:scale-105"
+            className="h-16 md:h-28 object-contain cursor-pointer drop-shadow-[0_0_22px_rgba(57,255,20,0.75)] transition-transform hover:scale-105"
           />
         </a>
 
         {/* Search Bar */}
-        <form onSubmit={handleSearch} className="flex-1 max-w-2xl hidden md:block">
+        <form onSubmit={handleSearch} className="flex-1 max-w-2xl mx-2 md:mx-4">
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-gray-400" />
             <input
               type="text"
               placeholder="Search artists..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-neutral-900 border border-neutral-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon-green transition"
+              className="w-full pl-10 md:pl-12 pr-3 md:pr-4 py-2 md:py-3 bg-neutral-900 border border-neutral-700 rounded-lg text-white text-sm md:text-base placeholder-gray-500 focus:outline-none focus:border-neon-green transition"
             />
           </div>
         </form>
 
         {/* Domain */}
-        <div className="text-sm md:text-base text-gray-300 tracking-wide flex-shrink-0">
+        <div className="hidden sm:block text-xs md:text-base text-gray-300 tracking-wide flex-shrink-0">
           BeatBookingsLive.com
         </div>
       </div>

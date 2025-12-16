@@ -72,16 +72,16 @@ export default function PlannerDashboard() {
 
       <main className="flex-1 px-6 py-12">
         <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
-            <h1 className="text-4xl font-bold">Planner Dashboard</h1>
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
+            <h1 className="text-3xl md:text-4xl font-bold">Planner Dashboard</h1>
+            <div className="flex items-center gap-3 md:gap-4 w-full md:w-auto">
               {profile && (
                 <>
-                  <div className="text-right">
-                    <p className="font-semibold">{profile.name}</p>
-                    <p className="text-sm text-gray-400">{profile.email}</p>
+                  <div className="text-right flex-1 md:flex-initial">
+                    <p className="font-semibold text-sm md:text-base">{profile.name}</p>
+                    <p className="text-xs md:text-sm text-gray-400">{profile.email}</p>
                   </div>
-                  <div className="w-12 h-12 rounded-full bg-neutral-800 flex items-center justify-center overflow-hidden border-2 border-neutral-700">
+                  <div className="w-12 h-12 rounded-full bg-neutral-800 flex items-center justify-center overflow-hidden border-2 border-neutral-700 flex-shrink-0">
                     {profile.image_url ? (
                       <img
                         src={profile.image_url}
@@ -96,11 +96,12 @@ export default function PlannerDashboard() {
               )}
               <button
                 onClick={() => setShowEditModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded-lg transition text-white font-medium"
+                className="flex items-center gap-2 px-3 md:px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded-lg transition text-white font-medium text-sm md:text-base shadow-lg hover:shadow-orange-500/50 flex-shrink-0"
                 title="Edit Profile"
               >
-                <Settings className="w-5 h-5" />
-                <span>Edit Profile</span>
+                <Settings className="w-4 h-4 md:w-5 md:h-5" />
+                <span className="hidden sm:inline">Edit Profile</span>
+                <span className="sm:hidden">Edit</span>
               </button>
             </div>
           </div>
@@ -112,51 +113,62 @@ export default function PlannerDashboard() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
                 <Link
                   to="/planner/bookings"
-                  className="bg-neutral-900 p-6 rounded-lg border border-neutral-800 hover:border-orange-500 hover:shadow-lg transition cursor-pointer"
+                  className="bg-neutral-900 p-6 rounded-lg border-2 border-neutral-700 hover:border-orange-500 hover:shadow-[0_0_20px_rgba(249,115,22,0.3)] transition-all duration-200 cursor-pointer"
                 >
-                  <div className="flex items-center gap-3 mb-3">
-                    <MessageSquare className="w-6 h-6 text-orange-500" />
-                    <h3 className="text-lg font-semibold">Pending Requests</h3>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 bg-orange-500/10 rounded-lg">
+                      <MessageSquare className="w-6 h-6 text-orange-500" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-white">Pending Requests</h3>
                   </div>
-                  <p className="text-4xl font-bold text-orange-500">
+                  <p className="text-5xl font-bold text-orange-500">
                     {stats.pendingRequests}
                   </p>
+                  <p className="text-sm text-gray-400 mt-2">Awaiting response</p>
                 </Link>
 
                 <Link
                   to="/planner/confirmed"
-                  className="bg-neutral-900 p-6 rounded-lg border border-neutral-800 hover:border-green-500 hover:shadow-lg transition cursor-pointer"
+                  className="bg-neutral-900 p-6 rounded-lg border-2 border-neutral-700 hover:border-green-500 hover:shadow-[0_0_20px_rgba(34,197,94,0.3)] transition-all duration-200 cursor-pointer"
                 >
-                  <div className="flex items-center gap-3 mb-3">
-                    <Calendar className="w-6 h-6 text-green-500" />
-                    <h3 className="text-lg font-semibold">Confirmed Bookings</h3>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 bg-green-500/10 rounded-lg">
+                      <Calendar className="w-6 h-6 text-green-500" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-white">Confirmed Bookings</h3>
                   </div>
-                  <p className="text-4xl font-bold text-green-500">
+                  <p className="text-5xl font-bold text-green-500">
                     {stats.confirmedBookings}
                   </p>
+                  <p className="text-sm text-gray-400 mt-2">Upcoming events</p>
                 </Link>
 
                 <Link
                   to="/planner/favourites"
-                  className="bg-neutral-900 p-6 rounded-lg border border-neutral-800 hover:border-pink-500 hover:shadow-lg transition cursor-pointer"
+                  className="bg-neutral-900 p-6 rounded-lg border-2 border-neutral-700 hover:border-pink-500 hover:shadow-[0_0_20px_rgba(236,72,153,0.3)] transition-all duration-200 cursor-pointer"
                 >
-                  <div className="flex items-center gap-3 mb-3">
-                    <Heart className="w-6 h-6 text-pink-500" />
-                    <h3 className="text-lg font-semibold">Favourite Artists</h3>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 bg-pink-500/10 rounded-lg">
+                      <Heart className="w-6 h-6 text-pink-500" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-white">Favourite Artists</h3>
                   </div>
-                  <p className="text-4xl font-bold text-pink-500">
+                  <p className="text-5xl font-bold text-pink-500">
                     {stats.favouriteArtists}
                   </p>
+                  <p className="text-sm text-gray-400 mt-2">Saved for later</p>
                 </Link>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Link
                   to="/planner/artists"
-                  className="bg-orange-600 hover:bg-orange-700 p-8 rounded-lg transition group"
+                  className="bg-gradient-to-br from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 p-8 rounded-lg shadow-lg hover:shadow-[0_0_30px_rgba(249,115,22,0.4)] transition-all duration-200 group"
                 >
                   <div className="flex items-center gap-4">
-                    <Users className="w-8 h-8" />
+                    <div className="p-3 bg-white/10 rounded-lg">
+                      <Users className="w-8 h-8" />
+                    </div>
                     <div>
                       <h3 className="text-xl font-bold mb-1">Browse Artists</h3>
                       <p className="text-orange-100">
@@ -168,10 +180,12 @@ export default function PlannerDashboard() {
 
                 <Link
                   to="/planner/bookings"
-                  className="bg-neutral-900 hover:bg-neutral-800 p-8 rounded-lg border border-neutral-700 transition group"
+                  className="bg-neutral-900 hover:bg-neutral-800 p-8 rounded-lg border-2 border-neutral-700 hover:border-orange-500 shadow-lg hover:shadow-[0_0_20px_rgba(249,115,22,0.2)] transition-all duration-200 group"
                 >
                   <div className="flex items-center gap-4">
-                    <Calendar className="w-8 h-8" />
+                    <div className="p-3 bg-orange-500/10 rounded-lg">
+                      <Calendar className="w-8 h-8 text-orange-500" />
+                    </div>
                     <div>
                       <h3 className="text-xl font-bold mb-1">View Bookings</h3>
                       <p className="text-gray-400">
