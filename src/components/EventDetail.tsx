@@ -574,6 +574,14 @@ export default function EventDetail() {
           <div className="flex flex-wrap gap-4">
             {event.status === 'draft' && event.creator_id === currentUserId ? (
               <div className="w-full">
+                <div className="mb-4 p-3 bg-gray-900 border border-gray-700 rounded-lg text-xs text-gray-400">
+                  <p>Debug Info:</p>
+                  <p>Event Status: {event.status}</p>
+                  <p>Creator ID: {event.creator_id}</p>
+                  <p>Current User ID: {currentUserId || 'Not set'}</p>
+                  <p>User Role: {userRole || 'Not set'}</p>
+                  <p>Match: {event.creator_id === currentUserId ? 'YES' : 'NO'}</p>
+                </div>
                 {userRole === 'planner' && publishedCount === 0 && (
                   <p className="text-sm text-blue-400 mb-3">
                     1 free publish remaining
@@ -601,6 +609,15 @@ export default function EventDetail() {
                   >
                     Promo Test ($0.05)
                   </button>
+                </div>
+              </div>
+            ) : event.status === 'draft' ? (
+              <div className="w-full p-4 bg-yellow-900/20 border border-yellow-600 rounded-lg">
+                <p className="text-yellow-400 font-semibold mb-2">This is not your event</p>
+                <p className="text-sm text-gray-400">Only the event creator can publish this event.</p>
+                <div className="mt-3 text-xs text-gray-500">
+                  <p>Event Creator ID: {event.creator_id}</p>
+                  <p>Your User ID: {currentUserId || 'Not logged in'}</p>
                 </div>
               </div>
             ) : event.status === 'published' && (
