@@ -13,9 +13,9 @@ interface Event {
   end_time: string;
   cover_image: string | null;
   external_link: string | null;
-  artist: {
-    stage_name: string;
-    genre: string;
+  profiles: {
+    display_name: string;
+    role: string;
   };
 }
 
@@ -46,8 +46,12 @@ export default function EventsSection() {
           end_time,
           cover_image,
           external_link,
-          artist:artist_profiles(stage_name, genre)
+          profiles:creator_id (
+            display_name,
+            role
+          )
         `)
+        .eq('status', 'published')
         .gte('event_date', today.toISOString().split('T')[0])
         .lte('event_date', nextWeek.toISOString().split('T')[0])
         .order('event_date', { ascending: true })
@@ -147,11 +151,11 @@ export default function EventsSection() {
                           {event.type}
                         </h3>
                         <p className="text-neon-green text-sm font-semibold">
-                          {event.artist.stage_name}
+                          {event.profiles.display_name}
                         </p>
                       </div>
-                      <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded">
-                        {event.artist.genre}
+                      <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded capitalize">
+                        {event.profiles.role}
                       </span>
                     </div>
 
