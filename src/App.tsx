@@ -73,11 +73,11 @@ export default function App() {
     <Route path="/terms-agreement" element={<TermsAgreement />} />
 
     {/* Protected */}
-    <Route path="/dashboard" element={<Dashboard />} />
-    <Route path="/events" element={<Events />} />
-    <Route path="/events/:id" element={<EventDetail />} />
-    <Route path="/publish/success" element={<PublishSuccess />} />
-    <Route path="/publish/cancel" element={<PublishCancel />} />
+    <Route path="/dashboard" element={session ? <Dashboard /> : <Navigate to="/login" replace />} />
+    <Route path="/events" element={session ? <Events /> : <Navigate to="/login" replace />} />
+    <Route path="/events/:id" element={session ? <EventDetail /> : <Navigate to="/login" replace />} />
+    <Route path="/publish/success" element={session ? <PublishSuccess /> : <Navigate to="/login" replace />} />
+    <Route path="/publish/cancel" element={session ? <PublishCancel /> : <Navigate to="/login" replace />} />
     {/* later */}
     {/* <Route path="/admin" element={<AdminDashboard />} /> */}
 
