@@ -114,32 +114,22 @@ export default function EventDetail() {
     }
   }
 
-  async function toggleAttendance() {
-    if (!currentUserId || !id || attendanceLoading) return;
+  async function handleRSVP() {
+    if (!currentUserId || !id || attendanceLoading || isAttending) return;
 
     setAttendanceLoading(true);
     try {
-      if (isAttending) {
-        await supabase
-          .from('event_attendance')
-          .delete()
-          .eq('event_id', id)
-          .eq('user_id', currentUserId);
-        setIsAttending(false);
-        setAttendees(prev => prev.filter(a => a.user_id !== currentUserId));
-      } else {
-        await supabase
-          .from('event_attendance')
-          .insert({
-            event_id: id,
-            user_id: currentUserId,
-            status: 'going'
-          });
-        setIsAttending(true);
-        await loadEventData();
-      }
+      await supabase
+        .from('event_attendance')
+        .insert({
+          event_id: id,
+          user_id: currentUserId,
+          status: 'going'
+        });
+      setIsAttending(true);
+      await loadEventData();
     } catch (error) {
-      console.error('Error toggling attendance:', error);
+      console.error('Error RSVPing to event:', error);
     } finally {
       setAttendanceLoading(false);
     }
@@ -270,27 +260,21 @@ export default function EventDetail() {
           )}
 
           <div className="flex flex-wrap gap-4">
-            <button
-              onClick={toggleAttendance}
-              disabled={attendanceLoading}
-              className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-colors ${
-                isAttending
-                  ? 'bg-green-600 hover:bg-green-700 text-white'
-                  : 'bg-blue-600 hover:bg-blue-700 text-white'
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
-            >
-              {isAttending ? (
-                <>
-                  <Check className="w-4 h-4" />
-                  Attending
-                </>
-              ) : (
-                <>
-                  <Plus className="w-4 h-4" />
-                  Attend Event
-                </>
-              )}
-            </button>
+            {isAttending ? (
+              <div className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg font-semibold">
+                <Check className="w-4 h-4" />
+                You're attending
+              </div>
+            ) : (
+              <button
+                onClick={handleRSVP}
+                disabled={attendanceLoading}
+                className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Plus className="w-4 h-4" />
+                Attend Event
+              </button>
+            )}
             {event.ticket_link && (
               <a
                 href={event.ticket_link}

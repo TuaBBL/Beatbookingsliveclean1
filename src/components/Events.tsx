@@ -445,31 +445,22 @@ function EventCard({ event, userId }: { event: Event; userId: string }) {
     setIsAttending(!!data);
   }
 
-  async function toggleAttendance(e: React.MouseEvent) {
+  async function handleRSVP(e: React.MouseEvent) {
     e.stopPropagation();
-    if (loading) return;
+    if (loading || isAttending) return;
 
     setLoading(true);
     try {
-      if (isAttending) {
-        await supabase
-          .from('event_attendance')
-          .delete()
-          .eq('event_id', event.id)
-          .eq('user_id', userId);
-        setIsAttending(false);
-      } else {
-        await supabase
-          .from('event_attendance')
-          .insert({
-            event_id: event.id,
-            user_id: userId,
-            status: 'going'
-          });
-        setIsAttending(true);
-      }
+      await supabase
+        .from('event_attendance')
+        .insert({
+          event_id: event.id,
+          user_id: userId,
+          status: 'going'
+        });
+      setIsAttending(true);
     } catch (error) {
-      console.error('Error toggling attendance:', error);
+      console.error('Error RSVPing to event:', error);
     } finally {
       setLoading(false);
     }
@@ -529,27 +520,21 @@ function EventCard({ event, userId }: { event: Event; userId: string }) {
       </div>
 
       <div className="px-6 pb-6">
-        <button
-          onClick={toggleAttendance}
-          disabled={loading}
-          className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold transition ${
-            isAttending
-              ? 'bg-neon-green text-black hover:bg-neon-green/90'
-              : 'bg-gray-800 text-white hover:bg-gray-700'
-          } disabled:opacity-50 disabled:cursor-not-allowed`}
-        >
-          {isAttending ? (
-            <>
-              <Check className="w-4 h-4" />
-              Attending
-            </>
-          ) : (
-            <>
-              <Plus className="w-4 h-4" />
-              Attend
-            </>
-          )}
-        </button>
+        {isAttending ? (
+          <div className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-neon-green text-black rounded-lg font-semibold">
+            <Check className="w-4 h-4" />
+            You're attending
+          </div>
+        ) : (
+          <button
+            onClick={handleRSVP}
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-800 text-white hover:bg-gray-700 rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Plus className="w-4 h-4" />
+            Attend
+          </button>
+        )}
       </div>
     </div>
   );
@@ -586,31 +571,22 @@ function MyEventCard({
     setIsAttending(!!data);
   }
 
-  async function toggleAttendance(e: React.MouseEvent) {
+  async function handleRSVP(e: React.MouseEvent) {
     e.stopPropagation();
-    if (loading) return;
+    if (loading || isAttending) return;
 
     setLoading(true);
     try {
-      if (isAttending) {
-        await supabase
-          .from('event_attendance')
-          .delete()
-          .eq('event_id', event.id)
-          .eq('user_id', userId);
-        setIsAttending(false);
-      } else {
-        await supabase
-          .from('event_attendance')
-          .insert({
-            event_id: event.id,
-            user_id: userId,
-            status: 'going'
-          });
-        setIsAttending(true);
-      }
+      await supabase
+        .from('event_attendance')
+        .insert({
+          event_id: event.id,
+          user_id: userId,
+          status: 'going'
+        });
+      setIsAttending(true);
     } catch (error) {
-      console.error('Error toggling attendance:', error);
+      console.error('Error RSVPing to event:', error);
     } finally {
       setLoading(false);
     }
@@ -685,27 +661,21 @@ function MyEventCard({
           </div>
         </div>
 
-        <button
-          onClick={toggleAttendance}
-          disabled={loading}
-          className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold transition mb-3 ${
-            isAttending
-              ? 'bg-neon-green text-black hover:bg-neon-green/90'
-              : 'bg-gray-800 text-white hover:bg-gray-700'
-          } disabled:opacity-50 disabled:cursor-not-allowed`}
-        >
-          {isAttending ? (
-            <>
-              <Check className="w-4 h-4" />
-              Attending
-            </>
-          ) : (
-            <>
-              <Plus className="w-4 h-4" />
-              Attend
-            </>
-          )}
-        </button>
+        {isAttending ? (
+          <div className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-neon-green text-black rounded-lg font-semibold mb-3">
+            <Check className="w-4 h-4" />
+            You're attending
+          </div>
+        ) : (
+          <button
+            onClick={handleRSVP}
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-800 text-white hover:bg-gray-700 rounded-lg font-semibold transition mb-3 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Plus className="w-4 h-4" />
+            Attend
+          </button>
+        )}
 
         <div className="flex gap-2">
           <button
