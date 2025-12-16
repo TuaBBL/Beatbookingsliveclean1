@@ -1,175 +1,87 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "npm:@supabase/supabase-js@2";
-import Stripe from "npm:stripe@14";
+import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2?target=deno";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
-};
+const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
+  apiVersion: "2024-04-10",
+});
 
-Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, {
-      status: 200,
-      headers: corsHeaders,
-    });
+const supabaseAdmin = createClient(
+  Deno.env.get("SUPABASE_URL")!,
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+);
+
+Deno.serve(async (req) => {
+  if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
+
+  const { event_id } = await req.json().catch(() => ({}));
+  if (!event_id) return new Response("Missing event_id", { status: 400 });
+
+  // IMPORTANT: identify caller via JWT (not from body)
+  const authHeader = req.headers.get("Authorization") || "";
+  const token = authHeader.replace("Bearer ", "");
+  if (!token) return new Response("Missing Authorization", { status: 401 });
+
+  const { data: userData, error: userErr } = await supabaseAdmin.auth.getUser(token);
+  if (userErr || !userData?.user) return new Response("Invalid auth", { status: 401 });
+
+  // Fetch event and enforce: only creator can pay-to-publish, and only drafts can be paid for
+  const { data: eventRow, error: eventErr } = await supabaseAdmin
+    .from("events")
+    .select("id, creator_id, creator_role, status, title")
+    .eq("id", event_id)
+    .single();
+
+  if (eventErr || !eventRow) return new Response("Event not found", { status: 404 });
+
+  if (eventRow.creator_id !== userData.user.id) {
+    return new Response("Not event creator", { status: 403 });
+  }
+  if (eventRow.status !== "draft") {
+    return new Response("Event not in draft", { status: 400 });
   }
 
-  try {
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: "Missing authorization header" }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
+  // Price: $30 one-time publish fee (AUD cents)
+  const unitAmount = 3000;
+  const currency = "aud";
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
+  const appUrl = Deno.env.get("APP_URL")!;
+  const successUrl = `${appUrl}/publish/success?event_id=${event_id}`;
+  const cancelUrl = `${appUrl}/publish/cancel?event_id=${event_id}`;
 
-    if (!stripeSecretKey) {
-      return new Response(
-        JSON.stringify({ error: "Stripe is not configured. Please contact support." }),
-        {
-          status: 503,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
-    const stripe = new Stripe(stripeSecretKey, {
-      apiVersion: "2023-10-16",
-    });
-
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
-
-    if (userError || !user) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    const { event_id } = await req.json();
-
-    if (!event_id) {
-      return new Response(
-        JSON.stringify({ error: "Missing event_id" }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    const { data: event, error: eventError } = await supabaseClient
-      .from("events")
-      .select("id, creator_id, title, status")
-      .eq("id", event_id)
-      .maybeSingle();
-
-    if (eventError || !event) {
-      return new Response(
-        JSON.stringify({ error: "Event not found" }),
-        {
-          status: 404,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    if (event.creator_id !== user.id) {
-      return new Response(
-        JSON.stringify({ error: "Not authorized to publish this event" }),
-        {
-          status: 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    if (event.status === "published") {
-      return new Response(
-        JSON.stringify({ error: "Event is already published" }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    const { count } = await supabaseClient
-      .from("events")
-      .select("id", { count: "exact", head: true })
-      .eq("creator_id", user.id)
-      .eq("status", "published");
-
-    if (count !== null && count < 1) {
-      return new Response(
-        JSON.stringify({
-          error: "You still have free publishes available. Use the free publish option.",
-          free_publishes_remaining: 1 - count
-        }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      line_items: [
-        {
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: "Event Publishing",
-              description: `Publish event: ${event.title}`,
-            },
-            unit_amount: 3000,
-          },
-          quantity: 1,
+  const session = await stripe.checkout.sessions.create({
+    mode: "payment",
+    payment_method_types: ["card"],
+    line_items: [
+      {
+        price_data: {
+          currency,
+          product_data: { name: "Event Publish Fee" },
+          unit_amount: unitAmount,
         },
-      ],
-      mode: "payment",
-      success_url: `${req.headers.get("origin")}/events/${event_id}?published=true`,
-      cancel_url: `${req.headers.get("origin")}/events/${event_id}?canceled=true`,
-      metadata: {
-        event_id: event_id,
-        user_id: user.id,
-        purpose: "event_publish",
+        quantity: 1,
       },
-    });
+    ],
+    success_url: successUrl,
+    cancel_url: cancelUrl,
+    metadata: {
+      event_id,
+      creator_id: eventRow.creator_id,
+      creator_role: eventRow.creator_role,
+    },
+  });
 
-    return new Response(
-      JSON.stringify({
-        checkout_url: session.url,
-        session_id: session.id
-      }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
-  } catch (error) {
-    console.error("Error in create-checkout-session:", error);
-    return new Response(
-      JSON.stringify({ error: "Internal server error" }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
-  }
+  // Log it (idempotency + audit)
+  await supabaseAdmin.from("event_payments").insert({
+    event_id,
+    creator_id: eventRow.creator_id,
+    stripe_session_id: session.id,
+    status: "pending",
+    amount: (unitAmount / 100).toFixed(2),
+    currency,
+  });
+
+  return new Response(JSON.stringify({ url: session.url }), {
+    headers: { "Content-Type": "application/json" },
+    status: 200,
+  });
 });
