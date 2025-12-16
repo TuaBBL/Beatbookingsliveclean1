@@ -277,6 +277,43 @@ export default function Events() {
     }
   }
 
+  async function handlePromoEvent(eventId: string) {
+    if (!profile) return;
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        alert('Please log in');
+        return;
+      }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-promo-checkout`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ event_id: eventId }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || 'Failed to create promo checkout');
+        return;
+      }
+
+      if (data.checkout_url) {
+        window.location.href = data.checkout_url;
+      }
+    } catch (error) {
+      alert('Failed to create promo checkout');
+    }
+  }
+
   function handleEventCreated() {
     setShowCreateModal(false);
     setEditingEvent(null);
@@ -477,6 +514,7 @@ export default function Events() {
                   onEdit={handleEditEvent}
                   onDelete={handleDeleteEvent}
                   onPublish={handlePublishEvent}
+                  onPromo={handlePromoEvent}
                 />
               ))}
             </div>
@@ -654,6 +692,7 @@ function MyEventCard({
   onEdit,
   onDelete,
   onPublish,
+  onPromo,
 }: {
   event: Event;
   userId: string;
@@ -662,6 +701,7 @@ function MyEventCard({
   onEdit: (event: Event) => void;
   onDelete: (id: string) => void;
   onPublish: (id: string) => void;
+  onPromo: (id: string) => void;
 }) {
   const navigate = useNavigate();
   const [isAttending, setIsAttending] = useState(false);
@@ -822,7 +862,7 @@ function MyEventCard({
         )}
 
         {event.status === 'draft' && (
-          <div className="mb-3">
+          <div className="mb-3 space-y-2">
             {userRole === 'planner' && publishedCount === 0 && (
               <p className="text-sm text-blue-400 mb-2 text-center">
                 1 free publish remaining
@@ -841,6 +881,15 @@ function MyEventCard({
                 : userRole === 'planner'
                 ? 'Publish (Free)'
                 : 'Publish'}
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onPromo(event.id);
+              }}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-semibold transition"
+            >
+              Promo Test ($0.05)
             </button>
           </div>
         )}
