@@ -107,7 +107,10 @@ export default function PlannerDashboard() {
           ) : (
             <>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                <div className="bg-neutral-900 p-6 rounded-lg border border-neutral-800">
+                <Link
+                  to="/planner/bookings"
+                  className="bg-neutral-900 p-6 rounded-lg border border-neutral-800 hover:border-orange-500 hover:shadow-lg transition cursor-pointer"
+                >
                   <div className="flex items-center gap-3 mb-3">
                     <MessageSquare className="w-6 h-6 text-orange-500" />
                     <h3 className="text-lg font-semibold">Pending Requests</h3>
@@ -115,9 +118,12 @@ export default function PlannerDashboard() {
                   <p className="text-4xl font-bold text-orange-500">
                     {stats.pendingRequests}
                   </p>
-                </div>
+                </Link>
 
-                <div className="bg-neutral-900 p-6 rounded-lg border border-neutral-800">
+                <Link
+                  to="/planner/confirmed"
+                  className="bg-neutral-900 p-6 rounded-lg border border-neutral-800 hover:border-green-500 hover:shadow-lg transition cursor-pointer"
+                >
                   <div className="flex items-center gap-3 mb-3">
                     <Calendar className="w-6 h-6 text-green-500" />
                     <h3 className="text-lg font-semibold">Confirmed Bookings</h3>
@@ -125,9 +131,12 @@ export default function PlannerDashboard() {
                   <p className="text-4xl font-bold text-green-500">
                     {stats.confirmedBookings}
                   </p>
-                </div>
+                </Link>
 
-                <div className="bg-neutral-900 p-6 rounded-lg border border-neutral-800">
+                <Link
+                  to="/planner/favourites"
+                  className="bg-neutral-900 p-6 rounded-lg border border-neutral-800 hover:border-pink-500 hover:shadow-lg transition cursor-pointer"
+                >
                   <div className="flex items-center gap-3 mb-3">
                     <Heart className="w-6 h-6 text-pink-500" />
                     <h3 className="text-lg font-semibold">Favourite Artists</h3>
@@ -135,7 +144,7 @@ export default function PlannerDashboard() {
                   <p className="text-4xl font-bold text-pink-500">
                     {stats.favouriteArtists}
                   </p>
-                </div>
+                </Link>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

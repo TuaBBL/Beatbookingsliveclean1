@@ -3,69 +3,81 @@ import { Link } from "react-router-dom";
 import Header from "../Header";
 import Footer from "../Footer";
 import PlannerProfileMenu from "./PlannerProfileMenu";
-import { Music, Search } from "lucide-react";
+import SearchFilters, { FilterState } from "../SearchFilters";
+import { Music } from "lucide-react";
 import { mockArtists, Artist } from "../../data/mockArtists";
 
 export default function PlannerArtists() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [genreFilter, setGenreFilter] = useState("");
-
   const allArtists: Artist[] = Array.isArray(mockArtists) ? mockArtists : [];
+  const [filteredArtists, setFilteredArtists] = useState<Artist[]>(allArtists);
 
-  const filteredArtists = allArtists.filter((artist) => {
-    const matchesSearch = artist.name
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
-    const matchesGenre = !genreFilter || artist.genre === genreFilter;
-    return matchesSearch && matchesGenre;
-  });
+  const handleFilterChange = (filters: FilterState) => {
+    let results = [...allArtists];
 
-  const genres = Array.from(new Set(allArtists.map((a) => a.genre)));
+    if (filters.search) {
+      results = results.filter((artist) =>
+        artist.name.toLowerCase().includes(filters.search.toLowerCase())
+      );
+    }
+
+    if (filters.genre !== 'All Genres') {
+      results = results.filter((artist) => artist.genre === filters.genre);
+    }
+
+    if (filters.category !== 'All Categories') {
+      results = results.filter((artist) => artist.role === filters.category);
+    }
+
+    if (filters.state !== 'All States') {
+      results = results.filter((artist) => artist.state === filters.state);
+    }
+
+    if (filters.city) {
+      results = results.filter((artist) =>
+        artist.city?.toLowerCase().includes(filters.city.toLowerCase())
+      );
+    }
+
+    if (filters.socials.youtube) {
+      results = results.filter((artist) => artist.socials.youtube);
+    }
+    if (filters.socials.instagram) {
+      results = results.filter((artist) => artist.socials.instagram);
+    }
+    if (filters.socials.facebook) {
+      results = results.filter((artist) => artist.socials.facebook);
+    }
+    if (filters.socials.soundcloud) {
+      results = results.filter((artist) => artist.socials.soundcloud);
+    }
+    if (filters.socials.spotify) {
+      results = results.filter((artist) => artist.socials.spotify);
+    }
+
+    setFilteredArtists(results);
+  };
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
       <Header />
 
+      <div className="flex items-center justify-end px-6 pt-6">
+        <div className="flex items-center gap-4">
+          <Link
+            to="/planner/dashboard"
+            className="text-gray-400 hover:text-white transition"
+          >
+            Back to Dashboard
+          </Link>
+          <PlannerProfileMenu />
+        </div>
+      </div>
+
+      <SearchFilters onFilterChange={handleFilterChange} />
+
       <main className="flex-1 px-6 py-12">
         <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
-            <h1 className="text-4xl font-bold">Browse Artists</h1>
-            <div className="flex items-center gap-4">
-              <Link
-                to="/planner/dashboard"
-                className="text-gray-400 hover:text-white transition"
-              >
-                Back to Dashboard
-              </Link>
-              <PlannerProfileMenu />
-            </div>
-          </div>
-
-          <div className="mb-8 flex gap-4 flex-wrap">
-            <div className="relative flex-1 min-w-64">
-              <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search artists..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-neutral-900 border border-neutral-700 rounded-lg focus:outline-none focus:border-orange-500"
-              />
-            </div>
-
-            <select
-              value={genreFilter}
-              onChange={(e) => setGenreFilter(e.target.value)}
-              className="px-4 py-2 bg-neutral-900 border border-neutral-700 rounded-lg focus:outline-none focus:border-orange-500"
-            >
-              <option value="">All Genres</option>
-              {genres.map((genre) => (
-                <option key={genre} value={genre}>
-                  {genre}
-                </option>
-              ))}
-            </select>
-          </div>
+          <h1 className="text-4xl font-bold mb-8">Browse Artists</h1>
 
           {filteredArtists.length === 0 ? (
             <p className="text-gray-400">No artists found</p>
