@@ -118,7 +118,7 @@ export default function PublishSuccess() {
               {eventTitle}
             </p>
             <p className="text-gray-400 mb-8">
-              Your test payment of $0.05 was successful. The event remains in draft status and was not published.
+              Your test payment of $0.50 was successful. The event remains in draft status and was not published.
             </p>
             <button
               onClick={() => navigate(`/events/${eventId}`)}

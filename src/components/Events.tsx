@@ -889,7 +889,7 @@ function MyEventCard({
               }}
               className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-semibold transition"
             >
-              Promo Test ($0.05)
+              Promo Test ($0.50)
             </button>
           </div>
         )}

@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const unitAmount = 5;
+    const unitAmount = 50;
     const currency = "aud";
 
     const appUrl = Deno.env.get("APP_URL")!;
@@ -112,7 +112,7 @@ Deno.serve(async (req) => {
       creator_id: eventRow.creator_id,
       stripe_session_id: session.id,
       status: "pending",
-      amount: "0.05",
+      amount: "0.50",
       currency,
     });
 

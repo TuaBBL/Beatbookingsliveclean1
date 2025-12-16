@@ -607,7 +607,7 @@ export default function EventDetail() {
                     disabled={publishLoading}
                     className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-bold transition disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Promo Test ($0.05)
+                    Promo Test ($0.50)
                   </button>
                 </div>
               </div>
