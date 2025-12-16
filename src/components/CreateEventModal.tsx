@@ -118,7 +118,7 @@ export default function CreateEventModal({ event, profile, onClose, onSuccess }:
     cover_image: '',
     description: '',
     external_link: '',
-    status: 'published'
+    status: 'draft'
   });
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const [existingMedia, setExistingMedia] = useState<MediaFile[]>([]);

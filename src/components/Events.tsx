@@ -50,6 +50,7 @@ export default function Events() {
   });
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [publishedCount, setPublishedCount] = useState(0);
 
   useEffect(() => {
     loadData();
@@ -118,6 +119,9 @@ export default function Events() {
 
       if (error) throw error;
       setMyEvents(data || []);
+
+      const publishedEvents = data?.filter(e => e.status === 'published') || [];
+      setPublishedCount(publishedEvents.length);
     } catch (error) {
       console.error('Error fetching my events:', error);
     }
@@ -203,6 +207,36 @@ export default function Events() {
   function handleEditEvent(event: Event) {
     setEditingEvent(event);
     setShowCreateModal(true);
+  }
+
+  async function handlePublishEvent(eventId: string) {
+    if (!profile) return;
+
+    if (profile.role === 'planner' && publishedCount >= 5) {
+      alert('You have used all 5 free publishes. Please pay $30 to publish this event.');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('events')
+        .update({ status: 'published' })
+        .eq('id', eventId);
+
+      if (error) throw error;
+
+      const message = profile.role === 'planner' && publishedCount < 5
+        ? `Event published for free! You have ${4 - publishedCount} free publishes remaining.`
+        : 'Event published successfully!';
+
+      alert(message);
+
+      fetchMyEvents(profile.id);
+      fetchAllEvents(profile);
+    } catch (error) {
+      console.error('Error publishing event:', error);
+      alert('Failed to publish event');
+    }
   }
 
   function handleEventCreated() {
@@ -400,8 +434,11 @@ export default function Events() {
                   key={event.id}
                   event={event}
                   userId={profile.id}
+                  userRole={profile.role}
+                  publishedCount={publishedCount}
                   onEdit={handleEditEvent}
                   onDelete={handleDeleteEvent}
+                  onPublish={handlePublishEvent}
                 />
               ))}
             </div>
@@ -574,13 +611,19 @@ function EventCard({ event, userId }: { event: Event; userId: string }) {
 function MyEventCard({
   event,
   userId,
+  userRole,
+  publishedCount,
   onEdit,
   onDelete,
+  onPublish,
 }: {
   event: Event;
   userId: string;
+  userRole: string;
+  publishedCount: number;
   onEdit: (event: Event) => void;
   onDelete: (id: string) => void;
+  onPublish: (id: string) => void;
 }) {
   const navigate = useNavigate();
   const [isAttending, setIsAttending] = useState(false);
@@ -727,7 +770,7 @@ function MyEventCard({
           )}
         </button>
 
-        {event.external_link && (
+        {event.external_link && event.status === 'published' && (
           <a
             href={event.external_link}
             target="_blank"
@@ -738,6 +781,30 @@ function MyEventCard({
             Tickets
             <ExternalLink className="w-4 h-4" />
           </a>
+        )}
+
+        {event.status === 'draft' && (
+          <div className="mb-3">
+            {userRole === 'planner' && publishedCount < 5 && (
+              <p className="text-sm text-blue-400 mb-2 text-center">
+                {5 - publishedCount} free publish{5 - publishedCount === 1 ? '' : 'es'} remaining
+              </p>
+            )}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onPublish(event.id);
+              }}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-neon-green hover:bg-neon-green/90 text-black rounded-lg font-semibold transition shadow-[0_0_25px_rgba(57,255,20,0.5)] hover:shadow-[0_0_35px_rgba(57,255,20,0.7)]"
+            >
+              <Check className="w-4 h-4" />
+              {userRole === 'planner' && publishedCount >= 5
+                ? 'Publish ($30)'
+                : userRole === 'planner'
+                ? 'Publish (Free)'
+                : 'Publish'}
+            </button>
+          </div>
         )}
 
         <div className="flex gap-2">
