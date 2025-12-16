@@ -312,7 +312,7 @@ export default function EventDetail() {
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
               >
-                More Info
+                Buy Tickets
                 <ExternalLink className="w-4 h-4" />
               </a>
             )}

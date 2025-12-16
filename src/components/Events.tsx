@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, MapPin, Clock, Search, Plus, CreditCard as Edit2, Trash2, User, ArrowLeft, Check, X } from 'lucide-react';
+import { Calendar, MapPin, Clock, Search, Plus, CreditCard as Edit2, Trash2, User, ArrowLeft, Check, X, ExternalLink } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import CreateEventModal from './CreateEventModal';
 
@@ -532,7 +532,7 @@ function EventCard({ event, userId }: { event: Event; userId: string }) {
         </div>
       </div>
 
-      <div className="px-6 pb-6">
+      <div className="px-6 pb-6 flex flex-col gap-2">
         <button
           onClick={toggleAttendance}
           disabled={loading}
@@ -554,6 +554,18 @@ function EventCard({ event, userId }: { event: Event; userId: string }) {
             </>
           )}
         </button>
+        {event.external_link && (
+          <a
+            href={event.external_link}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-neon-green hover:bg-neon-green/90 text-black rounded-lg font-semibold transition"
+          >
+            Tickets
+            <ExternalLink className="w-4 h-4" />
+          </a>
+        )}
       </div>
     </div>
   );
@@ -714,6 +726,19 @@ function MyEventCard({
             </>
           )}
         </button>
+
+        {event.external_link && (
+          <a
+            href={event.external_link}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-neon-green hover:bg-neon-green/90 text-black rounded-lg font-semibold transition mb-3"
+          >
+            Tickets
+            <ExternalLink className="w-4 h-4" />
+          </a>
+        )}
 
         <div className="flex gap-2">
           <button
