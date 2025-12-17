@@ -15,11 +15,23 @@ export default function PlannerArtistProfile() {
   const [loading, setLoading] = useState(true);
   const [isFavourite, setIsFavourite] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
+    checkAuth();
     loadArtist();
     checkFavourite();
   }, [id]);
+
+  async function checkAuth() {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      setIsLoggedIn(!!user);
+    } catch (error) {
+      console.error("Error checking auth:", error);
+      setIsLoggedIn(false);
+    }
+  }
 
   async function loadArtist() {
     try {
@@ -114,7 +126,10 @@ export default function PlannerArtistProfile() {
   async function toggleFavourite() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        navigate('/login');
+        return;
+      }
 
       if (isFavourite) {
         await supabase
@@ -132,6 +147,14 @@ export default function PlannerArtistProfile() {
     } catch (error) {
       console.error("Error toggling favourite:", error);
     }
+  }
+
+  function handleBookingClick() {
+    if (!isLoggedIn) {
+      navigate('/login');
+      return;
+    }
+    setShowBookingModal(true);
   }
 
   function handleBookingSuccess() {
@@ -208,24 +231,37 @@ export default function PlannerArtistProfile() {
                   <p className="text-xl text-gray-400 mb-2">{artist.genre}</p>
                   <p className="text-gray-500">{artist.city}, {artist.state}, {artist.country}</p>
                 </div>
-                <button
-                  onClick={toggleFavourite}
-                  className={`p-3 rounded-full transition ${
-                    isFavourite
-                      ? "bg-pink-600 text-white"
-                      : "bg-neutral-800 text-gray-400 hover:text-pink-500"
-                  }`}
-                >
-                  <Heart className={`w-6 h-6 ${isFavourite ? "fill-current" : ""}`} />
-                </button>
+                {isLoggedIn && (
+                  <button
+                    onClick={toggleFavourite}
+                    className={`p-3 rounded-full transition ${
+                      isFavourite
+                        ? "bg-pink-600 text-white"
+                        : "bg-neutral-800 text-gray-400 hover:text-pink-500"
+                    }`}
+                  >
+                    <Heart className={`w-6 h-6 ${isFavourite ? "fill-current" : ""}`} />
+                  </button>
+                )}
               </div>
 
+              {!isLoggedIn && (
+                <div className="mb-6 p-4 bg-neutral-800 border border-neutral-700 rounded-lg">
+                  <p className="text-gray-300 text-center">
+                    <Link to="/login" className="text-orange-500 hover:text-orange-400 font-semibold">
+                      Sign in
+                    </Link>
+                    {' '}to request bookings and add to favourites
+                  </p>
+                </div>
+              )}
+
               <button
-                onClick={() => setShowBookingModal(true)}
+                onClick={handleBookingClick}
                 className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-bold transition"
               >
                 <MessageSquare className="w-5 h-5" />
-                Request Booking
+                {isLoggedIn ? 'Request Booking' : 'Sign in to Request Booking'}
               </button>
             </div>
           </div>

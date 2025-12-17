@@ -81,7 +81,7 @@ export default function HomePage() {
 
     // Category
     if (filters.category !== 'All Categories') {
-      results = results.filter((artist) => artist.category === filters.category);
+      results = results.filter((artist) => artist.role === filters.category);
     }
 
     // State
@@ -98,19 +98,19 @@ export default function HomePage() {
 
     // Social filters (purely visual now)
     if (filters.socials.youtube) {
-      results = results.filter((artist) => artist.youtube);
+      results = results.filter((artist) => artist.socials?.youtube);
     }
     if (filters.socials.instagram) {
-      results = results.filter((artist) => artist.instagram);
+      results = results.filter((artist) => artist.socials?.instagram);
     }
     if (filters.socials.facebook) {
-      results = results.filter((artist) => artist.facebook);
+      results = results.filter((artist) => artist.socials?.facebook);
     }
     if (filters.socials.soundcloud) {
-      results = results.filter((artist) => artist.soundcloud);
+      results = results.filter((artist) => artist.socials?.soundcloud);
     }
     if (filters.socials.spotify) {
-      results = results.filter((artist) => artist.spotify);
+      results = results.filter((artist) => artist.socials?.spotify);
     }
 
     setFilteredArtists(results);

@@ -121,19 +121,19 @@ export default function PlannerArtists() {
     }
 
     if (filters.socials.youtube) {
-      results = results.filter((artist) => artist.socials.youtube);
+      results = results.filter((artist) => artist.socials?.youtube);
     }
     if (filters.socials.instagram) {
-      results = results.filter((artist) => artist.socials.instagram);
+      results = results.filter((artist) => artist.socials?.instagram);
     }
     if (filters.socials.facebook) {
-      results = results.filter((artist) => artist.socials.facebook);
+      results = results.filter((artist) => artist.socials?.facebook);
     }
     if (filters.socials.soundcloud) {
-      results = results.filter((artist) => artist.socials.soundcloud);
+      results = results.filter((artist) => artist.socials?.soundcloud);
     }
     if (filters.socials.spotify) {
-      results = results.filter((artist) => artist.socials.spotify);
+      results = results.filter((artist) => artist.socials?.spotify);
     }
 
     setFilteredArtists(results);
