@@ -92,24 +92,36 @@ export default function EditProfileModal({
     setUploading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
+      if (!user) {
+        console.error("No authenticated user found");
+        return null;
+      }
 
       const fileExt = imageFile.name.split(".").pop();
       const fileName = `${user.id}-${Date.now()}.${fileExt}`;
       const filePath = `profiles/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
+      console.log("Uploading image to:", filePath);
+
+      const { error: uploadError, data: uploadData } = await supabase.storage
         .from("media")
         .upload(filePath, imageFile, {
           cacheControl: "3600",
           upsert: true,
         });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error("Upload error details:", uploadError);
+        throw uploadError;
+      }
+
+      console.log("Upload successful:", uploadData);
 
       const { data } = supabase.storage
         .from("media")
         .getPublicUrl(filePath);
+
+      console.log("Public URL:", data.publicUrl);
 
       return data.publicUrl;
     } catch (error) {
@@ -124,19 +136,34 @@ export default function EditProfileModal({
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        console.error("No authenticated user found");
+        setLoading(false);
+        return;
+      }
 
       let imageUrl = profile.image_url;
       if (imageFile) {
+        console.log("Uploading image file...");
         const uploadedUrl = await uploadImage();
         if (!uploadedUrl) {
+          console.error("Image upload failed - no URL returned");
           setLoading(false);
           return;
         }
+        console.log("Image uploaded successfully, URL:", uploadedUrl);
         imageUrl = uploadedUrl;
       }
 
-      const { error } = await supabase
+      console.log("Updating profile with data:", {
+        name: profile.name,
+        country: profile.country,
+        state: profile.state,
+        city: profile.city,
+        image_url: imageUrl,
+      });
+
+      const { error, data } = await supabase
         .from("profiles")
         .update({
           name: profile.name,
@@ -146,9 +173,20 @@ export default function EditProfileModal({
           image_url: imageUrl,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", user.id);
+        .eq("id", user.id)
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Profile update error:", error);
+        throw error;
+      }
+
+      console.log("Profile updated successfully:", data);
+
+      setImageFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
 
       onSave();
       onClose();

@@ -147,25 +147,47 @@ export default function EditArtistProfileModal({
     setUploading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      if (!user) {
+        console.error('Not authenticated');
+        e.target.value = '';
+        setUploading(false);
+        return;
+      }
 
       const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const fileName = `profiles/${user.id}-${Date.now()}.${fileExt}`;
 
-      const { error: uploadError } = await supabase.storage
+      console.log('Uploading profile image to:', fileName);
+
+      const { error: uploadError, data: uploadData } = await supabase.storage
         .from('media')
         .upload(fileName, file, { upsert: true });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw uploadError;
+      }
+
+      console.log('Upload successful:', uploadData);
 
       const { data } = supabase.storage
         .from('media')
         .getPublicUrl(fileName);
 
-      await supabase
+      console.log('Public URL:', data.publicUrl);
+
+      const { error: updateError, data: updateData } = await supabase
         .from('profiles')
         .update({ image_url: data.publicUrl })
-        .eq('id', user.id);
+        .eq('id', user.id)
+        .select();
+
+      if (updateError) {
+        console.error('Profile update error:', updateError);
+        throw updateError;
+      }
+
+      console.log('Profile updated successfully:', updateData);
 
       e.target.value = '';
       onSave();
@@ -194,25 +216,42 @@ export default function EditArtistProfileModal({
     setUploading(true);
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `${artistProfile.id}-${Date.now()}.${fileExt}`;
+      const fileName = `artist-media/${artistProfile.id}-${Date.now()}.${fileExt}`;
 
-      const { error: uploadError } = await supabase.storage
+      console.log(`Uploading ${type} to:`, fileName);
+
+      const { error: uploadError, data: uploadData } = await supabase.storage
         .from('media')
-        .upload(fileName, file);
+        .upload(fileName, file, { upsert: true });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw uploadError;
+      }
+
+      console.log('Upload successful:', uploadData);
 
       const { data } = supabase.storage
         .from('media')
         .getPublicUrl(fileName);
 
-      await supabase
+      console.log('Public URL:', data.publicUrl);
+
+      const { error: insertError, data: insertData } = await supabase
         .from('artist_media')
         .insert({
           artist_id: artistProfile.id,
           media_type: type,
           url: data.publicUrl,
-        });
+        })
+        .select();
+
+      if (insertError) {
+        console.error('Insert error:', insertError);
+        throw insertError;
+      }
+
+      console.log('Media record created:', insertData);
 
       e.target.value = '';
       loadMediaAndSocial();
