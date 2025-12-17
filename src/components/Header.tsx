@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Search } from "lucide-react";
 import logo from "../assets/logo-beatbookingslive.png";
 
@@ -37,13 +37,13 @@ export default function Header() {
     >
       <div className="flex items-center justify-between gap-2 md:gap-6 px-4 md:px-6 py-4 md:py-6">
         {/* Logo */}
-        <a href="/about" className="flex items-center flex-shrink-0">
+        <Link to="/about" className="flex items-center flex-shrink-0">
           <img
             src={logo}
             alt="BeatBookingsLive"
             className="h-16 md:h-28 object-contain cursor-pointer drop-shadow-[0_0_22px_rgba(57,255,20,0.75)] transition-transform hover:scale-105"
           />
-        </a>
+        </Link>
 
         {/* Search Bar */}
         <form onSubmit={handleSearch} className="flex-1 max-w-2xl mx-2 md:mx-4">
