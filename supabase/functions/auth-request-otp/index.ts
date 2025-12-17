@@ -1,5 +1,11 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
+};
+
 /**
  * Generate a 6-digit numeric OTP
  */
@@ -41,6 +47,7 @@ function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
     headers: {
+      ...corsHeaders,
       "Content-Type": "application/json",
       "Cache-Control": "no-store",
     },
@@ -49,6 +56,10 @@ function json(data: unknown, status = 200) {
 
 Deno.serve(async (req) => {
   try {
+    if (req.method === "OPTIONS") {
+      return new Response(null, { status: 200, headers: corsHeaders });
+    }
+
     if (req.method !== "POST") {
       return json({ error: "Method not allowed" }, 405);
     }
