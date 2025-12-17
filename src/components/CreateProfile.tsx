@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "../lib/supabase";
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 
-type Role = "planner" | "artist" | "admin";
+type Role = 'planner' | 'artist' | 'admin';
 
 export default function CreateProfile() {
   const navigate = useNavigate();
@@ -12,40 +12,30 @@ export default function CreateProfile() {
   const [error, setError] = useState<string | null>(null);
 
   const [role, setRole] = useState<Role | null>(null);
-  const [name, setName] = useState("");
-  const [country, setCountry] = useState("");
-  const [state, setState] = useState("");
-  const [city, setCity] = useState("");
+  const [name, setName] = useState('');
+  const [country, setCountry] = useState('');
+  const [state, setState] = useState('');
+  const [city, setCity] = useState('');
 
-  const isStateRequired = country === "AU";
+  const isStateRequired = country === 'AU';
 
-  // Guard: must be authenticated, must NOT already have profile
   useEffect(() => {
     const run = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
 
       if (!session?.user) {
-        navigate("/login", { replace: true });
+        navigate('/login', { replace: true });
         return;
       }
 
       const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", session.user.id)
+        .from('profiles')
+        .select('id')
+        .eq('id', session.user.id)
         .maybeSingle();
 
-      // Admins never onboard
-      if (profile?.role === "admin") {
-        navigate("/admin/messages", { replace: true });
-        return;
-      }
-
-      // Existing profile → let AuthGate decide
       if (profile) {
-        navigate("/auth-gate", { replace: true });
+        navigate('/auth-gate', { replace: true });
         return;
       }
 
@@ -60,45 +50,43 @@ export default function CreateProfile() {
     setError(null);
 
     if (!role) {
-      setError("Please select a role");
+      setError('Please select a role');
       return;
     }
 
     if (!name.trim() || !country || !city.trim()) {
-      setError("Please fill in all required fields");
+      setError('Please fill in all required fields');
       return;
     }
 
     if (isStateRequired && !state.trim()) {
-      setError("State is required for Australia");
+      setError('State is required for Australia');
       return;
     }
 
     try {
       setSubmitting(true);
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        navigate("/login", { replace: true });
+        navigate('/login', { replace: true });
         return;
       }
 
-      const isAdminRequest = role === "admin";
+      const isAdminRequest = role === 'admin';
 
-      const { error } = await supabase.from("profiles").insert({
-        id: user.id,
-        email: user.email,
-        name: name.trim(),
-        role: isAdminRequest ? "planner" : role, // 🔒 safe default
-        country,
-        state: isStateRequired ? state.trim() : null,
-        city: city.trim(),
-        agreed_terms: true,
-        admin_requested: isAdminRequest,
-      });
+      const { error } = await supabase
+        .from('profiles')
+        .upsert({
+          id: user.id,
+          email: user.email,
+          name: name.trim(),
+          country,
+          state: isStateRequired ? state.trim() : null,
+          city: city.trim(),
+          role: isAdminRequest ? 'planner' : role,
+          admin_requested: isAdminRequest,
+        }, { onConflict: 'id' });
 
       if (error) {
         console.error(error);
@@ -106,10 +94,11 @@ export default function CreateProfile() {
         return;
       }
 
-      navigate("/auth-gate", { replace: true });
+      navigate('/auth-gate', { replace: true });
+
     } catch (err) {
       console.error(err);
-      setError("Something went wrong. Please try again.");
+      setError('Something went wrong. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -127,54 +116,39 @@ export default function CreateProfile() {
     <div className="min-h-screen bg-black flex items-center justify-center px-4">
       <div className="w-full max-w-xl bg-charcoal border border-gray-800 rounded-xl p-8">
         <h1 className="text-3xl font-bold text-white mb-6">
-          Complete your profile
+          Create your profile
         </h1>
 
         {/* Role selection */}
-        <div className="flex flex-col gap-4 mb-6">
+        <div className="grid gap-4 mb-6">
           <button
-            type="button"
-            onClick={() => setRole("planner")}
-            className={`w-full py-4 rounded-lg border ${
-              role === "planner"
-                ? "border-neon-green text-white"
-                : "border-gray-700 text-gray-400"
-            }`}
+            onClick={() => setRole('planner')}
+            className={`py-4 rounded-lg border ${
+              role === 'planner' ? 'border-neon-green' : 'border-gray-700'
+            } text-white`}
           >
             Planner
           </button>
 
           <button
-            type="button"
-            onClick={() => setRole("artist")}
-            className={`w-full py-4 rounded-lg border ${
-              role === "artist"
-                ? "border-neon-red text-white"
-                : "border-gray-700 text-gray-400"
-            }`}
+            onClick={() => setRole('artist')}
+            className={`py-4 rounded-lg border ${
+              role === 'artist' ? 'border-neon-red' : 'border-gray-700'
+            } text-white`}
           >
             Artist
           </button>
 
           <button
-            type="button"
-            onClick={() => setRole("admin")}
-            className={`w-full py-4 rounded-lg border ${
-              role === "admin"
-                ? "border-yellow-400 text-white"
-                : "border-gray-700 text-gray-400"
-            }`}
+            onClick={() => setRole('admin')}
+            className={`py-4 rounded-lg border border-yellow-500 text-yellow-400`}
           >
-            Admin{" "}
-            <span className="text-xs text-gray-400">
-              (approval required)
-            </span>
+            Admin (approval required)
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
-            type="text"
             placeholder="Name"
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -185,7 +159,7 @@ export default function CreateProfile() {
             value={country}
             onChange={(e) => {
               setCountry(e.target.value);
-              if (e.target.value === "NZ") setState("");
+              if (e.target.value === 'NZ') setState('');
             }}
             className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white"
           >
@@ -195,16 +169,14 @@ export default function CreateProfile() {
           </select>
 
           <input
-            type="text"
-            placeholder={isStateRequired ? "State *" : "State (NZ not required)"}
+            placeholder="State"
             value={state}
-            onChange={(e) => setState(e.target.value)}
             disabled={!isStateRequired}
+            onChange={(e) => setState(e.target.value)}
             className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white disabled:opacity-50"
           />
 
           <input
-            type="text"
             placeholder="City"
             value={city}
             onChange={(e) => setCity(e.target.value)}
@@ -212,7 +184,7 @@ export default function CreateProfile() {
           />
 
           {error && (
-            <div className="text-red-400 text-sm bg-red-950/30 border border-red-800 rounded-lg p-3">
+            <div className="text-red-400 bg-red-950/30 border border-red-800 rounded-lg p-3">
               {error}
             </div>
           )}
@@ -220,9 +192,9 @@ export default function CreateProfile() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full bg-neon-red text-white py-3 rounded-lg font-semibold disabled:opacity-50"
+            className="w-full bg-neon-red py-3 rounded-lg text-white font-semibold"
           >
-            {submitting ? "Creating profile…" : "Complete profile"}
+            {submitting ? 'Saving…' : 'Complete profile'}
           </button>
         </form>
       </div>
