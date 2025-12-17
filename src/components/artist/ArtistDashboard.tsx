@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase';
 import Header from '../Header';
 import Footer from '../Footer';
 import EditArtistProfileModal from './EditArtistProfileModal';
+import AnimatedArtistHero from '../dashboard/AnimatedArtistHero';
 import { Calendar, MessageSquare, User, Settings, LogOut, Shield, Image, Video, Inbox } from 'lucide-react';
 
 export default function ArtistDashboard() {
@@ -114,8 +115,10 @@ export default function ArtistDashboard() {
     <div className="min-h-screen bg-black text-white flex flex-col">
       <Header />
 
-      <main className="flex-1 px-6 py-12">
-        <div className="max-w-6xl mx-auto">
+      <main className="flex-1 px-6 py-12 relative">
+        <AnimatedArtistHero className="h-80" />
+
+        <div className="max-w-6xl mx-auto relative z-20">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
             <h1 className="text-3xl md:text-4xl font-bold">Artist Dashboard</h1>
             <div className="flex items-center gap-3 md:gap-4 w-full md:w-auto">
