@@ -168,11 +168,12 @@ export default function EditArtistProfileModal({
         .update({ image_url: data.publicUrl })
         .eq('id', user.id);
 
-      alert('Profile image updated!');
+      e.target.value = '';
       onSave();
     } catch (err) {
       console.error('Error uploading image:', err);
       alert('Failed to upload image');
+      e.target.value = '';
     } finally {
       setUploading(false);
     }
@@ -188,6 +189,7 @@ export default function EditArtistProfileModal({
 
     if (currentCount >= limit) {
       alert(`You've reached your ${type} limit (${limit}). Upgrade to premium for more.`);
+      e.target.value = '';
       return;
     }
 
@@ -214,11 +216,13 @@ export default function EditArtistProfileModal({
           url: data.publicUrl,
         });
 
+      e.target.value = '';
       loadMediaAndSocial();
       alert(`${type} uploaded successfully!`);
     } catch (err) {
       console.error('Error uploading media:', err);
       alert('Failed to upload media');
+      e.target.value = '';
     } finally {
       setUploading(false);
     }
