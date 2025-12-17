@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase';
 import Header from '../Header';
 import Footer from '../Footer';
 import PlannerProfileMenu from './PlannerProfileMenu';
-import { ArrowLeft, Calendar, MapPin, MessageSquare, User, FileText } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, MessageSquare, User, FileText, ShieldAlert } from 'lucide-react';
 
 interface BookingRequest {
   id: string;
@@ -26,6 +26,7 @@ export default function PlannerRequestsPage() {
   const navigate = useNavigate();
   const [requests, setRequests] = useState<BookingRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [accessDenied, setAccessDenied] = useState(false);
 
   useEffect(() => {
     loadRequests();
@@ -39,28 +40,53 @@ export default function PlannerRequestsPage() {
         return;
       }
 
-      const { data, error } = await supabase
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (profile?.role !== 'planner') {
+        setAccessDenied(true);
+        setLoading(false);
+        return;
+      }
+
+      const { data: requestsData, error } = await supabase
         .from('booking_requests')
-        .select(`
-          id,
-          artist_user_id,
-          event_name,
-          event_date,
-          event_location,
-          message,
-          status,
-          created_at,
-          artist:profiles!booking_requests_artist_user_id_fkey(
-            name,
-            email,
-            image_url
-          )
-        `)
+        .select('id, artist_user_id, event_name, event_date, event_location, message, status, created_at')
         .eq('planner_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setRequests(data || []);
+
+      if (!requestsData || requestsData.length === 0) {
+        setRequests([]);
+        setLoading(false);
+        return;
+      }
+
+      const artistIds = [...new Set(requestsData.map(r => r.artist_user_id))];
+
+      const { data: artistsData } = await supabase
+        .from('profiles')
+        .select('id, name, email, image_url')
+        .in('id', artistIds);
+
+      const artistsMap = new Map(
+        (artistsData || []).map(artist => [artist.id, artist])
+      );
+
+      const requestsWithArtists = requestsData.map(request => ({
+        ...request,
+        artist: artistsMap.get(request.artist_user_id) || {
+          name: 'Unknown Artist',
+          email: '',
+          image_url: null,
+        },
+      }));
+
+      setRequests(requestsWithArtists);
     } catch (error) {
       console.error('Error loading booking requests:', error);
     } finally {
@@ -112,6 +138,14 @@ export default function PlannerRequestsPage() {
 
           {loading ? (
             <p className="text-gray-400">Loading...</p>
+          ) : accessDenied ? (
+            <div className="bg-neutral-900 border-2 border-red-700 rounded-lg p-12 text-center">
+              <ShieldAlert className="w-16 h-16 text-red-500 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold mb-2">Access Denied</h3>
+              <p className="text-gray-400">
+                Only planners can view this page
+              </p>
+            </div>
           ) : requests.length === 0 ? (
             <div className="bg-neutral-900 border-2 border-neutral-700 rounded-lg p-12 text-center">
               <MessageSquare className="w-16 h-16 text-gray-600 mx-auto mb-4" />

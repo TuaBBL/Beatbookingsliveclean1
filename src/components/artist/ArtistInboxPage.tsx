@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import Header from '../Header';
 import Footer from '../Footer';
-import { ArrowLeft, Calendar, MapPin, MessageSquare, User, FileText } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, MessageSquare, User, FileText, ShieldAlert } from 'lucide-react';
 
 interface BookingRequest {
   id: string;
@@ -25,6 +25,7 @@ export default function ArtistInboxPage() {
   const navigate = useNavigate();
   const [requests, setRequests] = useState<BookingRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [accessDenied, setAccessDenied] = useState(false);
 
   useEffect(() => {
     loadRequests();
@@ -35,6 +36,18 @@ export default function ArtistInboxPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         navigate('/login');
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (profile?.role !== 'artist') {
+        setAccessDenied(true);
+        setLoading(false);
         return;
       }
 
@@ -108,6 +121,14 @@ export default function ArtistInboxPage() {
 
           {loading ? (
             <p className="text-gray-400">Loading...</p>
+          ) : accessDenied ? (
+            <div className="bg-neutral-900 border-2 border-red-700 rounded-lg p-12 text-center">
+              <ShieldAlert className="w-16 h-16 text-red-500 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold mb-2">Access Denied</h3>
+              <p className="text-gray-400">
+                Only artists can view this page
+              </p>
+            </div>
           ) : requests.length === 0 ? (
             <div className="bg-neutral-900 border-2 border-neutral-700 rounded-lg p-12 text-center">
               <MessageSquare className="w-16 h-16 text-gray-600 mx-auto mb-4" />
