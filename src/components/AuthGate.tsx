@@ -8,43 +8,36 @@ export default function AuthGate() {
 
   useEffect(() => {
     const run = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
 
-      // Not authenticated
       if (!session?.user) {
         setRedirect("/login");
         return;
       }
 
       const userId = session.user.id;
-      const email = session.user.email;
 
-      // Fetch profile
-      let { data: profile } = await supabase
+      // 🔐 Check admin table FIRST
+      const { data: admin } = await supabase
+        .from("admin_users")
+        .select("user_id")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (admin) {
+        setRedirect("/admin/messages");
+        return;
+      }
+
+      // 👤 Normal profile check
+      const { data: profile } = await supabase
         .from("profiles")
         .select("role")
         .eq("id", userId)
         .maybeSingle();
 
-      // Auto-repair missing profile
       if (!profile) {
-        await supabase.from("profiles").insert({
-          id: userId,
-          email,
-          role: "planner",
-          name: "",
-          agreed_terms: false,
-        });
-
         setRedirect("/create-profile");
-        return;
-      }
-
-      // Route by role
-      if (profile.role === "admin") {
-        setRedirect("/admin");
         return;
       }
 
