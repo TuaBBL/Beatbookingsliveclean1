@@ -6,12 +6,14 @@ import PlannerProfileMenu from "./PlannerProfileMenu";
 import SearchFilters, { FilterState } from "../SearchFilters";
 import { Music } from "lucide-react";
 import { mockArtists, Artist } from "../../data/mockArtists";
+import { supabase } from "../../lib/supabase";
 
 export default function PlannerArtists() {
   const [searchParams] = useSearchParams();
   const allArtists: Artist[] = Array.isArray(mockArtists) ? mockArtists : [];
   const [filteredArtists, setFilteredArtists] = useState<Artist[]>(allArtists);
   const [initialSearch, setInitialSearch] = useState("");
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
     const search = searchParams.get("search");
@@ -19,6 +21,29 @@ export default function PlannerArtists() {
       setInitialSearch(search);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    loadUserRole();
+  }, []);
+
+  const loadUserRole = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (data) {
+        setUserRole(data.role);
+      }
+    } catch (error) {
+      console.error('Error loading user role:', error);
+    }
+  };
 
   const handleFilterChange = (filters: FilterState) => {
     let results = [...allArtists];
@@ -73,7 +98,7 @@ export default function PlannerArtists() {
       <div className="flex items-center justify-end px-6 pt-6">
         <div className="flex items-center gap-4">
           <Link
-            to="/planner/dashboard"
+            to={userRole === 'artist' ? '/artist/dashboard' : '/planner/dashboard'}
             className="text-gray-400 hover:text-white transition"
           >
             Back to Dashboard
