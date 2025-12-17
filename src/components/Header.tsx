@@ -17,7 +17,7 @@ export default function Header() {
 
         {/* Top-right brand text */}
         <div className="text-white text-lg md:text-xl font-semibold tracking-wide">
-          BeatBookingsLive
+          BeatBookingsLive.com
         </div>
 
       </div>
