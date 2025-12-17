@@ -77,32 +77,30 @@ export default function App() {
     <Route path="/privacy" element={<Privacy />} />
     <Route path="/login" element={<Login />} />
 
-    {/* Auth plumbing */}
+    {/* Auth */}
     <Route path="/auth-callback" element={<AuthCallback />} />
     <Route path="/auth-gate" element={<AuthGate />} />
 
-    {/* Mandatory onboarding */}
+    {/* Onboarding */}
     <Route path="/create-profile" element={<CreateProfile />} />
     <Route path="/terms-agreement" element={<TermsAgreement />} />
 
-    {/* Protected */}
-    <Route path="/dashboard" element={session ? <Dashboard /> : <Navigate to="/login" replace />} />
-    <Route path="/events" element={session ? <Events /> : <Navigate to="/login" replace />} />
-    <Route path="/events/:id" element={session ? <EventDetail /> : <Navigate to="/login" replace />} />
-    <Route path="/publish/success" element={<PublishSuccess />} />
-    <Route path="/publish/cancel" element={<PublishCancel />} />
+    {/* Dashboards (unguarded – AuthGate handles auth) */}
+    <Route path="/dashboard" element={<Dashboard />} />
+    <Route path="/events" element={<Events />} />
+    <Route path="/events/:id" element={<EventDetail />} />
 
-    {/* Planner Dashboard */}
-    <Route path="/planner/dashboard" element={session ? <PlannerDashboard /> : <Navigate to="/login" replace />} />
-    <Route path="/planner/artists" element={session ? <PlannerArtists /> : <Navigate to="/login" replace />} />
-    <Route path="/planner/artists/:id" element={session ? <PlannerArtistProfile /> : <Navigate to="/login" replace />} />
-    <Route path="/planner/bookings" element={session ? <PlannerBookingInbox /> : <Navigate to="/login" replace />} />
-    <Route path="/planner/confirmed" element={session ? <PlannerConfirmedBookings /> : <Navigate to="/login" replace />} />
-    <Route path="/planner/favourites" element={session ? <PlannerFavourites /> : <Navigate to="/login" replace />} />
-    <Route path="/planner/calendar" element={session ? <PlannerCalendar /> : <Navigate to="/login" replace />} />
+    {/* Planner */}
+    <Route path="/planner/dashboard" element={<PlannerDashboard />} />
+    <Route path="/planner/artists" element={<PlannerArtists />} />
+    <Route path="/planner/artists/:id" element={<PlannerArtistProfile />} />
+    <Route path="/planner/bookings" element={<PlannerBookingInbox />} />
+    <Route path="/planner/confirmed" element={<PlannerConfirmedBookings />} />
+    <Route path="/planner/favourites" element={<PlannerFavourites />} />
+    <Route path="/planner/calendar" element={<PlannerCalendar />} />
 
     {/* Admin */}
-    <Route path="/admin/messages" element={session ? <AdminMessages /> : <Navigate to="/login" replace />} />
+    <Route path="/admin/messages" element={<AdminMessages />} />
 
     {/* Fallback */}
     <Route path="*" element={<Navigate to="/" replace />} />
