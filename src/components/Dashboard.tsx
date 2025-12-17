@@ -52,6 +52,11 @@ export default function Dashboard() {
           return;
         }
 
+        if (profileData.role === 'artist') {
+          navigate('/artist/dashboard');
+          return;
+        }
+
         setProfile(profileData);
         setLoading(false);
       } catch (err) {
