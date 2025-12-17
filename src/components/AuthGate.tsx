@@ -1,10 +1,9 @@
 // src/components/AuthGate.tsx
-import { useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { useEffect, useState } from "react";
+import { Navigate } from "react-router-dom";
+import { supabase } from "../lib/supabase";
 
 export default function AuthGate() {
-  const [loading, setLoading] = useState(true);
   const [redirect, setRedirect] = useState<string | null>(null);
 
   useEffect(() => {
@@ -13,56 +12,55 @@ export default function AuthGate() {
         data: { session },
       } = await supabase.auth.getSession();
 
-      // 1. Not authenticated
+      // Not authenticated
       if (!session?.user) {
-        setRedirect('/login');
-        setLoading(false);
+        setRedirect("/login");
         return;
       }
 
-      // 2. Check profile
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', session.user.id)
+      const userId = session.user.id;
+      const email = session.user.email;
+
+      // Fetch profile
+      let { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", userId)
         .maybeSingle();
 
-      if (error) {
-        console.error('Profile check failed:', error);
-        setRedirect('/login');
-        setLoading(false);
-        return;
-      }
-
-      // 3. No profile → force creation
+      // Auto-repair missing profile
       if (!profile) {
-        setRedirect('/create-profile');
-        setLoading(false);
+        await supabase.from("profiles").insert({
+          id: userId,
+          email,
+          role: "planner",
+          name: "",
+          agreed_terms: false,
+        });
+
+        setRedirect("/create-profile");
         return;
       }
 
-      // 4. Route by role
-      switch (profile.role) {
-        case 'planner':
-          setRedirect('/planner/dashboard');
-          break;
-        case 'artist':
-          setRedirect('/dashboard');
-          break;
-        case 'admin':
-          setRedirect('/admin');
-          break;
-        default:
-          setRedirect('/login');
+      // Route by role
+      if (profile.role === "admin") {
+        setRedirect("/admin");
+        return;
       }
 
-      setLoading(false);
+      if (profile.role === "artist") {
+        setRedirect("/dashboard");
+        return;
+      }
+
+      // default planner
+      setRedirect("/planner/dashboard");
     };
 
     run();
   }, []);
 
-  if (loading || !redirect) {
+  if (!redirect) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <p className="text-white">Checking account…</p>
