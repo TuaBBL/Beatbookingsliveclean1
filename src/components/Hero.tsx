@@ -1,11 +1,13 @@
 import { Artist } from "../data/mockArtists";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 interface HeroProps {
   artists?: Artist[];
 }
 
 export default function Hero({ artists = [] }: HeroProps) {
+  const navigate = useNavigate();
+
   const safeArtists = Array.isArray(artists) ? artists : [];
   const loopArtists = safeArtists.length > 0 ? [...safeArtists, ...safeArtists] : [];
 
@@ -34,8 +36,9 @@ export default function Hero({ artists = [] }: HeroProps) {
       </div>
 
       {/* Floating artist rows */}
-      {Array.isArray(loopArtists) && loopArtists.length > 0 && (
+      {loopArtists.length > 0 && (
         <div className="relative z-0 space-y-10 opacity-90">
+          {/* Row 1 */}
           <div className="overflow-hidden">
             <div className="flex animate-marquee-left gap-6">
               {loopArtists.map((artist, index) => (
@@ -60,6 +63,7 @@ export default function Hero({ artists = [] }: HeroProps) {
             </div>
           </div>
 
+          {/* Row 2 */}
           <div className="overflow-hidden">
             <div className="flex animate-marquee-right gap-6">
               {loopArtists.map((artist, index) => (
@@ -99,12 +103,13 @@ export default function Hero({ artists = [] }: HeroProps) {
         </p>
 
         <div className="mt-10 flex justify-center">
-          <Link
-            to="/auth-gate"
+          <button
+            type="button"
+            onClick={() => navigate("/login")}
             className="px-10 py-4 rounded-lg bg-neon-red text-white font-bold text-lg hover:bg-neon-red/90 transition shadow-[0_0_25px_rgba(255,45,45,0.5)] hover:shadow-[0_0_35px_rgba(255,45,45,0.7)]"
           >
             Check it out
-          </Link>
+          </button>
         </div>
       </div>
     </section>
