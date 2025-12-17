@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import Header from '../Header';
 import Footer from '../Footer';
 import EditArtistProfileModal from './EditArtistProfileModal';
-import { MapPin, Music, Tag, Star, Award, Edit } from 'lucide-react';
+import BookingRequestModal from './BookingRequestModal';
+import { MapPin, Music, Star, Award, Edit, Instagram, Youtube, Facebook, Radio } from 'lucide-react';
 
 interface Profile {
   id: string;
@@ -29,11 +30,14 @@ interface ArtistProfile {
 
 export default function ArtistProfilePage() {
   const { userId } = useParams<{ userId: string }>();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [artistProfile, setArtistProfile] = useState<ArtistProfile | null>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [socialLinks, setSocialLinks] = useState<any[]>([]);
 
   useEffect(() => {
     loadData();
@@ -54,14 +58,24 @@ export default function ArtistProfilePage() {
       setProfile(profileData);
 
       if (profileData) {
-        const { data: artistData, error: artistError } = await supabase
-          .from('artist_profiles')
-          .select('*')
-          .eq('user_id', userId)
-          .maybeSingle();
+        const [artistRes, socialRes] = await Promise.all([
+          supabase
+            .from('artist_profiles')
+            .select('*')
+            .eq('user_id', userId)
+            .maybeSingle(),
+          supabase
+            .from('artist_social_links')
+            .select('*')
+            .eq('artist_id', userId)
+        ]);
 
-        if (artistError) throw artistError;
-        setArtistProfile(artistData);
+        if (artistRes.error) throw artistRes.error;
+        setArtistProfile(artistRes.data);
+
+        if (socialRes.data) {
+          setSocialLinks(socialRes.data);
+        }
       }
     } catch (err) {
       console.error('Error loading artist profile:', err);
@@ -211,20 +225,53 @@ export default function ArtistProfilePage() {
                 </div>
               </div>
 
+              {socialLinks.length > 0 && (
+                <div className="bg-neutral-800 rounded-lg p-6 border border-neutral-700">
+                  <h2 className="text-xl font-bold mb-4">Social Links</h2>
+                  <div className="flex flex-wrap gap-3">
+                    {socialLinks.map((link) => {
+                      const getIcon = (platform: string) => {
+                        switch (platform) {
+                          case 'instagram': return <Instagram className="w-5 h-5" />;
+                          case 'youtube': return <Youtube className="w-5 h-5" />;
+                          case 'facebook': return <Facebook className="w-5 h-5" />;
+                          case 'soundcloud': return <Radio className="w-5 h-5" />;
+                          case 'spotify': return <Music className="w-5 h-5" />;
+                          default: return <Music className="w-5 h-5" />;
+                        }
+                      };
+
+                      return (
+                        <a
+                          key={link.id}
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 px-4 py-2 bg-neutral-700 hover:bg-neutral-600 rounded-lg transition-colors"
+                        >
+                          {getIcon(link.platform)}
+                          <span className="capitalize">{link.platform}</span>
+                        </a>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {!isOwner && (
                 <div className="bg-neutral-800 rounded-lg p-6 border border-neutral-700">
                   <h2 className="text-xl font-bold mb-4">Interested in booking?</h2>
                   <button
                     onClick={() => {
                       if (!currentUser) {
-                        alert('Please log in to request a booking');
+                        navigate('/login');
                         return;
                       }
-                      alert('Booking request feature coming soon!');
+                      setIsBookingModalOpen(true);
                     }}
                     className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
                   >
-                    Request Booking
+                    {currentUser ? 'Request Booking' : 'Sign In to Book'}
                   </button>
                 </div>
               )}
@@ -235,12 +282,22 @@ export default function ArtistProfilePage() {
 
       <Footer />
 
-      {artistProfile && (
+      {artistProfile && profile && (
         <EditArtistProfileModal
           isOpen={isEditModalOpen}
           onClose={() => setIsEditModalOpen(false)}
           artistProfile={artistProfile}
+          profile={profile}
           onSave={handleSave}
+        />
+      )}
+
+      {artistProfile && (
+        <BookingRequestModal
+          isOpen={isBookingModalOpen}
+          onClose={() => setIsBookingModalOpen(false)}
+          artistId={artistProfile.id}
+          artistName={artistProfile.stage_name || profile?.name || 'Artist'}
         />
       )}
     </div>
