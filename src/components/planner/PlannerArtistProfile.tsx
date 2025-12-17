@@ -4,7 +4,7 @@ import { supabase } from "../../lib/supabase";
 import Header from "../Header";
 import Footer from "../Footer";
 import PlannerProfileMenu from "./PlannerProfileMenu";
-import { Music, Heart, MessageSquare, X } from "lucide-react";
+import { Music, Heart, MessageSquare, X, ArrowLeft } from "lucide-react";
 import { mockArtists, Artist } from "../../data/mockArtists";
 
 export default function PlannerArtistProfile() {
@@ -118,12 +118,22 @@ export default function PlannerArtistProfile() {
       <main className="flex-1 px-6 py-12">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between mb-6">
-            <Link
-              to="/planner/artists"
-              className="text-gray-400 hover:text-white transition"
-            >
-              ← Back to Artists
-            </Link>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => navigate('/planner/dashboard')}
+                className="flex items-center gap-2 text-gray-400 hover:text-white transition"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                Back to Dashboard
+              </button>
+              <span className="text-gray-600">|</span>
+              <Link
+                to="/planner/artists"
+                className="text-gray-400 hover:text-white transition text-sm"
+              >
+                Back to Artists
+              </Link>
+            </div>
             <PlannerProfileMenu />
           </div>
 

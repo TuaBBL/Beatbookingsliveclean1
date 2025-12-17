@@ -5,7 +5,7 @@ import Header from '../Header';
 import Footer from '../Footer';
 import EditArtistProfileModal from './EditArtistProfileModal';
 import BookingRequestModal from './BookingRequestModal';
-import { MapPin, Music, Star, Award, Edit, Instagram, Youtube, Facebook, Radio } from 'lucide-react';
+import { MapPin, Music, Star, Award, Edit, Instagram, Youtube, Facebook, Radio, ArrowLeft } from 'lucide-react';
 
 interface Profile {
   id: string;
@@ -150,6 +150,15 @@ export default function ArtistProfilePage() {
 
       <main className="flex-1 px-6 py-12">
         <div className="max-w-4xl mx-auto">
+          {isOwner && (
+            <button
+              onClick={() => navigate('/artist/dashboard')}
+              className="flex items-center gap-2 text-gray-400 hover:text-white mb-6 transition"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              Back to Dashboard
+            </button>
+          )}
           <div className="bg-neutral-900 rounded-lg border border-neutral-800 overflow-hidden">
             <div className="relative h-48 bg-gradient-to-r from-blue-600 to-blue-800">
               <div className="absolute -bottom-16 left-8">
