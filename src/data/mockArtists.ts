@@ -15,6 +15,8 @@ export interface Artist {
     spotify?: boolean;
   };
   trending?: number;
+  isDemo?: boolean;
+  bio?: string;
 }
 
 export const mockArtists: Artist[] = [

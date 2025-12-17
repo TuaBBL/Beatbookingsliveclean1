@@ -59,6 +59,7 @@ export default function PlannerArtists() {
           category,
           location,
           bio,
+          type,
           image_url,
           profiles!artist_profiles_user_id_fkey(image_url)
         `);
@@ -68,6 +69,8 @@ export default function PlannerArtists() {
         const city = locationParts[0] || '';
         const state = locationParts[1] || '';
         const country = locationParts[2] || 'Australia';
+
+        const isDemo = profile.type === 'demo';
 
         return {
           id: profile.user_id || profile.id,
@@ -79,6 +82,8 @@ export default function PlannerArtists() {
           country,
           imageUrl: profile.image_url || profile.profiles?.image_url || '',
           socials: {},
+          isDemo,
+          bio: profile.bio,
         };
       });
 

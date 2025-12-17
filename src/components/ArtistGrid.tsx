@@ -4,9 +4,10 @@ import { ArtistCard } from './ArtistCard';
 interface ArtistGridProps {
   artists: Artist[];
   showRank?: boolean;
+  onFavouriteChange?: () => void;
 }
 
-export function ArtistGrid({ artists, showRank = false }: ArtistGridProps) {
+export function ArtistGrid({ artists, showRank = false, onFavouriteChange }: ArtistGridProps) {
   if (!Array.isArray(artists)) return null;
 
   return (
@@ -16,6 +17,7 @@ export function ArtistGrid({ artists, showRank = false }: ArtistGridProps) {
           key={artist.id}
           artist={artist}
           showRank={showRank}
+          onFavouriteChange={onFavouriteChange}
         />
       ))}
     </div>

@@ -1,24 +1,15 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
+import { Artist } from "../../data/mockArtists";
+import { ArtistGrid } from "../ArtistGrid";
 import Header from "../Header";
 import Footer from "../Footer";
 import PlannerProfileMenu from "./PlannerProfileMenu";
-import { Heart, Music, X } from "lucide-react";
-
-interface Favourite {
-  id: string;
-  artist_id: string;
-  artist_profiles: {
-    id: string;
-    stage_name: string;
-    genre: string;
-    location: string;
-  };
-}
+import { Heart } from "lucide-react";
 
 export default function PlannerFavourites() {
-  const [favourites, setFavourites] = useState<Favourite[]>([]);
+  const [artists, setArtists] = useState<Artist[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,30 +23,58 @@ export default function PlannerFavourites() {
 
       const { data, error } = await supabase
         .from("favourites")
-        .select("*, artist_profiles(id, stage_name, genre, location)")
+        .select(`
+          id,
+          artist_id,
+          artist_profiles(
+            id,
+            user_id,
+            stage_name,
+            genre,
+            category,
+            location,
+            bio,
+            type,
+            image_url,
+            profiles(image_url)
+          )
+        `)
         .eq("planner_id", user.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setFavourites(data || []);
+
+      const mappedArtists: Artist[] = (data || [])
+        .filter((fav: any) => fav.artist_profiles)
+        .map((fav: any) => {
+          const profile = fav.artist_profiles;
+          const locationParts = (profile.location || '').split(',').map((s: string) => s.trim());
+          const city = locationParts[0] || '';
+          const state = locationParts[1] || '';
+          const country = locationParts[2] || 'Australia';
+
+          const isDemo = profile.type === 'demo';
+
+          return {
+            id: profile.user_id || profile.id,
+            name: profile.stage_name || 'Unknown Artist',
+            role: profile.category || 'DJ',
+            genre: profile.genre || 'Electronic',
+            city,
+            state,
+            country,
+            imageUrl: profile.image_url || profile.profiles?.image_url || '',
+            socials: {},
+            isDemo,
+            bio: profile.bio,
+          };
+        });
+
+      setArtists(mappedArtists);
     } catch (error) {
       console.error("Error loading favourites:", error);
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function removeFavourite(favouriteId: string) {
-    try {
-      const { error } = await supabase
-        .from("favourites")
-        .delete()
-        .eq("id", favouriteId);
-
-      if (error) throw error;
-      loadFavourites();
-    } catch (error) {
-      console.error("Error removing favourite:", error);
     }
   }
 
@@ -83,7 +102,7 @@ export default function PlannerFavourites() {
 
           {loading ? (
             <p className="text-gray-400">Loading...</p>
-          ) : favourites.length === 0 ? (
+          ) : artists.length === 0 ? (
             <div className="text-center py-12">
               <Heart className="w-16 h-16 text-gray-600 mx-auto mb-4" />
               <p className="text-gray-400 mb-4">No favourite artists yet</p>
@@ -95,38 +114,7 @@ export default function PlannerFavourites() {
               </Link>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {favourites.map((favourite) => (
-                <div
-                  key={favourite.id}
-                  className="bg-neutral-900 rounded-lg border border-neutral-800 overflow-hidden group relative"
-                >
-                  <button
-                    onClick={() => removeFavourite(favourite.id)}
-                    className="absolute top-3 right-3 z-10 p-2 bg-black/70 hover:bg-red-600 rounded-full transition"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-
-                  <Link to={`/planner/artists/${favourite.artist_profiles.id}`}>
-                    <div className="h-48 bg-neutral-800 flex items-center justify-center">
-                      <Music className="w-16 h-16 text-neutral-700" />
-                    </div>
-                    <div className="p-4">
-                      <h3 className="text-xl font-bold mb-1 group-hover:text-orange-500 transition">
-                        {favourite.artist_profiles.stage_name}
-                      </h3>
-                      <p className="text-sm text-gray-400 mb-2">
-                        {favourite.artist_profiles.genre}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {favourite.artist_profiles.location}
-                      </p>
-                    </div>
-                  </Link>
-                </div>
-              ))}
-            </div>
+            <ArtistGrid artists={artists} onFavouriteChange={loadFavourites} />
           )}
         </div>
       </main>

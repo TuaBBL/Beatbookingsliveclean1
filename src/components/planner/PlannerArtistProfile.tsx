@@ -47,6 +47,7 @@ export default function PlannerArtistProfile() {
           category,
           location,
           bio,
+          type,
           image_url,
           profiles!artist_profiles_user_id_fkey(image_url)
         `)
@@ -66,6 +67,7 @@ export default function PlannerArtistProfile() {
             category,
             location,
             bio,
+            type,
             image_url,
             profiles!artist_profiles_user_id_fkey(image_url)
           `)
@@ -83,6 +85,8 @@ export default function PlannerArtistProfile() {
         const state = locationParts[1] || '';
         const country = locationParts[2] || 'Australia';
 
+        const isDemo = artistProfile.type === 'demo';
+
         setArtist({
           id: artistProfile.user_id || artistProfile.id,
           name: artistProfile.stage_name || 'Unknown Artist',
@@ -93,6 +97,8 @@ export default function PlannerArtistProfile() {
           country,
           imageUrl: artistProfile.image_url || artistProfile.profiles?.image_url || '',
           socials: {},
+          isDemo,
+          bio: artistProfile.bio,
         });
       } else {
         setArtist(null);
@@ -245,7 +251,15 @@ export default function PlannerArtistProfile() {
                 )}
               </div>
 
-              {!isLoggedIn && (
+              {artist.isDemo && (
+                <div className="mb-6 p-4 bg-neutral-800 border border-yellow-700/50 rounded-lg">
+                  <p className="text-yellow-500 text-center font-semibold">
+                    This is a demo artist profile. Booking is not available.
+                  </p>
+                </div>
+              )}
+
+              {!isLoggedIn && !artist.isDemo && (
                 <div className="mb-6 p-4 bg-neutral-800 border border-neutral-700 rounded-lg">
                   <p className="text-gray-300 text-center">
                     <Link to="/login" className="text-orange-500 hover:text-orange-400 font-semibold">
@@ -258,10 +272,20 @@ export default function PlannerArtistProfile() {
 
               <button
                 onClick={handleBookingClick}
-                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-bold transition"
+                disabled={artist.isDemo}
+                title={artist.isDemo ? "Demo artist – booking disabled" : undefined}
+                className={`w-full flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-bold transition ${
+                  artist.isDemo
+                    ? "bg-neutral-700 text-neutral-500 cursor-not-allowed"
+                    : "bg-orange-600 hover:bg-orange-700 text-white"
+                }`}
               >
                 <MessageSquare className="w-5 h-5" />
-                {isLoggedIn ? 'Request Booking' : 'Sign in to Request Booking'}
+                {artist.isDemo
+                  ? 'Booking Not Available'
+                  : isLoggedIn
+                  ? 'Request Booking'
+                  : 'Sign in to Request Booking'}
               </button>
             </div>
           </div>
