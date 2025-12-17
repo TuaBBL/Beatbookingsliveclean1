@@ -26,6 +26,7 @@ import PlannerFavourites from './components/planner/PlannerFavourites';
 import PlannerCalendar from './components/planner/PlannerCalendar';
 import AdminMessages from './components/AdminMessages';
 import AdminDashboard from './components/AdminDashboard';
+import ArtistProfilePage from './components/artist/ArtistProfilePage';
 
 export default function App() {
   const [session, setSession] = useState<any>(null);
@@ -77,6 +78,7 @@ export default function App() {
     <Route path="/terms" element={<Terms />} />
     <Route path="/privacy" element={<Privacy />} />
     <Route path="/login" element={<Login />} />
+    <Route path="/artists/:userId" element={<ArtistProfilePage />} />
 
     {/* Auth */}
     <Route path="/auth-callback" element={<AuthCallback />} />
