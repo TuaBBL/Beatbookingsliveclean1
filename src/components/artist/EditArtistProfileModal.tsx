@@ -107,6 +107,10 @@ export default function EditArtistProfileModal({
         .update(profileUpdates)
         .eq('id', user.id);
 
+      const location = [formData.city, formData.state, formData.country]
+        .filter(Boolean)
+        .join(', ') || 'Unknown';
+
       if (artistProfile?.id) {
         await supabase
           .from('artist_profiles')
@@ -116,6 +120,7 @@ export default function EditArtistProfileModal({
             genre: formData.genre,
             category: formData.category,
             type: formData.type,
+            location: location,
           })
           .eq('id', artistProfile.id);
       } else {
@@ -128,6 +133,7 @@ export default function EditArtistProfileModal({
             genre: formData.genre,
             category: formData.category,
             type: formData.type,
+            location: location,
           });
       }
 
