@@ -138,6 +138,7 @@ export default function EditProfileModal({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         console.error("No authenticated user found");
+        alert("Not authenticated. Please log in again.");
         setLoading(false);
         return;
       }
@@ -148,6 +149,7 @@ export default function EditProfileModal({
         const uploadedUrl = await uploadImage();
         if (!uploadedUrl) {
           console.error("Image upload failed - no URL returned");
+          alert("Failed to upload image. Please try again.");
           setLoading(false);
           return;
         }
@@ -155,6 +157,7 @@ export default function EditProfileModal({
         imageUrl = uploadedUrl;
       }
 
+      console.log("User ID:", user.id);
       console.log("Updating profile with data:", {
         name: profile.name,
         country: profile.country,
@@ -178,20 +181,28 @@ export default function EditProfileModal({
 
       if (error) {
         console.error("Profile update error:", error);
+        alert(`Failed to save profile: ${error.message}`);
         throw error;
       }
 
       console.log("Profile updated successfully:", data);
+
+      if (!data || data.length === 0) {
+        console.warn("No data returned from update - this may indicate no rows were matched");
+        alert("Profile update completed but no rows were updated. Please check your profile exists.");
+      }
 
       setImageFile(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
 
+      alert("Profile saved successfully!");
       onSave();
       onClose();
     } catch (error) {
       console.error("Error saving profile:", error);
+      alert(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
