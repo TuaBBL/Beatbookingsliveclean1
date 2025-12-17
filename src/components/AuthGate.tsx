@@ -12,48 +12,40 @@ export default function AuthGate() {
         data: { session },
       } = await supabase.auth.getSession();
 
-      // Not authenticated
+      // 1️⃣ Not authenticated
       if (!session?.user) {
         setRedirect("/login");
         return;
       }
 
       const userId = session.user.id;
-      const email = session.user.email;
 
-      // Fetch profile
-      let { data: profile } = await supabase
+      // 2️⃣ Check profile existence + role
+      const { data: profile, error } = await supabase
         .from("profiles")
         .select("role")
         .eq("id", userId)
         .maybeSingle();
 
-      // Auto-repair missing profile
-      if (!profile) {
-        await supabase.from("profiles").insert({
-          id: userId,
-          email,
-          role: "planner",
-          name: "",
-          agreed_terms: false,
-        });
+      if (error) {
+        console.error("AuthGate profile error:", error);
+        setRedirect("/login");
+        return;
+      }
 
+      // 3️⃣ No profile → onboarding
+      if (!profile) {
         setRedirect("/create-profile");
         return;
       }
 
-      // Route by role
-      if (profile.role === "admin") {
-        setRedirect("/admin");
-        return;
-      }
-
+      // 4️⃣ Route by role (NO ADMIN HERE)
       if (profile.role === "artist") {
         setRedirect("/dashboard");
         return;
       }
 
-      // default planner
+      // default: planner
       setRedirect("/planner/dashboard");
     };
 
