@@ -1,81 +1,30 @@
-import { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { Search } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/logo-beatbookingslive.png";
 
 export default function Header() {
-  const [scrolled, setScrolled] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 10);
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/planner/artists?search=${encodeURIComponent(searchQuery)}`);
-    }
-  };
-
   return (
-    <header
-      className={`
-        sticky top-0 z-30
-        transition-all duration-300
-        ${scrolled
-          ? 'bg-black/95 backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.8)]'
-          : 'bg-black'
-        }
-      `}
-    >
-      <div className="flex items-center justify-between gap-2 md:gap-6 px-4 md:px-6 py-4 md:py-6">
+    <header className="sticky top-0 z-30 bg-black border-b border-gray-800">
+      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
         {/* Logo */}
-        <Link to="/about" className="flex items-center flex-shrink-0">
+        <Link to="/" className="flex items-center">
           <img
             src={logo}
             alt="BeatBookingsLive"
-            className="h-16 md:h-28 object-contain cursor-pointer drop-shadow-[0_0_22px_rgba(57,255,20,0.75)] transition-transform hover:scale-105"
+            className="h-14 object-contain"
           />
         </Link>
 
-        {/* Search Bar */}
-        <form onSubmit={handleSearch} className="flex-1 max-w-2xl mx-2 md:mx-4">
-          <div className="relative">
-            <Search className="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search artists..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 md:pl-12 pr-3 md:pr-4 py-2 md:py-3 bg-neutral-900 border border-neutral-700 rounded-lg text-white text-sm md:text-base placeholder-gray-500 focus:outline-none focus:border-neon-green transition"
-            />
-          </div>
-        </form>
-
-        {/* Domain */}
-        <div className="hidden sm:block text-xs md:text-base text-gray-300 tracking-wide flex-shrink-0">
-          BeatBookingsLive.com
-        </div>
+        {/* CTA */}
+        <button
+          type="button"
+          onClick={() => navigate("/login")}
+          className="bg-neon-red text-white px-5 py-2 rounded-lg font-semibold hover:bg-neon-red/90 transition"
+        >
+          Check it out now
+        </button>
       </div>
-
-      {/* Red divider */}
-      <div
-        className={`
-          h-px w-full bg-neon-red
-          transition-all duration-300
-          ${scrolled
-            ? 'shadow-[0_0_15px_rgba(255,45,45,0.9)]'
-            : 'shadow-[0_0_10px_rgba(255,45,45,0.7)]'
-          }
-        `}
-      />
     </header>
   );
 }
