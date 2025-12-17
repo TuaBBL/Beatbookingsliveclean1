@@ -24,7 +24,6 @@ type Message = {
 
 type Profile = {
   id: string;
-  is_admin: boolean;
   last_active_at: string | null;
 };
 
@@ -73,21 +72,17 @@ export default function AdminMessages() {
         return;
       }
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('is_admin')
-        .eq('id', user.id)
-        .maybeSingle();
+      const isAdmin = user.email === 'genetua@gtrax.net';
 
-      if (!profile?.is_admin) {
-        navigate('/');
+      if (!isAdmin) {
+        navigate('/planner/dashboard');
         return;
       }
 
       setLoading(false);
     } catch (err) {
       console.error('Error checking admin access:', err);
-      navigate('/');
+      navigate('/planner/dashboard');
     }
   };
 
@@ -137,7 +132,7 @@ export default function AdminMessages() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('id, is_admin, last_active_at')
+        .select('id, last_active_at')
         .eq('id', selectedUserId)
         .maybeSingle();
 
