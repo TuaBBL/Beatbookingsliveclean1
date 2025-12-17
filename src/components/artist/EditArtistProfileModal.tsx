@@ -35,7 +35,6 @@ export default function EditArtistProfileModal({
     bio: artistProfile?.bio || '',
     genre: artistProfile?.genre || '',
     category: artistProfile?.category || '',
-    location: artistProfile?.location || '',
     type: artistProfile?.type || 'real',
   });
 
@@ -116,7 +115,6 @@ export default function EditArtistProfileModal({
             bio: formData.bio,
             genre: formData.genre,
             category: formData.category,
-            location: formData.location,
             type: formData.type,
           })
           .eq('id', artistProfile.id);
@@ -129,7 +127,6 @@ export default function EditArtistProfileModal({
             bio: formData.bio,
             genre: formData.genre,
             category: formData.category,
-            location: formData.location,
             type: formData.type,
           });
       }
@@ -162,13 +159,13 @@ export default function EditArtistProfileModal({
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
+      const { data } = supabase.storage
         .from('media')
         .getPublicUrl(fileName);
 
       await supabase
         .from('profiles')
-        .update({ image_url: publicUrl })
+        .update({ image_url: data.publicUrl })
         .eq('id', user.id);
 
       alert('Profile image updated!');
@@ -205,7 +202,7 @@ export default function EditArtistProfileModal({
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
+      const { data } = supabase.storage
         .from('media')
         .getPublicUrl(fileName);
 
@@ -214,7 +211,7 @@ export default function EditArtistProfileModal({
         .insert({
           artist_id: artistProfile.id,
           media_type: type,
-          url: publicUrl,
+          url: data.publicUrl,
         });
 
       loadMediaAndSocial();
@@ -435,21 +432,6 @@ export default function EditArtistProfileModal({
 
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Location
-                </label>
-                <input
-                  type="text"
-                  value={formData.location}
-                  onChange={(e) =>
-                    setFormData({ ...formData, location: e.target.value })
-                  }
-                  className="w-full px-4 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
                   Genre
                 </label>
                 <input
@@ -467,15 +449,28 @@ export default function EditArtistProfileModal({
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   Category
                 </label>
-                <input
-                  type="text"
+                <select
                   value={formData.category}
                   onChange={(e) =>
                     setFormData({ ...formData, category: e.target.value })
                   }
-                  className="w-full px-4 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+                  className="w-full px-4 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white focus:outline-none focus:border-blue-500"
                   required
-                />
+                >
+                  <option value="">Select category...</option>
+                  <option value="DJ">DJ</option>
+                  <option value="Live Music">Live Music</option>
+                  <option value="Band">Band</option>
+                  <option value="Producer">Producer</option>
+                  <option value="Vocalist">Vocalist</option>
+                  <option value="Instrumentalist">Instrumentalist</option>
+                  <option value="Electronic">Electronic</option>
+                  <option value="Hip Hop">Hip Hop</option>
+                  <option value="Rock">Rock</option>
+                  <option value="Jazz">Jazz</option>
+                  <option value="Classical">Classical</option>
+                  <option value="Other">Other</option>
+                </select>
               </div>
 
               <div>

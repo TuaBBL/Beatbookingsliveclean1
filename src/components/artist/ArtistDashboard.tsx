@@ -273,6 +273,23 @@ export default function ArtistDashboard() {
                 </Link>
 
                 <Link
+                  to="/planner/artists"
+                  className="bg-neutral-900 hover:bg-neutral-800 p-8 rounded-lg border-2 border-neutral-700 hover:border-purple-500 shadow-lg hover:shadow-[0_0_20px_rgba(168,85,247,0.2)] transition-all duration-200 group"
+                >
+                  <div className="flex flex-col items-center text-center gap-3">
+                    <div className="p-3 bg-purple-500/10 rounded-lg">
+                      <User className="w-8 h-8 text-purple-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold mb-1">Browse Artists</h3>
+                      <p className="text-gray-400 text-sm">
+                        Discover other artists
+                      </p>
+                    </div>
+                  </div>
+                </Link>
+
+                <Link
                   to={artistProfile ? `/artists/${profile.id}` : '#'}
                   onClick={(e) => {
                     if (!artistProfile) {

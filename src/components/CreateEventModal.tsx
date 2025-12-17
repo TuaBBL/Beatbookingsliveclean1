@@ -250,11 +250,11 @@ export default function CreateEventModal({ event, profile, onClose, onSuccess }:
       throw uploadError;
     }
 
-    const { data: { publicUrl } } = supabase.storage
+    const { data } = supabase.storage
       .from('media')
       .getPublicUrl(filePath);
 
-    return publicUrl;
+    return data.publicUrl;
   };
 
   const uploadMediaFiles = async (eventId: string) => {
@@ -273,7 +273,7 @@ export default function CreateEventModal({ event, profile, onClose, onSuccess }:
           continue;
         }
 
-        const { data: { publicUrl } } = supabase.storage
+        const { data } = supabase.storage
           .from('media')
           .getPublicUrl(filePath);
 
@@ -282,7 +282,7 @@ export default function CreateEventModal({ event, profile, onClose, onSuccess }:
           .insert([{
             event_id: eventId,
             media_type: media.type,
-            url: publicUrl
+            url: data.publicUrl
           }]);
       }
     }

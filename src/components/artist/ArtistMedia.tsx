@@ -86,7 +86,7 @@ export default function ArtistMedia() {
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
+      const { data } = supabase.storage
         .from('media')
         .getPublicUrl(filePath);
 
@@ -95,7 +95,7 @@ export default function ArtistMedia() {
         .insert({
           artist_id: artistProfileId,
           media_type: isVideo ? 'video' : 'image',
-          url: publicUrl,
+          url: data.publicUrl,
         });
 
       if (insertError) throw insertError;

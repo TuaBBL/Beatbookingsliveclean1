@@ -107,11 +107,11 @@ export default function EditProfileModal({
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
+      const { data } = supabase.storage
         .from("media")
         .getPublicUrl(filePath);
 
-      return publicUrl;
+      return data.publicUrl;
     } catch (error) {
       console.error("Error uploading image:", error);
       alert("Failed to upload image");
