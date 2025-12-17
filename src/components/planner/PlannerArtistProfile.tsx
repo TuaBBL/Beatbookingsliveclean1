@@ -4,7 +4,8 @@ import { supabase } from "../../lib/supabase";
 import Header from "../Header";
 import Footer from "../Footer";
 import PlannerProfileMenu from "./PlannerProfileMenu";
-import { Music, Heart, MessageSquare, X, ArrowLeft } from "lucide-react";
+import BookingRequestModal from "../artist/BookingRequestModal";
+import { Music, Heart, MessageSquare, ArrowLeft } from "lucide-react";
 import { mockArtists, Artist } from "../../data/mockArtists";
 
 export default function PlannerArtistProfile() {
@@ -14,11 +15,6 @@ export default function PlannerArtistProfile() {
   const [loading, setLoading] = useState(true);
   const [isFavourite, setIsFavourite] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
-  const [bookingMessage, setBookingMessage] = useState("");
-  const [eventDate, setEventDate] = useState("");
-  const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime] = useState("");
-  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     loadArtist();
@@ -27,10 +23,46 @@ export default function PlannerArtistProfile() {
 
   async function loadArtist() {
     try {
-      const foundArtist = mockArtists.find((a) => a.id === id);
-      setArtist(foundArtist || null);
+      const { data: artistProfile } = await supabase
+        .from('artist_profiles')
+        .select(`
+          id,
+          user_id,
+          stage_name,
+          genre,
+          category,
+          location,
+          bio,
+          profiles!artist_profiles_user_id_fkey(image_url)
+        `)
+        .eq('user_id', id)
+        .maybeSingle();
+
+      if (artistProfile) {
+        const locationParts = (artistProfile.location || '').split(',').map((s: string) => s.trim());
+        const city = locationParts[0] || '';
+        const state = locationParts[1] || '';
+        const country = locationParts[2] || 'Australia';
+
+        setArtist({
+          id: artistProfile.user_id,
+          name: artistProfile.stage_name || 'Unknown Artist',
+          role: artistProfile.category || 'DJ',
+          genre: artistProfile.genre || 'Electronic',
+          city,
+          state,
+          country,
+          imageUrl: artistProfile.profiles?.image_url || '',
+          socials: {},
+        });
+      } else {
+        const foundArtist = mockArtists.find((a) => a.id === id);
+        setArtist(foundArtist || null);
+      }
     } catch (error) {
       console.error("Error loading artist:", error);
+      const foundArtist = mockArtists.find((a) => a.id === id);
+      setArtist(foundArtist || null);
     } finally {
       setLoading(false);
     }
@@ -77,13 +109,7 @@ export default function PlannerArtistProfile() {
     }
   }
 
-  async function handleBookingRequest() {
-    if (!bookingMessage.trim() || !eventDate || !startTime || !endTime) {
-      alert("Please fill in all fields");
-      return;
-    }
-
-    alert("Booking functionality is available for real artist profiles. These are demo artists for browsing.");
+  function handleBookingSuccess() {
     setShowBookingModal(false);
   }
 
@@ -181,73 +207,13 @@ export default function PlannerArtistProfile() {
         </div>
       </main>
 
-      {showBookingModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-          <div className="bg-neutral-900 rounded-lg max-w-lg w-full p-6 border border-neutral-800">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold">Request Booking</h2>
-              <button
-                onClick={() => setShowBookingModal(false)}
-                className="text-gray-400 hover:text-white transition"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Event Date</label>
-                <input
-                  type="date"
-                  value={eventDate}
-                  onChange={(e) => setEventDate(e.target.value)}
-                  className="w-full px-4 py-2 bg-neutral-800 border border-neutral-700 rounded-lg focus:outline-none focus:border-orange-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Start Time</label>
-                  <input
-                    type="time"
-                    value={startTime}
-                    onChange={(e) => setStartTime(e.target.value)}
-                    className="w-full px-4 py-2 bg-neutral-800 border border-neutral-700 rounded-lg focus:outline-none focus:border-orange-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">End Time</label>
-                  <input
-                    type="time"
-                    value={endTime}
-                    onChange={(e) => setEndTime(e.target.value)}
-                    className="w-full px-4 py-2 bg-neutral-800 border border-neutral-700 rounded-lg focus:outline-none focus:border-orange-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Message</label>
-                <textarea
-                  value={bookingMessage}
-                  onChange={(e) => setBookingMessage(e.target.value)}
-                  placeholder="Introduce yourself and describe your event..."
-                  rows={6}
-                  className="w-full px-4 py-2 bg-neutral-800 border border-neutral-700 rounded-lg focus:outline-none focus:border-orange-500 resize-none"
-                />
-              </div>
-
-              <button
-                onClick={handleBookingRequest}
-                disabled={submitting}
-                className="w-full px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-bold transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {submitting ? "Sending..." : "Send Booking Request"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <BookingRequestModal
+        isOpen={showBookingModal}
+        onClose={() => setShowBookingModal(false)}
+        artistId={id || ''}
+        artistName={artist?.name || ''}
+        onSuccess={handleBookingSuccess}
+      />
 
       <Footer />
     </div>

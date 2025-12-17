@@ -10,10 +10,11 @@ import { supabase } from "../../lib/supabase";
 
 export default function PlannerArtists() {
   const [searchParams] = useSearchParams();
-  const allArtists: Artist[] = Array.isArray(mockArtists) ? mockArtists : [];
-  const [filteredArtists, setFilteredArtists] = useState<Artist[]>(allArtists);
+  const [allArtists, setAllArtists] = useState<Artist[]>([]);
+  const [filteredArtists, setFilteredArtists] = useState<Artist[]>([]);
   const [initialSearch, setInitialSearch] = useState("");
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const search = searchParams.get("search");
@@ -24,6 +25,7 @@ export default function PlannerArtists() {
 
   useEffect(() => {
     loadUserRole();
+    loadArtists();
   }, []);
 
   const loadUserRole = async () => {
@@ -42,6 +44,55 @@ export default function PlannerArtists() {
       }
     } catch (error) {
       console.error('Error loading user role:', error);
+    }
+  };
+
+  const loadArtists = async () => {
+    try {
+      const { data: artistProfiles } = await supabase
+        .from('artist_profiles')
+        .select(`
+          id,
+          user_id,
+          stage_name,
+          genre,
+          category,
+          location,
+          bio,
+          profiles!artist_profiles_user_id_fkey(image_url)
+        `);
+
+      const realArtists: Artist[] = (artistProfiles || []).map((profile: any) => {
+        const locationParts = (profile.location || '').split(',').map((s: string) => s.trim());
+        const city = locationParts[0] || '';
+        const state = locationParts[1] || '';
+        const country = locationParts[2] || 'Australia';
+
+        return {
+          id: profile.user_id,
+          name: profile.stage_name || 'Unknown Artist',
+          role: profile.category || 'DJ',
+          genre: profile.genre || 'Electronic',
+          city,
+          state,
+          country,
+          imageUrl: profile.profiles?.image_url || '',
+          socials: {},
+        };
+      });
+
+      const mockArtistsList: Artist[] = Array.isArray(mockArtists) ? mockArtists : [];
+      const combined = [...realArtists, ...mockArtistsList];
+
+      setAllArtists(combined);
+      setFilteredArtists(combined);
+    } catch (error) {
+      console.error('Error loading artists:', error);
+      const mockArtistsList: Artist[] = Array.isArray(mockArtists) ? mockArtists : [];
+      setAllArtists(mockArtistsList);
+      setFilteredArtists(mockArtistsList);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -113,7 +164,9 @@ export default function PlannerArtists() {
         <div className="max-w-6xl mx-auto">
           <h1 className="text-4xl font-bold mb-8">Browse Artists</h1>
 
-          {filteredArtists.length === 0 ? (
+          {loading ? (
+            <p className="text-gray-400">Loading artists...</p>
+          ) : filteredArtists.length === 0 ? (
             <div className="bg-neutral-900 rounded-lg border border-neutral-800 p-12 text-center">
               <Music className="w-16 h-16 text-neutral-700 mx-auto mb-4" />
               <p className="text-gray-400 text-lg">No artists found</p>

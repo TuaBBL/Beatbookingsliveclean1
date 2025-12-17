@@ -1,5 +1,5 @@
-import { useState } from 'react';
-
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 import Header from './Header';
 import Hero from './Hero';
 import SearchFilters, { FilterState } from './SearchFilters';
@@ -10,10 +10,62 @@ import Footer from './Footer';
 import { mockArtists, Artist } from '../data/mockArtists';
 
 export default function HomePage() {
-  // HARD SAFETY: mockArtists must always be an array
-  const allArtists: Artist[] = Array.isArray(mockArtists) ? mockArtists : [];
+  const [allArtists, setAllArtists] = useState<Artist[]>([]);
+  const [filteredArtists, setFilteredArtists] = useState<Artist[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [filteredArtists, setFilteredArtists] = useState<Artist[]>(allArtists);
+  useEffect(() => {
+    loadArtists();
+  }, []);
+
+  async function loadArtists() {
+    try {
+      const { data: artistProfiles } = await supabase
+        .from('artist_profiles')
+        .select(`
+          id,
+          user_id,
+          stage_name,
+          genre,
+          category,
+          location,
+          bio,
+          profiles!artist_profiles_user_id_fkey(image_url)
+        `);
+
+      const realArtists: Artist[] = (artistProfiles || []).map((profile: any) => {
+        const locationParts = (profile.location || '').split(',').map((s: string) => s.trim());
+        const city = locationParts[0] || '';
+        const state = locationParts[1] || '';
+        const country = locationParts[2] || 'Australia';
+
+        return {
+          id: profile.user_id,
+          name: profile.stage_name || 'Unknown Artist',
+          role: profile.category || 'DJ',
+          genre: profile.genre || 'Electronic',
+          city,
+          state,
+          country,
+          imageUrl: profile.profiles?.image_url || '',
+          socials: {},
+        };
+      });
+
+      const mockArtistsList: Artist[] = Array.isArray(mockArtists) ? mockArtists : [];
+      const combined = [...realArtists, ...mockArtistsList];
+
+      setAllArtists(combined);
+      setFilteredArtists(combined);
+    } catch (error) {
+      console.error('Error loading artists:', error);
+      const mockArtistsList: Artist[] = Array.isArray(mockArtists) ? mockArtists : [];
+      setAllArtists(mockArtistsList);
+      setFilteredArtists(mockArtistsList);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const handleFilterChange = (filters: FilterState) => {
     let results = [...allArtists];
@@ -84,10 +136,14 @@ export default function HomePage() {
           Featured This Month
         </h2>
 
-        <ArtistGrid
-          artists={allArtists.slice(0, 4)}
-          showRank
-        />
+        {loading ? (
+          <p className="text-gray-400">Loading artists...</p>
+        ) : (
+          <ArtistGrid
+            artists={allArtists.slice(0, 4)}
+            showRank
+          />
+        )}
       </section>
 
       {/* EVENTS SECTION */}
@@ -99,7 +155,11 @@ export default function HomePage() {
           Browse Artists
         </h2>
 
-        <ArtistGrid artists={filteredArtists} />
+        {loading ? (
+          <p className="text-gray-400">Loading artists...</p>
+        ) : (
+          <ArtistGrid artists={filteredArtists} />
+        )}
       </section>
 
       {/* FOOTER */}
