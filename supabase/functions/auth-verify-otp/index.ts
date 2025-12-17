@@ -69,18 +69,20 @@ Deno.serve(async (req) => {
       return json({ error: "Invalid payload" }, 400);
     }
 
+    const normalisedEmail = String(email).trim().toLowerCase();
+
     const supabase = supabaseServiceClient();
     const anon = supabaseAnonClient();
 
     /**
-     * 1️⃣ Verify OTP (single gate for ALL sign-ins)
+     * 1️⃣ Verify OTP
      */
     const otpHash = await hashOtp(String(otp));
 
     const { data: record } = await supabase
       .from("email_otps")
       .select("*")
-      .eq("email", email)
+      .eq("email", normalisedEmail)
       .eq("otp_hash", otpHash)
       .single();
 
@@ -102,13 +104,13 @@ Deno.serve(async (req) => {
     await supabase
       .from("email_otps")
       .update({ attempts: record.attempts + 1 })
-      .eq("email", email);
+      .eq("email", normalisedEmail);
 
     /**
-     * 3️⃣ Get or create user (NO bypass)
+     * 3️⃣ Get or create auth user
      */
     const { data: users } = await supabase.auth.admin.listUsers({
-      email,
+      email: normalisedEmail,
       perPage: 1,
     });
 
@@ -116,7 +118,7 @@ Deno.serve(async (req) => {
 
     if (!user) {
       const { data, error } = await supabase.auth.admin.createUser({
-        email,
+        email: normalisedEmail,
         email_confirm: true,
       });
 
@@ -128,12 +130,28 @@ Deno.serve(async (req) => {
     }
 
     /**
-     * 4️⃣ Generate login token (NO email sent)
+     * 4️⃣ GUARANTEE PROFILE EXISTS (THIS FIXES LOGIN)
+     */
+    await supabase
+      .from("profiles")
+      .upsert(
+        {
+          id: user.id,
+          email: user.email,
+          name: user.email.split("@")[0], // temporary fallback
+          role: "planner",                // safe default
+          agreed_terms: false,
+        },
+        { onConflict: "id" }
+      );
+
+    /**
+     * 5️⃣ Generate login token (NO email sent)
      */
     const { data: linkData, error: linkError } =
       await supabase.auth.admin.generateLink({
         type: "magiclink",
-        email,
+        email: normalisedEmail,
       });
 
     if (linkError || !linkData?.properties?.hashed_token) {
@@ -141,7 +159,7 @@ Deno.serve(async (req) => {
     }
 
     /**
-     * 5️⃣ Verify token_hash → mint REAL Supabase session
+     * 6️⃣ Verify token_hash → mint REAL Supabase session
      */
     const { data: verified, error: verifyError } =
       await anon.auth.verifyOtp({
@@ -154,12 +172,15 @@ Deno.serve(async (req) => {
     }
 
     /**
-     * 6️⃣ Cleanup OTP (single-use)
+     * 7️⃣ Cleanup OTP (single-use)
      */
-    await supabase.from("email_otps").delete().eq("email", email);
+    await supabase
+      .from("email_otps")
+      .delete()
+      .eq("email", normalisedEmail);
 
     /**
-     * 7️⃣ Return frontend-safe payload
+     * 8️⃣ Return frontend-safe payload
      */
     const session = verified.session;
 
