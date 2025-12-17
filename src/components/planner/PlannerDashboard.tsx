@@ -4,7 +4,7 @@ import { supabase } from "../../lib/supabase";
 import Header from "../Header";
 import Footer from "../Footer";
 import EditProfileModal from "./EditProfileModal";
-import { Calendar, Users, MessageSquare, Heart, User, Settings, CalendarDays, LogOut } from "lucide-react";
+import { Calendar, Users, MessageSquare, Heart, User, Settings, CalendarDays, LogOut, Shield } from "lucide-react";
 
 export default function PlannerDashboard() {
   const navigate = useNavigate();
@@ -20,6 +20,7 @@ export default function PlannerDashboard() {
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -72,6 +73,30 @@ export default function PlannerDashboard() {
     navigate('/login');
   };
 
+  const handleAdminAccess = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("is_admin")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (profile?.is_admin === true) {
+        navigate('/admin');
+      } else {
+        setToast("Admin access not approved.");
+        setTimeout(() => setToast(null), 3000);
+      }
+    } catch (error) {
+      console.error("Error checking admin access:", error);
+      setToast("Admin access not approved.");
+      setTimeout(() => setToast(null), 3000);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
       <Header />
@@ -100,6 +125,14 @@ export default function PlannerDashboard() {
                   </div>
                 </>
               )}
+              <button
+                onClick={handleAdminAccess}
+                className="flex items-center gap-2 px-3 md:px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition text-white font-medium text-sm md:text-base shadow-lg hover:shadow-purple-500/50 flex-shrink-0"
+                title="Admin"
+              >
+                <Shield className="w-4 h-4 md:w-5 md:h-5" />
+                <span className="hidden sm:inline">Admin</span>
+              </button>
               <button
                 onClick={() => setShowEditModal(true)}
                 className="flex items-center gap-2 px-3 md:px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded-lg transition text-white font-medium text-sm md:text-base shadow-lg hover:shadow-orange-500/50 flex-shrink-0"
@@ -238,6 +271,12 @@ export default function PlannerDashboard() {
           loadData();
         }}
       />
+
+      {toast && (
+        <div className="fixed bottom-4 right-4 bg-neutral-900 border-2 border-orange-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
+          {toast}
+        </div>
+      )}
 
       <Footer />
     </div>
