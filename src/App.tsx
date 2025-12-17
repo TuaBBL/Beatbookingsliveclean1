@@ -28,6 +28,9 @@ import AdminMessages from './components/AdminMessages';
 import AdminDashboard from './components/AdminDashboard';
 import ArtistProfilePage from './components/artist/ArtistProfilePage';
 import ArtistDashboard from './components/artist/ArtistDashboard';
+import ArtistBookingInbox from './components/artist/ArtistBookingInbox';
+import ArtistCalendar from './components/artist/ArtistCalendar';
+import ArtistMedia from './components/artist/ArtistMedia';
 
 export default function App() {
   const [session, setSession] = useState<any>(null);
@@ -105,6 +108,9 @@ export default function App() {
 
     {/* Artist */}
     <Route path="/artist/dashboard" element={<ArtistDashboard />} />
+    <Route path="/artist/bookings" element={<ArtistBookingInbox />} />
+    <Route path="/artist/calendar" element={<ArtistCalendar />} />
+    <Route path="/artist/media" element={<ArtistMedia />} />
 
     {/* Admin */}
     <Route path="/admin" element={<AdminDashboard />} />

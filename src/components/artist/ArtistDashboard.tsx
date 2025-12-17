@@ -31,7 +31,7 @@ export default function ArtistDashboard() {
         return;
       }
 
-      const [profileRes, artistProfileRes, bookingsRes, mediaRes] = await Promise.all([
+      const [profileRes, artistProfileRes] = await Promise.all([
         supabase
           .from('profiles')
           .select('*')
@@ -42,13 +42,6 @@ export default function ArtistDashboard() {
           .select('*')
           .eq('user_id', user.id)
           .maybeSingle(),
-        supabase
-          .from('bookings')
-          .select('status')
-          .eq('artist_id', user.id),
-        supabase
-          .from('artist_media')
-          .select('id')
       ]);
 
       if (profileRes.data) {
@@ -57,24 +50,36 @@ export default function ArtistDashboard() {
 
       if (artistProfileRes.data) {
         setArtistProfile(artistProfileRes.data);
+
+        const [bookingsRes, mediaRes] = await Promise.all([
+          supabase
+            .from('bookings')
+            .select('status')
+            .eq('artist_id', artistProfileRes.data.id),
+          supabase
+            .from('artist_media')
+            .select('id')
+            .eq('artist_id', artistProfileRes.data.id)
+        ]);
+
+        const bookings = bookingsRes.data || [];
+        const pending = bookings.filter((b) => b.status === 'pending').length;
+        const confirmed = bookings.filter((b) => b.status === 'accepted').length;
+        const totalMedia = mediaRes.data?.length || 0;
+
+        setStats({
+          pendingRequests: pending,
+          confirmedBookings: confirmed,
+          totalMedia,
+        });
       }
-
-      const bookings = bookingsRes.data || [];
-      const pending = bookings.filter((b) => b.status === 'pending').length;
-      const confirmed = bookings.filter((b) => b.status === 'accepted').length;
-      const totalMedia = mediaRes.data?.length || 0;
-
-      setStats({
-        pendingRequests: pending,
-        confirmedBookings: confirmed,
-        totalMedia,
-      });
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
       setLoading(false);
     }
   }
+
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -166,7 +171,10 @@ export default function ArtistDashboard() {
           ) : (
             <>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                <div className="bg-neutral-900 p-6 rounded-lg border-2 border-neutral-700 hover:border-blue-500 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all duration-200">
+                <Link
+                  to="/artist/bookings"
+                  className="bg-neutral-900 p-6 rounded-lg border-2 border-neutral-700 hover:border-blue-500 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all duration-200 cursor-pointer"
+                >
                   <div className="flex items-center gap-3 mb-4">
                     <div className="p-2 bg-blue-500/10 rounded-lg">
                       <MessageSquare className="w-6 h-6 text-blue-500" />
@@ -177,9 +185,12 @@ export default function ArtistDashboard() {
                     {stats.pendingRequests}
                   </p>
                   <p className="text-sm text-gray-400 mt-2">Booking inquiries</p>
-                </div>
+                </Link>
 
-                <div className="bg-neutral-900 p-6 rounded-lg border-2 border-neutral-700 hover:border-green-500 hover:shadow-[0_0_20px_rgba(34,197,94,0.3)] transition-all duration-200">
+                <Link
+                  to="/artist/calendar"
+                  className="bg-neutral-900 p-6 rounded-lg border-2 border-neutral-700 hover:border-green-500 hover:shadow-[0_0_20px_rgba(34,197,94,0.3)] transition-all duration-200 cursor-pointer"
+                >
                   <div className="flex items-center gap-3 mb-4">
                     <div className="p-2 bg-green-500/10 rounded-lg">
                       <Calendar className="w-6 h-6 text-green-500" />
@@ -190,9 +201,12 @@ export default function ArtistDashboard() {
                     {stats.confirmedBookings}
                   </p>
                   <p className="text-sm text-gray-400 mt-2">Upcoming gigs</p>
-                </div>
+                </Link>
 
-                <div className="bg-neutral-900 p-6 rounded-lg border-2 border-neutral-700 hover:border-orange-500 hover:shadow-[0_0_20px_rgba(249,115,22,0.3)] transition-all duration-200">
+                <Link
+                  to="/artist/media"
+                  className="bg-neutral-900 p-6 rounded-lg border-2 border-neutral-700 hover:border-orange-500 hover:shadow-[0_0_20px_rgba(249,115,22,0.3)] transition-all duration-200 cursor-pointer"
+                >
                   <div className="flex items-center gap-3 mb-4">
                     <div className="p-2 bg-orange-500/10 rounded-lg">
                       <Image className="w-6 h-6 text-orange-500" />
@@ -203,10 +217,61 @@ export default function ArtistDashboard() {
                     {stats.totalMedia}
                   </p>
                   <p className="text-sm text-gray-400 mt-2">Photos & videos</p>
-                </div>
+                </Link>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <Link
+                  to="/artist/bookings"
+                  className="bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 p-8 rounded-lg shadow-lg hover:shadow-[0_0_30px_rgba(59,130,246,0.4)] transition-all duration-200 group"
+                >
+                  <div className="flex flex-col items-center text-center gap-3">
+                    <div className="p-3 bg-white/10 rounded-lg">
+                      <MessageSquare className="w-8 h-8" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold mb-1">Booking Inbox</h3>
+                      <p className="text-blue-100 text-sm">
+                        Manage booking requests
+                      </p>
+                    </div>
+                  </div>
+                </Link>
+
+                <Link
+                  to="/artist/calendar"
+                  className="bg-neutral-900 hover:bg-neutral-800 p-8 rounded-lg border-2 border-neutral-700 hover:border-green-500 shadow-lg hover:shadow-[0_0_20px_rgba(34,197,94,0.2)] transition-all duration-200 group"
+                >
+                  <div className="flex flex-col items-center text-center gap-3">
+                    <div className="p-3 bg-green-500/10 rounded-lg">
+                      <Calendar className="w-8 h-8 text-green-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold mb-1">My Calendar</h3>
+                      <p className="text-gray-400 text-sm">
+                        View confirmed bookings
+                      </p>
+                    </div>
+                  </div>
+                </Link>
+
+                <Link
+                  to="/artist/media"
+                  className="bg-neutral-900 hover:bg-neutral-800 p-8 rounded-lg border-2 border-neutral-700 hover:border-orange-500 shadow-lg hover:shadow-[0_0_20px_rgba(249,115,22,0.2)] transition-all duration-200 group"
+                >
+                  <div className="flex flex-col items-center text-center gap-3">
+                    <div className="p-3 bg-orange-500/10 rounded-lg">
+                      <Image className="w-8 h-8 text-orange-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold mb-1">Media Gallery</h3>
+                      <p className="text-gray-400 text-sm">
+                        Upload photos & videos
+                      </p>
+                    </div>
+                  </div>
+                </Link>
+
                 <Link
                   to={artistProfile ? `/artists/${profile.id}` : '#'}
                   onClick={(e) => {
@@ -216,54 +281,20 @@ export default function ArtistDashboard() {
                       setTimeout(() => setToast(null), 3000);
                     }
                   }}
-                  className="bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 p-8 rounded-lg shadow-lg hover:shadow-[0_0_30px_rgba(59,130,246,0.4)] transition-all duration-200 group"
+                  className="bg-neutral-900 hover:bg-neutral-800 p-8 rounded-lg border-2 border-neutral-700 hover:border-blue-500 shadow-lg hover:shadow-[0_0_20px_rgba(59,130,246,0.2)] transition-all duration-200 group"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-white/10 rounded-lg">
-                      <User className="w-8 h-8" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold mb-1">View My Profile</h3>
-                      <p className="text-blue-100">
-                        See how planners view your profile
-                      </p>
-                    </div>
-                  </div>
-                </Link>
-
-                <Link
-                  to="/events"
-                  className="bg-neutral-900 hover:bg-neutral-800 p-8 rounded-lg border-2 border-neutral-700 hover:border-green-500 shadow-lg hover:shadow-[0_0_20px_rgba(34,197,94,0.2)] transition-all duration-200 group"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-green-500/10 rounded-lg">
-                      <Calendar className="w-8 h-8 text-green-500" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold mb-1">Events</h3>
-                      <p className="text-gray-400">
-                        Browse and discover events
-                      </p>
-                    </div>
-                  </div>
-                </Link>
-
-                <button
-                  onClick={() => setShowEditModal(true)}
-                  className="bg-neutral-900 hover:bg-neutral-800 p-8 rounded-lg border-2 border-neutral-700 hover:border-blue-500 shadow-lg hover:shadow-[0_0_20px_rgba(59,130,246,0.2)] transition-all duration-200 group text-left"
-                >
-                  <div className="flex items-center gap-4">
+                  <div className="flex flex-col items-center text-center gap-3">
                     <div className="p-3 bg-blue-500/10 rounded-lg">
-                      <Settings className="w-8 h-8 text-blue-500" />
+                      <User className="w-8 h-8 text-blue-500" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold mb-1">Manage Profile</h3>
-                      <p className="text-gray-400">
-                        Update your artist information
+                      <h3 className="text-xl font-bold mb-1">Public Profile</h3>
+                      <p className="text-gray-400 text-sm">
+                        View your public page
                       </p>
                     </div>
                   </div>
-                </button>
+                </Link>
               </div>
             </>
           )}
