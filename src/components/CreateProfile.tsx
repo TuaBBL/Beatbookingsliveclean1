@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 
-type Role = "planner" | "artist" | "admin";
+type Role = "planner" | "artist";
 type Step = "role" | "details";
 
 export default function CreateProfile() {
@@ -22,7 +22,9 @@ export default function CreateProfile() {
 
   const isStateRequired = country === "AU";
 
-  // Guard: must be logged in
+  /**
+   * Guard: must be authenticated
+   */
   useEffect(() => {
     const run = async () => {
       const { data } = await supabase.auth.getSession();
@@ -68,25 +70,15 @@ export default function CreateProfile() {
         return;
       }
 
-      /**
-       * IMPORTANT:
-       * - Admin is REQUESTED, not granted
-       * - Actual admin access controlled by `is_admin`
-       */
-      const profilePayload = {
+      const { error } = await supabase.from("profiles").insert({
         id: user.id,
         email: user.email,
+        role,
         name: name.trim(),
         country,
         state: isStateRequired ? state.trim() : null,
         city: city.trim(),
-        role: role === "admin" ? "planner" : role, // never self-assign admin
-        admin_requested: role === "admin",
-      };
-
-      const { error } = await supabase
-        .from("profiles")
-        .upsert(profilePayload, { onConflict: "id" });
+      });
 
       if (error) {
         console.error(error);
@@ -94,8 +86,8 @@ export default function CreateProfile() {
         return;
       }
 
+      // Let AuthGate decide destination
       navigate("/auth-gate", { replace: true });
-
     } catch (err) {
       console.error(err);
       setError("Something went wrong. Please try again.");
@@ -115,7 +107,6 @@ export default function CreateProfile() {
   return (
     <div className="min-h-screen bg-black flex items-center justify-center px-4">
       <div className="w-full max-w-xl bg-charcoal border border-gray-800 rounded-xl p-8">
-
         {step === "role" && (
           <>
             <h1 className="text-3xl font-bold text-white mb-6">
@@ -124,24 +115,23 @@ export default function CreateProfile() {
 
             <div className="flex flex-col gap-4">
               <button
-                onClick={() => { setRole("planner"); setStep("details"); }}
+                onClick={() => {
+                  setRole("planner");
+                  setStep("details");
+                }}
                 className="w-full py-4 rounded-lg bg-gray-900 border border-gray-700 text-white hover:border-neon-green"
               >
                 Planner
               </button>
 
               <button
-                onClick={() => { setRole("artist"); setStep("details"); }}
+                onClick={() => {
+                  setRole("artist");
+                  setStep("details");
+                }}
                 className="w-full py-4 rounded-lg bg-gray-900 border border-gray-700 text-white hover:border-neon-red"
               >
                 Artist
-              </button>
-
-              <button
-                onClick={() => { setRole("admin"); setStep("details"); }}
-                className="w-full py-4 rounded-lg bg-gray-900 border border-yellow-500 text-yellow-400 hover:bg-yellow-500/10"
-              >
-                Admin (approval required)
               </button>
             </div>
           </>
@@ -165,8 +155,9 @@ export default function CreateProfile() {
               <select
                 value={country}
                 onChange={(e) => {
-                  setCountry(e.target.value);
-                  if (e.target.value !== "AU") setState("");
+                  const val = e.target.value;
+                  setCountry(val);
+                  if (val !== "AU") setState("");
                 }}
                 className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white"
               >
