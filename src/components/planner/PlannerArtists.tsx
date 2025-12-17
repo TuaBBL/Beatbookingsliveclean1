@@ -59,38 +59,35 @@ export default function PlannerArtists() {
           category,
           location,
           bio,
+          image_url,
           profiles!artist_profiles_user_id_fkey(image_url)
         `);
 
-      const realArtists: Artist[] = (artistProfiles || []).map((profile: any) => {
+      const artists: Artist[] = (artistProfiles || []).map((profile: any) => {
         const locationParts = (profile.location || '').split(',').map((s: string) => s.trim());
         const city = locationParts[0] || '';
         const state = locationParts[1] || '';
         const country = locationParts[2] || 'Australia';
 
         return {
-          id: profile.user_id,
+          id: profile.user_id || profile.id,
           name: profile.stage_name || 'Unknown Artist',
           role: profile.category || 'DJ',
           genre: profile.genre || 'Electronic',
           city,
           state,
           country,
-          imageUrl: profile.profiles?.image_url || '',
+          imageUrl: profile.image_url || profile.profiles?.image_url || '',
           socials: {},
         };
       });
 
-      const mockArtistsList: Artist[] = Array.isArray(mockArtists) ? mockArtists : [];
-      const combined = [...realArtists, ...mockArtistsList];
-
-      setAllArtists(combined);
-      setFilteredArtists(combined);
+      setAllArtists(artists);
+      setFilteredArtists(artists);
     } catch (error) {
       console.error('Error loading artists:', error);
-      const mockArtistsList: Artist[] = Array.isArray(mockArtists) ? mockArtists : [];
-      setAllArtists(mockArtistsList);
-      setFilteredArtists(mockArtistsList);
+      setAllArtists([]);
+      setFilteredArtists([]);
     } finally {
       setLoading(false);
     }

@@ -23,7 +23,9 @@ export default function PlannerArtistProfile() {
 
   async function loadArtist() {
     try {
-      const { data: artistProfile } = await supabase
+      let artistProfile = null;
+
+      const { data: byUserId } = await supabase
         .from('artist_profiles')
         .select(`
           id,
@@ -33,10 +35,35 @@ export default function PlannerArtistProfile() {
           category,
           location,
           bio,
+          image_url,
           profiles!artist_profiles_user_id_fkey(image_url)
         `)
         .eq('user_id', id)
         .maybeSingle();
+
+      if (byUserId) {
+        artistProfile = byUserId;
+      } else {
+        const { data: byId } = await supabase
+          .from('artist_profiles')
+          .select(`
+            id,
+            user_id,
+            stage_name,
+            genre,
+            category,
+            location,
+            bio,
+            image_url,
+            profiles!artist_profiles_user_id_fkey(image_url)
+          `)
+          .eq('id', id)
+          .maybeSingle();
+
+        if (byId) {
+          artistProfile = byId;
+        }
+      }
 
       if (artistProfile) {
         const locationParts = (artistProfile.location || '').split(',').map((s: string) => s.trim());
@@ -45,24 +72,22 @@ export default function PlannerArtistProfile() {
         const country = locationParts[2] || 'Australia';
 
         setArtist({
-          id: artistProfile.user_id,
+          id: artistProfile.user_id || artistProfile.id,
           name: artistProfile.stage_name || 'Unknown Artist',
           role: artistProfile.category || 'DJ',
           genre: artistProfile.genre || 'Electronic',
           city,
           state,
           country,
-          imageUrl: artistProfile.profiles?.image_url || '',
+          imageUrl: artistProfile.image_url || artistProfile.profiles?.image_url || '',
           socials: {},
         });
       } else {
-        const foundArtist = mockArtists.find((a) => a.id === id);
-        setArtist(foundArtist || null);
+        setArtist(null);
       }
     } catch (error) {
       console.error("Error loading artist:", error);
-      const foundArtist = mockArtists.find((a) => a.id === id);
-      setArtist(foundArtist || null);
+      setArtist(null);
     } finally {
       setLoading(false);
     }
