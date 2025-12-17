@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { Artist } from "../data/mockArtists";
 
 interface HeroProps {
@@ -98,12 +99,12 @@ export default function Hero({ artists = [] }: HeroProps) {
         </p>
 
         <div className="mt-10 flex justify-center">
-          <a
-            href="/auth-gate"
+          <Link
+            to="/auth-gate"
             className="px-10 py-4 rounded-lg bg-neon-red text-white font-bold text-lg hover:bg-neon-red/90 transition shadow-[0_0_25px_rgba(255,45,45,0.5)] hover:shadow-[0_0_35px_rgba(255,45,45,0.7)]"
           >
             Check it out
-          </a>
+          </Link>
         </div>
       </div>
     </section>
