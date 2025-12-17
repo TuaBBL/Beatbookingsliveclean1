@@ -1,12 +1,23 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 /**
+ * CORS headers (REQUIRED)
+ */
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+/**
  * JSON response helper
  */
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
     headers: {
+      ...corsHeaders,
       "Content-Type": "application/json",
       "Cache-Control": "no-store",
       "Pragma": "no-cache",
@@ -15,7 +26,7 @@ function json(data: unknown, status = 200) {
 }
 
 /**
- * Supabase service-role client (admin)
+ * Supabase service-role client
  */
 function supabaseServiceClient() {
   const url = Deno.env.get("SUPABASE_URL");
@@ -58,6 +69,11 @@ async function hashOtp(otp: string): Promise<string> {
 }
 
 Deno.serve(async (req) => {
+  // ✅ CORS preflight
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
   try {
     if (req.method !== "POST") {
       return json({ error: "Method not allowed" }, 405);
@@ -99,7 +115,7 @@ Deno.serve(async (req) => {
     }
 
     /**
-     * 2️⃣ Increment attempts (replay protection)
+     * 2️⃣ Increment attempts
      */
     await supabase
       .from("email_otps")
@@ -130,7 +146,7 @@ Deno.serve(async (req) => {
     }
 
     /**
-     * 4️⃣ GUARANTEE PROFILE EXISTS (THIS FIXES LOGIN)
+     * 4️⃣ ENSURE PROFILE EXISTS (CRITICAL)
      */
     await supabase
       .from("profiles")
@@ -138,15 +154,15 @@ Deno.serve(async (req) => {
         {
           id: user.id,
           email: user.email,
-          name: user.email.split("@")[0], // temporary fallback
-          role: "planner",                // safe default
+          name: user.email.split("@")[0],
+          role: "planner",
           agreed_terms: false,
         },
         { onConflict: "id" }
       );
 
     /**
-     * 5️⃣ Generate login token (NO email sent)
+     * 5️⃣ Generate login token (no email)
      */
     const { data: linkData, error: linkError } =
       await supabase.auth.admin.generateLink({
@@ -159,7 +175,7 @@ Deno.serve(async (req) => {
     }
 
     /**
-     * 6️⃣ Verify token_hash → mint REAL Supabase session
+     * 6️⃣ Verify token → mint session
      */
     const { data: verified, error: verifyError } =
       await anon.auth.verifyOtp({
@@ -172,7 +188,7 @@ Deno.serve(async (req) => {
     }
 
     /**
-     * 7️⃣ Cleanup OTP (single-use)
+     * 7️⃣ Cleanup OTP
      */
     await supabase
       .from("email_otps")
@@ -180,7 +196,7 @@ Deno.serve(async (req) => {
       .eq("email", normalisedEmail);
 
     /**
-     * 8️⃣ Return frontend-safe payload
+     * 8️⃣ Return session
      */
     const session = verified.session;
 
