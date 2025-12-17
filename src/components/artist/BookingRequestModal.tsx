@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { X, Calendar, Clock } from 'lucide-react';
+import { X, Calendar, MapPin, FileText, MessageSquare } from 'lucide-react';
 
 interface BookingRequestModalProps {
   isOpen: boolean;
   onClose: () => void;
   artistId: string;
   artistName: string;
+  onSuccess?: () => void;
 }
 
 export default function BookingRequestModal({
@@ -14,13 +15,16 @@ export default function BookingRequestModal({
   onClose,
   artistId,
   artistName,
+  onSuccess,
 }: BookingRequestModalProps) {
   const [formData, setFormData] = useState({
+    event_name: '',
     event_date: '',
-    start_time: '',
-    end_time: '',
+    event_location: '',
+    message: '',
   });
   const [sending, setSending] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
@@ -28,25 +32,47 @@ export default function BookingRequestModal({
     e.preventDefault();
     setSending(true);
 
-    const payload = {
-      artist_id: artistId,
-      event_date: formData.event_date,
-      start_time: formData.start_time,
-      end_time: formData.end_time,
-    };
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setToast('You must be logged in to send a booking request');
+        setTimeout(() => setToast(null), 3000);
+        setSending(false);
+        return;
+      }
 
-    console.log('Booking request payload (demo):', payload);
+      const { error } = await supabase
+        .from('booking_requests')
+        .insert({
+          planner_id: user.id,
+          artist_user_id: artistId,
+          event_name: formData.event_name,
+          event_date: formData.event_date,
+          event_location: formData.event_location,
+          message: formData.message || null,
+        });
 
-    setTimeout(() => {
-      alert('Booking request sent (demo)');
+      if (error) throw error;
+
+      setToast('Booking request sent');
+      setTimeout(() => {
+        setToast(null);
+        onClose();
+        if (onSuccess) onSuccess();
+        setFormData({
+          event_name: '',
+          event_date: '',
+          event_location: '',
+          message: '',
+        });
+      }, 1500);
+    } catch (error) {
+      console.error('Error sending booking request:', error);
+      setToast('Failed to send booking request');
+      setTimeout(() => setToast(null), 3000);
+    } finally {
       setSending(false);
-      onClose();
-      setFormData({
-        event_date: '',
-        start_time: '',
-        end_time: '',
-      });
-    }, 500);
+    }
   };
 
   return (
@@ -71,6 +97,23 @@ export default function BookingRequestModal({
 
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
+              <FileText className="w-4 h-4 inline mr-2" />
+              Event Name
+            </label>
+            <input
+              type="text"
+              value={formData.event_name}
+              onChange={(e) =>
+                setFormData({ ...formData, event_name: e.target.value })
+              }
+              placeholder="e.g., Birthday Party, Corporate Event"
+              className="w-full px-4 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               <Calendar className="w-4 h-4 inline mr-2" />
               Event Date
             </label>
@@ -87,15 +130,16 @@ export default function BookingRequestModal({
 
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              <Clock className="w-4 h-4 inline mr-2" />
-              Start Time
+              <MapPin className="w-4 h-4 inline mr-2" />
+              Event Location
             </label>
             <input
-              type="time"
-              value={formData.start_time}
+              type="text"
+              value={formData.event_location}
               onChange={(e) =>
-                setFormData({ ...formData, start_time: e.target.value })
+                setFormData({ ...formData, event_location: e.target.value })
               }
+              placeholder="e.g., Downtown Venue, 123 Main St"
               className="w-full px-4 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
               required
             />
@@ -103,17 +147,17 @@ export default function BookingRequestModal({
 
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              <Clock className="w-4 h-4 inline mr-2" />
-              End Time
+              <MessageSquare className="w-4 h-4 inline mr-2" />
+              Message (Optional)
             </label>
-            <input
-              type="time"
-              value={formData.end_time}
+            <textarea
+              value={formData.message}
               onChange={(e) =>
-                setFormData({ ...formData, end_time: e.target.value })
+                setFormData({ ...formData, message: e.target.value })
               }
-              className="w-full px-4 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
-              required
+              placeholder="Tell the artist more about your event..."
+              rows={3}
+              className="w-full px-4 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 resize-none"
             />
           </div>
 
@@ -134,6 +178,12 @@ export default function BookingRequestModal({
             </button>
           </div>
         </form>
+
+        {toast && (
+          <div className="absolute bottom-4 right-4 bg-neutral-900 border-2 border-blue-500 text-white px-6 py-3 rounded-lg shadow-lg">
+            {toast}
+          </div>
+        )}
       </div>
     </div>
   );

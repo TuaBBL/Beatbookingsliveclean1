@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase';
 import Header from '../Header';
 import Footer from '../Footer';
 import EditArtistProfileModal from './EditArtistProfileModal';
-import { Calendar, MessageSquare, User, Settings, LogOut, Shield, Image, Video } from 'lucide-react';
+import { Calendar, MessageSquare, User, Settings, LogOut, Shield, Image, Video, Inbox } from 'lucide-react';
 
 export default function ArtistDashboard() {
   const navigate = useNavigate();
@@ -222,17 +222,34 @@ export default function ArtistDashboard() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <Link
-                  to="/artist/bookings"
+                  to="/artist/inbox"
                   className="bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 p-8 rounded-lg shadow-lg hover:shadow-[0_0_30px_rgba(59,130,246,0.4)] transition-all duration-200 group"
                 >
                   <div className="flex flex-col items-center text-center gap-3">
                     <div className="p-3 bg-white/10 rounded-lg">
-                      <MessageSquare className="w-8 h-8" />
+                      <Inbox className="w-8 h-8" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold mb-1">Booking Requests</h3>
+                      <p className="text-blue-100 text-sm">
+                        View incoming requests
+                      </p>
+                    </div>
+                  </div>
+                </Link>
+
+                <Link
+                  to="/artist/bookings"
+                  className="bg-neutral-900 hover:bg-neutral-800 p-8 rounded-lg border-2 border-neutral-700 hover:border-blue-500 shadow-lg hover:shadow-[0_0_20px_rgba(59,130,246,0.2)] transition-all duration-200 group"
+                >
+                  <div className="flex flex-col items-center text-center gap-3">
+                    <div className="p-3 bg-blue-500/10 rounded-lg">
+                      <MessageSquare className="w-8 h-8 text-blue-500" />
                     </div>
                     <div>
                       <h3 className="text-xl font-bold mb-1">Booking Inbox</h3>
-                      <p className="text-blue-100 text-sm">
-                        Manage booking requests
+                      <p className="text-gray-400 text-sm">
+                        Manage booking inquiries
                       </p>
                     </div>
                   </div>

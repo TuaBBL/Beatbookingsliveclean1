@@ -31,6 +31,8 @@ import ArtistDashboard from './components/artist/ArtistDashboard';
 import ArtistBookingInbox from './components/artist/ArtistBookingInbox';
 import ArtistCalendar from './components/artist/ArtistCalendar';
 import ArtistMedia from './components/artist/ArtistMedia';
+import ArtistInboxPage from './components/artist/ArtistInboxPage';
+import PlannerRequestsPage from './components/planner/PlannerRequestsPage';
 
 export default function App() {
   const [session, setSession] = useState<any>(null);
@@ -105,12 +107,14 @@ export default function App() {
     <Route path="/planner/confirmed" element={<PlannerConfirmedBookings />} />
     <Route path="/planner/favourites" element={<PlannerFavourites />} />
     <Route path="/planner/calendar" element={<PlannerCalendar />} />
+    <Route path="/planner/requests" element={<PlannerRequestsPage />} />
 
     {/* Artist */}
     <Route path="/artist/dashboard" element={<ArtistDashboard />} />
     <Route path="/artist/bookings" element={<ArtistBookingInbox />} />
     <Route path="/artist/calendar" element={<ArtistCalendar />} />
     <Route path="/artist/media" element={<ArtistMedia />} />
+    <Route path="/artist/inbox" element={<ArtistInboxPage />} />
 
     {/* Admin */}
     <Route path="/admin" element={<AdminDashboard />} />

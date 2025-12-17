@@ -4,7 +4,7 @@ import { supabase } from "../../lib/supabase";
 import Header from "../Header";
 import Footer from "../Footer";
 import EditProfileModal from "./EditProfileModal";
-import { Calendar, Users, MessageSquare, Heart, User, Settings, CalendarDays, LogOut, Shield } from "lucide-react";
+import { Calendar, Users, MessageSquare, Heart, User, Settings, CalendarDays, LogOut, Shield, Send } from "lucide-react";
 
 export default function PlannerDashboard() {
   const navigate = useNavigate();
@@ -207,7 +207,7 @@ export default function PlannerDashboard() {
                 </Link>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <Link
                   to="/planner/artists"
                   className="bg-gradient-to-br from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 p-8 rounded-lg shadow-lg hover:shadow-[0_0_30px_rgba(249,115,22,0.4)] transition-all duration-200 group"
@@ -226,12 +226,29 @@ export default function PlannerDashboard() {
                 </Link>
 
                 <Link
-                  to="/events"
+                  to="/planner/requests"
                   className="bg-neutral-900 hover:bg-neutral-800 p-8 rounded-lg border-2 border-neutral-700 hover:border-blue-500 shadow-lg hover:shadow-[0_0_20px_rgba(59,130,246,0.2)] transition-all duration-200 group"
                 >
                   <div className="flex items-center gap-4">
                     <div className="p-3 bg-blue-500/10 rounded-lg">
-                      <CalendarDays className="w-8 h-8 text-blue-500" />
+                      <Send className="w-8 h-8 text-blue-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold mb-1">My Requests</h3>
+                      <p className="text-gray-400">
+                        View your sent booking requests
+                      </p>
+                    </div>
+                  </div>
+                </Link>
+
+                <Link
+                  to="/events"
+                  className="bg-neutral-900 hover:bg-neutral-800 p-8 rounded-lg border-2 border-neutral-700 hover:border-green-500 shadow-lg hover:shadow-[0_0_20px_rgba(34,197,94,0.2)] transition-all duration-200 group"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-green-500/10 rounded-lg">
+                      <CalendarDays className="w-8 h-8 text-green-500" />
                     </div>
                     <div>
                       <h3 className="text-xl font-bold mb-1">Events</h3>
