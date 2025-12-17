@@ -69,12 +69,12 @@ export default function EditProfileModal({
 
     const validTypes = ["image/jpeg", "image/png", "image/webp"];
     if (!validTypes.includes(file.type)) {
-      alert("Please select a JPG, PNG, or WEBP image");
+      console.error("Invalid file type");
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      alert("Image must be less than 5MB");
+      console.error("File size too large");
       return;
     }
 
@@ -102,7 +102,7 @@ export default function EditProfileModal({
         .from("media")
         .upload(filePath, imageFile, {
           cacheControl: "3600",
-          upsert: false,
+          upsert: true,
         });
 
       if (uploadError) throw uploadError;
@@ -114,7 +114,6 @@ export default function EditProfileModal({
       return data.publicUrl;
     } catch (error) {
       console.error("Error uploading image:", error);
-      alert("Failed to upload image");
       return null;
     } finally {
       setUploading(false);
@@ -155,7 +154,6 @@ export default function EditProfileModal({
       onClose();
     } catch (error) {
       console.error("Error saving profile:", error);
-      alert("Failed to save profile");
     } finally {
       setLoading(false);
     }

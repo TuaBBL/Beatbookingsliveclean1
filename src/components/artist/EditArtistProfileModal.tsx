@@ -135,7 +135,6 @@ export default function EditArtistProfileModal({
       onClose();
     } catch (err) {
       console.error('Error updating profile:', err);
-      alert('Failed to update profile');
     } finally {
       setSaving(false);
     }
@@ -172,7 +171,6 @@ export default function EditArtistProfileModal({
       onSave();
     } catch (err) {
       console.error('Error uploading image:', err);
-      alert('Failed to upload image');
       e.target.value = '';
     } finally {
       setUploading(false);
@@ -188,7 +186,7 @@ export default function EditArtistProfileModal({
     const limit = type === 'image' ? limits.images : limits.videos;
 
     if (currentCount >= limit) {
-      alert(`You've reached your ${type} limit (${limit}). Upgrade to premium for more.`);
+      console.error(`${type} limit reached: ${limit}`);
       e.target.value = '';
       return;
     }
@@ -218,10 +216,8 @@ export default function EditArtistProfileModal({
 
       e.target.value = '';
       loadMediaAndSocial();
-      alert(`${type} uploaded successfully!`);
     } catch (err) {
       console.error('Error uploading media:', err);
-      alert('Failed to upload media');
       e.target.value = '';
     } finally {
       setUploading(false);
@@ -240,7 +236,6 @@ export default function EditArtistProfileModal({
       loadMediaAndSocial();
     } catch (err) {
       console.error('Error deleting media:', err);
-      alert('Failed to delete media');
     }
   };
 
