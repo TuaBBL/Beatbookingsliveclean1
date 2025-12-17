@@ -24,7 +24,6 @@ import PlannerBookingInbox from './components/planner/PlannerBookingInbox';
 import PlannerConfirmedBookings from './components/planner/PlannerConfirmedBookings';
 import PlannerFavourites from './components/planner/PlannerFavourites';
 import PlannerCalendar from './components/planner/PlannerCalendar';
-import AdminMessages from './components/AdminMessages';
 
 export default function App() {
   const [session, setSession] = useState<any>(null);
@@ -101,8 +100,8 @@ export default function App() {
     <Route path="/planner/favourites" element={session ? <PlannerFavourites /> : <Navigate to="/login" replace />} />
     <Route path="/planner/calendar" element={session ? <PlannerCalendar /> : <Navigate to="/login" replace />} />
 
-    {/* Admin */}
-    <Route path="/admin/messages" element={session ? <AdminMessages /> : <Navigate to="/login" replace />} />
+    {/* later */}
+    {/* <Route path="/admin" element={<AdminDashboard />} /> */}
 
     {/* Fallback */}
     <Route path="*" element={<Navigate to="/" replace />} />
