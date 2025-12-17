@@ -66,6 +66,7 @@ export default function PublishCancel() {
         {
           method: 'POST',
           headers: {
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
             'Authorization': `Bearer ${session.access_token}`,
             'Content-Type': 'application/json',
           },

@@ -220,6 +220,7 @@ export default function Events() {
           {
             method: 'POST',
             headers: {
+              'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
               'Authorization': `Bearer ${session.access_token}`,
               'Content-Type': 'application/json',
             },
@@ -245,6 +246,7 @@ export default function Events() {
         {
           method: 'POST',
           headers: {
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
             'Authorization': `Bearer ${session.access_token}`,
             'Content-Type': 'application/json',
           },
@@ -292,6 +294,7 @@ export default function Events() {
         {
           method: 'POST',
           headers: {
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
             'Authorization': `Bearer ${session.access_token}`,
             'Content-Type': 'application/json',
           },
