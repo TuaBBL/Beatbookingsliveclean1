@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 import Header from "../Header";
 import Footer from "../Footer";
 import EditProfileModal from "./EditProfileModal";
-import { Calendar, Users, MessageSquare, Heart, User, Settings, CalendarDays, LogOut } from "lucide-react";
+import { Calendar, Users, MessageSquare, Heart, User, Settings, CalendarDays } from "lucide-react";
 
 export default function PlannerDashboard() {
-  const navigate = useNavigate();
   const [stats, setStats] = useState({
     pendingRequests: 0,
     confirmedBookings: 0,
@@ -67,11 +66,6 @@ export default function PlannerDashboard() {
     }
   }
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate('/login');
-  };
-
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
       <Header />
@@ -108,14 +102,6 @@ export default function PlannerDashboard() {
                 <Settings className="w-4 h-4 md:w-5 md:h-5" />
                 <span className="hidden sm:inline">Edit Profile</span>
                 <span className="sm:hidden">Edit</span>
-              </button>
-              <button
-                onClick={handleSignOut}
-                className="flex items-center gap-2 px-3 md:px-4 py-2 bg-neon-red hover:bg-neon-red/90 rounded-lg transition text-white font-semibold text-sm md:text-base flex-shrink-0"
-                title="Sign Out"
-              >
-                <LogOut className="w-4 h-4 md:w-5 md:h-5" />
-                <span className="hidden sm:inline">Sign out</span>
               </button>
             </div>
           </div>
