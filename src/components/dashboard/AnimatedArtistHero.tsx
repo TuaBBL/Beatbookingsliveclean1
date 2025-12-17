@@ -27,7 +27,8 @@ export default function AnimatedArtistHero({ className = '' }: AnimatedArtistHer
           location,
           image_url,
           type,
-          is_featured
+          is_featured,
+          profiles!artist_profiles_user_id_fkey(image_url)
         `)
         .order('is_featured', { ascending: false })
         .limit(12);
@@ -47,7 +48,7 @@ export default function AnimatedArtistHero({ className = '' }: AnimatedArtistHer
           city,
           state,
           country,
-          imageUrl: profile.image_url || '',
+          imageUrl: profile.image_url || profile.profiles?.image_url || '',
           socials: {},
           isDemo,
         };
