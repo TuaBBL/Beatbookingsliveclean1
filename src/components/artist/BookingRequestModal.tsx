@@ -28,39 +28,25 @@ export default function BookingRequestModal({
     e.preventDefault();
     setSending(true);
 
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        alert('Please log in to request a booking');
-        return;
-      }
+    const payload = {
+      artist_id: artistId,
+      event_date: formData.event_date,
+      start_time: formData.start_time,
+      end_time: formData.end_time,
+    };
 
-      const { error } = await supabase
-        .from('bookings')
-        .insert({
-          planner_id: user.id,
-          artist_id: artistId,
-          status: 'pending',
-          event_date: formData.event_date,
-          start_time: formData.start_time,
-          end_time: formData.end_time,
-        });
+    console.log('Booking request payload (demo):', payload);
 
-      if (error) throw error;
-
-      alert('Booking request sent successfully!');
+    setTimeout(() => {
+      alert('Booking request sent (demo)');
+      setSending(false);
       onClose();
       setFormData({
         event_date: '',
         start_time: '',
         end_time: '',
       });
-    } catch (err) {
-      console.error('Error sending booking request:', err);
-      alert('Failed to send booking request');
-    } finally {
-      setSending(false);
-    }
+    }, 500);
   };
 
   return (

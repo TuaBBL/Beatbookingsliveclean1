@@ -35,6 +35,7 @@ export default function ArtistProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [artistProfile, setArtistProfile] = useState<ArtistProfile | null>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [socialLinks, setSocialLinks] = useState<any[]>([]);
@@ -47,6 +48,16 @@ export default function ArtistProfilePage() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       setCurrentUser(user);
+
+      if (user) {
+        const { data: currentUserProfileData } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        setCurrentUserRole(currentUserProfileData?.role || null);
+      }
 
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
@@ -258,20 +269,14 @@ export default function ArtistProfilePage() {
                 </div>
               )}
 
-              {!isOwner && (
+              {!isOwner && currentUserRole === 'planner' && (
                 <div className="bg-neutral-800 rounded-lg p-6 border border-neutral-700">
                   <h2 className="text-xl font-bold mb-4">Interested in booking?</h2>
                   <button
-                    onClick={() => {
-                      if (!currentUser) {
-                        navigate('/login');
-                        return;
-                      }
-                      setIsBookingModalOpen(true);
-                    }}
+                    onClick={() => setIsBookingModalOpen(true)}
                     className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
                   >
-                    {currentUser ? 'Request Booking' : 'Sign In to Book'}
+                    Request Booking
                   </button>
                 </div>
               )}
