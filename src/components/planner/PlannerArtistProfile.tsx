@@ -80,12 +80,46 @@ export default function PlannerArtistProfile() {
       }
 
       if (artistProfile) {
+        const { data: socialLinks } = await supabase
+          .from('artist_social_links')
+          .select('artist_id, platform, url')
+          .eq('artist_id', artistProfile.id);
+
+        const { data: reviews } = await supabase
+          .from('artist_reviews')
+          .select('artist_id, rating')
+          .eq('artist_id', artistProfile.id);
+
+        const socialsMap = new Map<string, Record<string, string>>();
+        (socialLinks || []).forEach((link: any) => {
+          if (!socialsMap.has(link.artist_id)) {
+            socialsMap.set(link.artist_id, {});
+          }
+          socialsMap.get(link.artist_id)![link.platform] = link.url;
+        });
+
+        const ratingsMap = new Map<string, { averageRating: number; reviewCount: number }>();
+        (reviews || []).forEach((review: any) => {
+          if (!ratingsMap.has(review.artist_id)) {
+            ratingsMap.set(review.artist_id, { averageRating: 0, reviewCount: 0 });
+          }
+          const current = ratingsMap.get(review.artist_id)!;
+          current.averageRating += review.rating;
+          current.reviewCount += 1;
+        });
+
+        ratingsMap.forEach((value, key) => {
+          value.averageRating = Math.round((value.averageRating / value.reviewCount) * 10) / 10;
+        });
+
         const locationParts = (artistProfile.location || '').split(',').map((s: string) => s.trim());
         const city = locationParts[0] || '';
         const state = locationParts[1] || '';
         const country = locationParts[2] || 'Australia';
 
         const isDemo = artistProfile.type === 'demo';
+        const artistSocials = socialsMap.get(artistProfile.id) || {};
+        const ratings = ratingsMap.get(artistProfile.id);
 
         setArtist({
           id: artistProfile.user_id || artistProfile.id,
@@ -96,9 +130,11 @@ export default function PlannerArtistProfile() {
           state,
           country,
           imageUrl: artistProfile.image_url || artistProfile.profiles?.image_url || '',
-          socials: {},
+          socials: artistSocials,
           isDemo,
           bio: artistProfile.bio,
+          averageRating: ratings?.averageRating,
+          reviewCount: ratings?.reviewCount,
         });
       } else {
         setArtist(null);
