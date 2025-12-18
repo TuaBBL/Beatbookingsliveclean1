@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import Header from './Header';
 import Footer from './Footer';
-import { Shield, Users, Calendar, DollarSign, Wrench, BarChart3, Search, MessageCircle, Trash2 } from 'lucide-react';
+import { Shield, Users, Calendar, DollarSign, Wrench, BarChart3, Search, MessageCircle, Trash2, ArrowLeft } from 'lucide-react';
 
 type Tab = 'overview' | 'users' | 'events' | 'subscriptions' | 'utilities';
 
@@ -57,6 +57,13 @@ export default function AdminDashboard() {
       <main className="flex-1 px-6 py-12">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center gap-3 mb-8">
+            <button
+              onClick={() => navigate('/planner/dashboard')}
+              className="p-2 hover:bg-neutral-800 rounded-lg transition-colors"
+              title="Back to dashboard"
+            >
+              <ArrowLeft className="w-6 h-6 text-gray-400 hover:text-white" />
+            </button>
             <Shield className="w-8 h-8 text-purple-500" />
             <h1 className="text-3xl md:text-4xl font-bold">Admin Dashboard</h1>
           </div>
