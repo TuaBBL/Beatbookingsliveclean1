@@ -5,6 +5,7 @@ import Header from '../Header';
 import Footer from '../Footer';
 import EditArtistProfileModal from './EditArtistProfileModal';
 import AnimatedArtistHero from '../dashboard/AnimatedArtistHero';
+import SubscriptionStatusCard from './SubscriptionStatusCard';
 import { Calendar, MessageSquare, User, Settings, LogOut, Shield, Image, Video, Inbox } from 'lucide-react';
 
 export default function ArtistDashboard() {
@@ -173,6 +174,12 @@ export default function ArtistDashboard() {
             <p className="text-gray-400">Loading...</p>
           ) : (
             <>
+              {artistProfile && (
+                <div className="mb-8">
+                  <SubscriptionStatusCard artistId={artistProfile.id} />
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
                 <Link
                   to="/artist/bookings"
