@@ -1,3 +1,4 @@
+import Subscribe from "./components/Subscribe";
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { supabase } from './lib/supabase';
@@ -119,7 +120,8 @@ export default function App() {
     {/* Admin */}
     <Route path="/admin" element={<AdminDashboard />} />
     <Route path="/admin/messages" element={<AdminMessages />} />
-
+<Route path="/subscribe" element={<Subscribe />} />
+    
     {/* Fallback */}
     <Route path="*" element={<Navigate to="/" replace />} />
   </Routes>
