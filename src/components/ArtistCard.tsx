@@ -85,7 +85,7 @@ export function ArtistCard({ artist, showRank = false, onFavouriteChange }: Arti
   }
 
   const handleClick = () => {
-    navigate(`/planner/artists/${artist.id}`);
+    navigate(`/planner/artists/${artist.userId || artist.id}`);
   };
 
   return (

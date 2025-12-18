@@ -196,16 +196,18 @@ export default function EditArtistProfileModal({
       console.log('Profile updated successfully:', updateData);
 
       if (artistProfile?.id) {
-        const { error: artistUpdateError } = await supabase
+        const { error: artistUpdateError, data: artistUpdateData } = await supabase
           .from('artist_profiles')
           .update({ image_url: data.publicUrl })
-          .eq('id', artistProfile.id);
+          .eq('id', artistProfile.id)
+          .select();
 
         if (artistUpdateError) {
           console.error('Artist profile update error:', artistUpdateError);
-        } else {
-          console.log('Artist profile image_url updated successfully');
+          throw artistUpdateError;
         }
+
+        console.log('Artist profile image_url updated successfully:', artistUpdateData);
       }
 
       e.target.value = '';

@@ -102,9 +102,11 @@ export default function PlannerArtists() {
 
         const isDemo = profile.type === 'demo';
         const ratings = ratingsMap.get(profile.id);
+        const artistSocials = socialsMap.get(profile.id) || {};
 
         return {
-          id: profile.user_id || profile.id,
+          id: profile.id,
+          userId: profile.user_id,
           name: profile.stage_name || 'Unknown Artist',
           role: profile.category || 'DJ',
           genre: profile.genre || 'Electronic',
@@ -112,7 +114,7 @@ export default function PlannerArtists() {
           state,
           country,
           imageUrl: profile.image_url || profile.profiles?.image_url || '',
-          socials: socialsMap.get(profile.id) || {},
+          socials: artistSocials,
           isDemo,
           bio: profile.bio,
           averageRating: ratings?.averageRating,
@@ -214,7 +216,7 @@ export default function PlannerArtists() {
                 {filteredArtists.map((artist) => (
                   <Link
                     key={artist.id}
-                    to={`/planner/artists/${artist.id}`}
+                    to={`/planner/artists/${artist.userId || artist.id}`}
                     className="bg-neutral-900 rounded-lg border-2 border-neutral-700 hover:border-orange-500 hover:shadow-xl hover:shadow-orange-500/20 transition-all duration-200 overflow-hidden group"
                   >
                     <div className="h-56 bg-neutral-800 flex items-center justify-center overflow-hidden">

@@ -73,9 +73,11 @@ export default function HomePage() {
 
         const isDemo = profile.type === 'demo';
         const ratings = ratingsMap.get(profile.id);
+        const artistSocials = socialsMap.get(profile.id) || {};
 
         return {
-          id: profile.user_id || profile.id,
+          id: profile.id,
+          userId: profile.user_id,
           name: profile.stage_name || 'Unknown Artist',
           role: profile.category || 'DJ',
           genre: profile.genre || 'Electronic',
@@ -83,7 +85,7 @@ export default function HomePage() {
           state,
           country,
           imageUrl: profile.image_url || profile.profiles?.image_url || '',
-          socials: socialsMap.get(profile.id) || {},
+          socials: artistSocials,
           isDemo,
           bio: profile.bio,
           averageRating: ratings?.averageRating,
