@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { X, Upload, Trash2, Image as ImageIcon, Video as VideoIcon } from 'lucide-react';
+import { X, Upload, Trash2, Image as ImageIcon, Video as VideoIcon, UserCircle } from 'lucide-react';
 
 interface EditArtistProfileModalProps {
   isOpen: boolean;
@@ -296,6 +296,44 @@ export default function EditArtistProfileModal({
       loadMediaAndSocial();
     } catch (err) {
       console.error('Error deleting media:', err);
+    }
+  };
+
+  const handleSetAsProfileImage = async (imageUrl: string) => {
+    if (!confirm('Set this image as your profile picture?')) return;
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error('Not authenticated');
+        return;
+      }
+
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ image_url: imageUrl })
+        .eq('id', user.id);
+
+      if (profileError) {
+        console.error('Profile update error:', profileError);
+        throw profileError;
+      }
+
+      if (artistProfile?.id) {
+        const { error: artistError } = await supabase
+          .from('artist_profiles')
+          .update({ image_url: imageUrl })
+          .eq('id', artistProfile.id);
+
+        if (artistError) {
+          console.error('Artist profile update error:', artistError);
+          throw artistError;
+        }
+      }
+
+      onSave();
+    } catch (err) {
+      console.error('Error setting profile image:', err);
     }
   };
 
@@ -625,12 +663,22 @@ export default function EditArtistProfileModal({
                         alt="Artist media"
                         className="w-full h-32 object-cover rounded-lg"
                       />
-                      <button
-                        onClick={() => handleDeleteMedia(media.id)}
-                        className="absolute top-2 right-2 p-2 bg-red-600 hover:bg-red-700 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => handleSetAsProfileImage(media.url)}
+                          className="p-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                          title="Set as profile image"
+                        >
+                          <UserCircle className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteMedia(media.id)}
+                          className="p-2 bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+                          title="Delete image"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   ))}
               </div>
