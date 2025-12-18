@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Check, Sparkles, Crown, TestTube } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Check, Sparkles, Crown, TestTube, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import Header from './Header';
 import Footer from './Footer';
@@ -7,6 +8,7 @@ import Footer from './Footer';
 type Plan = 'free' | 'standard' | 'premium' | 'test';
 
 export default function Subscribe() {
+  const navigate = useNavigate();
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -56,6 +58,14 @@ export default function Subscribe() {
 
       <main className="flex-1 px-6 py-12">
         <div className="max-w-7xl mx-auto">
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-6"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span>Back to Dashboard</span>
+          </button>
+
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
               Activate Your Artist Profile
