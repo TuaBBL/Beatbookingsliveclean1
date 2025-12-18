@@ -64,6 +64,36 @@ export default function PlannerArtists() {
           profiles!artist_profiles_user_id_fkey(image_url)
         `);
 
+      const { data: socialLinks } = await supabase
+        .from('artist_social_links')
+        .select('artist_id, platform, url');
+
+      const { data: reviews } = await supabase
+        .from('artist_reviews')
+        .select('artist_id, rating');
+
+      const socialsMap = new Map<string, Record<string, string>>();
+      (socialLinks || []).forEach((link: any) => {
+        if (!socialsMap.has(link.artist_id)) {
+          socialsMap.set(link.artist_id, {});
+        }
+        socialsMap.get(link.artist_id)![link.platform] = link.url;
+      });
+
+      const ratingsMap = new Map<string, { averageRating: number; reviewCount: number }>();
+      (reviews || []).forEach((review: any) => {
+        if (!ratingsMap.has(review.artist_id)) {
+          ratingsMap.set(review.artist_id, { averageRating: 0, reviewCount: 0 });
+        }
+        const current = ratingsMap.get(review.artist_id)!;
+        current.averageRating += review.rating;
+        current.reviewCount += 1;
+      });
+
+      ratingsMap.forEach((value, key) => {
+        value.averageRating = Math.round((value.averageRating / value.reviewCount) * 10) / 10;
+      });
+
       const artists: Artist[] = (artistProfiles || []).map((profile: any) => {
         const locationParts = (profile.location || '').split(',').map((s: string) => s.trim());
         const city = locationParts[0] || '';
@@ -71,6 +101,7 @@ export default function PlannerArtists() {
         const country = locationParts[2] || 'Australia';
 
         const isDemo = profile.type === 'demo';
+        const ratings = ratingsMap.get(profile.id);
 
         return {
           id: profile.user_id || profile.id,
@@ -81,9 +112,11 @@ export default function PlannerArtists() {
           state,
           country,
           imageUrl: profile.image_url || profile.profiles?.image_url || '',
-          socials: {},
+          socials: socialsMap.get(profile.id) || {},
           isDemo,
           bio: profile.bio,
+          averageRating: ratings?.averageRating,
+          reviewCount: ratings?.reviewCount,
         };
       });
 

@@ -5,6 +5,7 @@ import {
   Facebook,
   Music,
   Radio,
+  Star,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -139,7 +140,7 @@ export function ArtistCard({ artist, showRank = false, onFavouriteChange }: Arti
         </p>
 
         <p className="text-xs text-gray-500 truncate mb-3">
-          {artist.state}, {artist.country}
+          {[artist.city, artist.state, artist.country].filter(Boolean).join(', ')}
         </p>
 
         {artist.isDemo && (
@@ -150,12 +151,86 @@ export function ArtistCard({ artist, showRank = false, onFavouriteChange }: Arti
           </div>
         )}
 
+        {artist.reviewCount !== undefined && artist.reviewCount > 0 ? (
+          <div className="flex items-center gap-1 mb-2 text-sm">
+            <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+            <span className="text-white font-medium">{artist.averageRating}</span>
+            <span className="text-gray-500">({artist.reviewCount})</span>
+          </div>
+        ) : (
+          <div className="mb-2 text-xs text-gray-500">
+            No reviews yet
+          </div>
+        )}
+
         <div className="flex gap-3 text-gray-400">
-          {artist.socials?.instagram && <Instagram size={16} />}
-          {artist.socials?.youtube && <Youtube size={16} />}
-          {artist.socials?.facebook && <Facebook size={16} />}
-          {artist.socials?.spotify && <Music size={16} />}
-          {artist.socials?.soundcloud && <Radio size={16} />}
+          {isLoggedIn ? (
+            <>
+              {artist.socials?.instagram && (
+                <a
+                  href={artist.socials.instagram}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="hover:text-orange-500 transition"
+                >
+                  <Instagram size={16} />
+                </a>
+              )}
+              {artist.socials?.youtube && (
+                <a
+                  href={artist.socials.youtube}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="hover:text-orange-500 transition"
+                >
+                  <Youtube size={16} />
+                </a>
+              )}
+              {artist.socials?.facebook && (
+                <a
+                  href={artist.socials.facebook}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="hover:text-orange-500 transition"
+                >
+                  <Facebook size={16} />
+                </a>
+              )}
+              {artist.socials?.spotify && (
+                <a
+                  href={artist.socials.spotify}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="hover:text-orange-500 transition"
+                >
+                  <Music size={16} />
+                </a>
+              )}
+              {artist.socials?.soundcloud && (
+                <a
+                  href={artist.socials.soundcloud}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="hover:text-orange-500 transition"
+                >
+                  <Radio size={16} />
+                </a>
+              )}
+            </>
+          ) : (
+            <>
+              {artist.socials?.instagram && (
+                <span title="Login to view" className="cursor-default">
+                  <Instagram size={16} />
+                </span>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>

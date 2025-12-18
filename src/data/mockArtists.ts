@@ -8,15 +8,17 @@ export interface Artist {
   country: string;
   imageUrl: string;
   socials: {
-    youtube?: boolean;
-    instagram?: boolean;
-    facebook?: boolean;
-    soundcloud?: boolean;
-    spotify?: boolean;
+    youtube?: boolean | string;
+    instagram?: boolean | string;
+    facebook?: boolean | string;
+    soundcloud?: boolean | string;
+    spotify?: boolean | string;
   };
   trending?: number;
   isDemo?: boolean;
   bio?: string;
+  averageRating?: number;
+  reviewCount?: number;
 }
 
 export const mockArtists: Artist[] = [
