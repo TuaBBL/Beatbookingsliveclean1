@@ -225,8 +225,48 @@ export function ArtistCard({ artist, showRank = false, onFavouriteChange }: Arti
           ) : (
             <>
               {artist.socials?.instagram && (
-                <span title="Login to view" className="cursor-default">
+                <span
+                  title="Sign in to view"
+                  className="opacity-40 cursor-not-allowed"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <Instagram size={16} />
+                </span>
+              )}
+              {artist.socials?.youtube && (
+                <span
+                  title="Sign in to view"
+                  className="opacity-40 cursor-not-allowed"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Youtube size={16} />
+                </span>
+              )}
+              {artist.socials?.facebook && (
+                <span
+                  title="Sign in to view"
+                  className="opacity-40 cursor-not-allowed"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Facebook size={16} />
+                </span>
+              )}
+              {artist.socials?.spotify && (
+                <span
+                  title="Sign in to view"
+                  className="opacity-40 cursor-not-allowed"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Music size={16} />
+                </span>
+              )}
+              {artist.socials?.soundcloud && (
+                <span
+                  title="Sign in to view"
+                  className="opacity-40 cursor-not-allowed"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Radio size={16} />
                 </span>
               )}
             </>
