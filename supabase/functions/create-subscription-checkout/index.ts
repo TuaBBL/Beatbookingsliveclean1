@@ -17,7 +17,7 @@ const supabaseAdmin = createClient(
 );
 
 Deno.serve(async (req) => {
-  // CORS preflight
+  // ---------- CORS ----------
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // -------- AUTH --------
+    // ---------- AUTH ----------
     const authHeader = req.headers.get("Authorization") || "";
     const token = authHeader.replace("Bearer ", "");
 
@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // -------- INPUT --------
+    // ---------- INPUT ----------
     const { subscriptionId, plan } = await req.json();
 
     if (!subscriptionId || !plan) {
@@ -61,8 +61,97 @@ Deno.serve(async (req) => {
       });
     }
 
-    // -------- FETCH SUBSCRIPTION --------
+    // ---------- FETCH SUBSCRIPTION ----------
     const { data: subscription, error: subError } = await supabaseAdmin
       .from("subscriptions")
       .select("id, artist_id, status")
       .eq("id", subscriptionId)
+      .single();
+
+    if (subError || !subscription) {
+      return new Response("Subscription not found", {
+        status: 404,
+        headers: corsHeaders,
+      });
+    }
+
+    // ---------- OWNERSHIP CHECK ----------
+    const { data: artistProfile } = await supabaseAdmin
+      .from("artist_profiles")
+      .select("user_id")
+      .eq("id", subscription.artist_id)
+      .single();
+
+    if (!artistProfile || artistProfile.user_id !== userData.user.id) {
+      return new Response("Not authorised", {
+        status: 403,
+        headers: corsHeaders,
+      });
+    }
+
+    // ---------- STRIPE PRICE MAP ----------
+    const priceMap: Record<string, string | undefined> = {
+      standard: Deno.env.get("STRIPE_PRICE_STANDARD"),
+      premium: Deno.env.get("STRIPE_PRICE_PREMIUM"),
+      test: Deno.env.get("STRIPE_PRICE_TEST"),
+    };
+
+    const priceId = priceMap[plan];
+
+    if (!priceId) {
+      return new Response("Invalid plan", {
+        status: 400,
+        headers: corsHeaders,
+      });
+    }
+
+    // ---------- CREATE CHECKOUT ----------
+    const siteUrl = Deno.env.get("SITE_URL");
+    if (!siteUrl) {
+      throw new Error("SITE_URL env var not set");
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price: priceId,
+          quantity: 1,
+        },
+      ],
+      success_url: `${siteUrl}/subscribe/success`,
+      cancel_url: `${siteUrl}/subscribe/cancel`,
+      metadata: {
+        subscription_id: subscription.id,
+        plan,
+      },
+    });
+
+    return new Response(
+      JSON.stringify({ url: session.url }),
+      {
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+  } catch (error: any) {
+    console.error("Subscription checkout error:", error);
+
+    return new Response(
+      JSON.stringify({
+        error: error.message || "Internal server error",
+      }),
+      {
+        status: 500,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+  }
+});
