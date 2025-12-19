@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import Header from '../Header';
 import Footer from '../Footer';
-import { ArrowLeft, Calendar, MapPin, MessageSquare, User, FileText, ShieldAlert, CheckCircle, XCircle, Clock, Send } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, MessageSquare, User, FileText, ShieldAlert, CheckCircle, XCircle, Clock, Send, X } from 'lucide-react';
 
 interface BookingRequest {
   id: string;
@@ -16,6 +16,7 @@ interface BookingRequest {
   created_at: string;
   start_time: string | null;
   end_time: string | null;
+  booking_id: string | null;
   planner: {
     name: string;
     email: string;
@@ -31,10 +32,13 @@ export default function ArtistInboxPage() {
   const [processing, setProcessing] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [selectedRequest, setSelectedRequest] = useState<BookingRequest | null>(null);
-  const [actionType, setActionType] = useState<'accept' | 'decline' | null>(null);
+  const [actionType, setActionType] = useState<'accept' | 'decline' | 'view' | null>(null);
   const [startTime, setStartTime] = useState('18:00');
   const [endTime, setEndTime] = useState('23:00');
   const [responseMessage, setResponseMessage] = useState('');
+  const [messages, setMessages] = useState<any[]>([]);
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
     loadRequests();
@@ -73,6 +77,7 @@ export default function ArtistInboxPage() {
           created_at,
           start_time,
           end_time,
+          booking_id,
           planner:profiles!booking_requests_planner_id_fkey(
             name,
             email,
@@ -80,7 +85,7 @@ export default function ArtistInboxPage() {
           )
         `)
         .eq('artist_user_id', user.id)
-        .eq('status', 'pending')
+        .in('status', ['pending', 'declined'])
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -171,12 +176,99 @@ export default function ArtistInboxPage() {
     }
   }
 
-  function openActionModal(request: BookingRequest, action: 'accept' | 'decline') {
+  async function loadCurrentUser() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) setCurrentUserId(user.id);
+  }
+
+  async function loadMessages(requestId: string, plannerId: string) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('messages')
+        .select(`
+          id,
+          sender_id,
+          recipient_id,
+          content,
+          created_at,
+          sender:profiles!messages_sender_id_fkey(name, image_url)
+        `)
+        .or(`and(sender_id.eq.${user.id},recipient_id.eq.${plannerId}),and(sender_id.eq.${plannerId},recipient_id.eq.${user.id})`)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      setMessages(data || []);
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    }
+  }
+
+  async function sendMessageInModal() {
+    if (!selectedRequest || !responseMessage.trim() || sendingMessage) return;
+
+    try {
+      setSendingMessage(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from('messages')
+        .insert({
+          sender_id: user.id,
+          recipient_id: selectedRequest.planner_id,
+          booking_id: selectedRequest.booking_id,
+          content: responseMessage.trim()
+        });
+
+      if (error) throw error;
+
+      setResponseMessage('');
+      loadMessages(selectedRequest.id, selectedRequest.planner_id);
+    } catch (error) {
+      console.error('Error sending message:', error);
+    } finally {
+      setSendingMessage(false);
+    }
+  }
+
+  async function handleDeleteRequest(requestId: string) {
+    if (!confirm('Are you sure you want to delete this request?')) return;
+
+    try {
+      setProcessing(requestId);
+      const { error } = await supabase
+        .from('booking_requests')
+        .delete()
+        .eq('id', requestId);
+
+      if (error) throw error;
+
+      setToast('Request deleted successfully');
+      setTimeout(() => setToast(null), 3000);
+      loadRequests();
+    } catch (error) {
+      console.error('Error deleting request:', error);
+      setToast('Failed to delete request');
+      setTimeout(() => setToast(null), 3000);
+    } finally {
+      setProcessing(null);
+    }
+  }
+
+  function openActionModal(request: BookingRequest, action: 'accept' | 'decline' | 'view') {
     setSelectedRequest(request);
     setActionType(action);
     setResponseMessage('');
     setStartTime(request.start_time || '18:00');
     setEndTime(request.end_time || '23:00');
+
+    if (action === 'view') {
+      loadCurrentUser();
+      loadMessages(request.id, request.planner_id);
+    }
   }
 
   return (
@@ -295,22 +387,43 @@ export default function ArtistInboxPage() {
                     </div>
 
                     <div className="flex flex-col gap-2">
+                      {request.status === 'pending' && (
+                        <>
+                          <button
+                            onClick={() => openActionModal(request, 'accept')}
+                            disabled={processing === request.id}
+                            className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition text-white font-medium disabled:opacity-50 whitespace-nowrap"
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                            Accept
+                          </button>
+                          <button
+                            onClick={() => openActionModal(request, 'decline')}
+                            disabled={processing === request.id}
+                            className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition text-white font-medium disabled:opacity-50 whitespace-nowrap"
+                          >
+                            <XCircle className="w-4 h-4" />
+                            Decline
+                          </button>
+                        </>
+                      )}
                       <button
-                        onClick={() => openActionModal(request, 'accept')}
-                        disabled={processing === request.id}
-                        className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition text-white font-medium disabled:opacity-50 whitespace-nowrap"
+                        onClick={() => openActionModal(request, 'view')}
+                        className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition text-white font-medium whitespace-nowrap"
                       >
-                        <CheckCircle className="w-4 h-4" />
-                        Accept
+                        <MessageSquare className="w-4 h-4" />
+                        Message
                       </button>
-                      <button
-                        onClick={() => openActionModal(request, 'decline')}
-                        disabled={processing === request.id}
-                        className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition text-white font-medium disabled:opacity-50 whitespace-nowrap"
-                      >
-                        <XCircle className="w-4 h-4" />
-                        Decline
-                      </button>
+                      {request.status === 'pending' && (
+                        <button
+                          onClick={() => handleDeleteRequest(request.id)}
+                          disabled={processing === request.id}
+                          className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition text-white font-medium disabled:opacity-50 whitespace-nowrap"
+                        >
+                          <XCircle className="w-4 h-4" />
+                          Delete
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -323,14 +436,91 @@ export default function ArtistInboxPage() {
       {selectedRequest && actionType && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="bg-neutral-900 rounded-lg border-2 border-neutral-700 max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-2xl font-bold mb-2">
-              {actionType === 'accept' ? 'Accept Booking' : 'Decline Booking'}
-            </h2>
-            <p className="text-gray-400 mb-6">
-              {selectedRequest.event_name} on {formatDate(selectedRequest.event_date)}
-            </p>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-2xl font-bold">
+                  {actionType === 'view' ? 'Messages' : actionType === 'accept' ? 'Accept Booking' : 'Decline Booking'}
+                </h2>
+                <p className="text-gray-400">
+                  {selectedRequest.event_name} on {formatDate(selectedRequest.event_date)}
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setSelectedRequest(null);
+                  setActionType(null);
+                  setResponseMessage('');
+                }}
+                className="p-2 hover:bg-neutral-800 rounded-lg transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-            {actionType === 'accept' && (
+            {actionType === 'view' ? (
+              <div className="space-y-4">
+                <div className="bg-neutral-800 rounded-lg p-4 max-h-96 overflow-y-auto">
+                  {messages.length === 0 ? (
+                    <p className="text-gray-400 text-sm text-center py-4">No messages yet</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {messages.map((message) => {
+                        const isOwnMessage = message.sender_id === currentUserId;
+                        return (
+                          <div
+                            key={message.id}
+                            className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
+                          >
+                            <div className={`max-w-[80%]`}>
+                              <div className={`rounded-lg p-3 ${
+                                isOwnMessage
+                                  ? 'bg-blue-600 text-white'
+                                  : 'bg-neutral-700 text-white'
+                              }`}>
+                                <p className="text-sm font-medium mb-1">
+                                  {message.sender?.name || 'Unknown'}
+                                </p>
+                                <p className="text-sm">{message.content}</p>
+                                <p className="text-xs mt-1 opacity-70">
+                                  {new Date(message.created_at).toLocaleString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={responseMessage}
+                    onChange={(e) => setResponseMessage(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && sendMessageInModal()}
+                    placeholder="Type a message..."
+                    className="flex-1 px-4 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+                  />
+                  <button
+                    onClick={sendMessageInModal}
+                    disabled={!responseMessage.trim() || sendingMessage}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition flex items-center gap-2"
+                  >
+                    <Send className="w-4 h-4" />
+                    Send
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+
+              {actionType === 'accept' && (
               <div className="space-y-4 mb-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -357,55 +547,57 @@ export default function ArtistInboxPage() {
                     className="w-full px-4 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white focus:outline-none focus:border-green-500"
                   />
                 </div>
+                </div>
+              )}
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <MessageSquare className="w-4 h-4 inline mr-2" />
+                  Message to Planner (Optional)
+                </label>
+                <textarea
+                  value={responseMessage}
+                  onChange={(e) => setResponseMessage(e.target.value)}
+                  placeholder={actionType === 'accept'
+                    ? "E.g., 'Looking forward to performing at your event!'"
+                    : "E.g., 'Unfortunately I'm not available on this date.'"}
+                  rows={4}
+                  className="w-full px-4 py-3 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"
+                />
               </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setSelectedRequest(null);
+                    setActionType(null);
+                    setResponseMessage('');
+                  }}
+                  className="flex-1 px-4 py-3 bg-neutral-800 hover:bg-neutral-700 text-white rounded-lg transition font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={actionType === 'accept' ? handleAccept : handleDecline}
+                  disabled={processing === selectedRequest.id}
+                  className={`flex-1 px-4 py-3 rounded-lg transition font-medium text-white disabled:opacity-50 flex items-center justify-center gap-2 ${
+                    actionType === 'accept'
+                      ? 'bg-green-600 hover:bg-green-700'
+                      : 'bg-red-600 hover:bg-red-700'
+                  }`}
+                >
+                  {processing === selectedRequest.id ? (
+                    'Processing...'
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      {actionType === 'accept' ? 'Confirm & Accept' : 'Confirm & Decline'}
+                    </>
+                  )}
+                </button>
+              </div>
+              </>
             )}
-
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                <MessageSquare className="w-4 h-4 inline mr-2" />
-                Message to Planner (Optional)
-              </label>
-              <textarea
-                value={responseMessage}
-                onChange={(e) => setResponseMessage(e.target.value)}
-                placeholder={actionType === 'accept'
-                  ? "E.g., 'Looking forward to performing at your event!'"
-                  : "E.g., 'Unfortunately I'm not available on this date.'"}
-                rows={4}
-                className="w-full px-4 py-3 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"
-              />
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  setSelectedRequest(null);
-                  setActionType(null);
-                  setResponseMessage('');
-                }}
-                className="flex-1 px-4 py-3 bg-neutral-800 hover:bg-neutral-700 text-white rounded-lg transition font-medium"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={actionType === 'accept' ? handleAccept : handleDecline}
-                disabled={processing === selectedRequest.id}
-                className={`flex-1 px-4 py-3 rounded-lg transition font-medium text-white disabled:opacity-50 flex items-center justify-center gap-2 ${
-                  actionType === 'accept'
-                    ? 'bg-green-600 hover:bg-green-700'
-                    : 'bg-red-600 hover:bg-red-700'
-                }`}
-              >
-                {processing === selectedRequest.id ? (
-                  'Processing...'
-                ) : (
-                  <>
-                    <Send className="w-4 h-4" />
-                    {actionType === 'accept' ? 'Confirm & Accept' : 'Confirm & Decline'}
-                  </>
-                )}
-              </button>
-            </div>
           </div>
         </div>
       )}

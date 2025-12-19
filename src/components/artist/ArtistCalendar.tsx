@@ -23,9 +23,17 @@ interface Booking {
   };
 }
 
+interface AttendedEvent {
+  id: string;
+  title: string;
+  event_date: string;
+  start_time: string;
+}
+
 export default function ArtistCalendar() {
   const navigate = useNavigate();
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [attendedEvents, setAttendedEvents] = useState<AttendedEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -54,30 +62,50 @@ export default function ArtistCalendar() {
         return;
       }
 
-      const { data, error } = await supabase
-        .from('bookings')
-        .select(`
-          id,
-          planner_id,
-          status,
-          event_date,
-          start_time,
-          end_time,
-          created_at,
-          planner:profiles!bookings_planner_id_fkey(
-            name,
-            email,
-            image_url,
-            city,
-            state
-          )
-        `)
-        .eq('artist_id', artistProfile.id)
-        .eq('status', 'accepted')
-        .order('event_date', { ascending: true });
+      const [bookingsRes, eventsRes] = await Promise.all([
+        supabase
+          .from('bookings')
+          .select(`
+            id,
+            planner_id,
+            status,
+            event_date,
+            start_time,
+            end_time,
+            created_at,
+            planner:profiles!bookings_planner_id_fkey(
+              name,
+              email,
+              image_url,
+              city,
+              state
+            )
+          `)
+          .eq('artist_id', artistProfile.id)
+          .eq('status', 'accepted')
+          .order('event_date', { ascending: true }),
+        supabase
+          .from('event_attendance')
+          .select(`
+            event_id,
+            events!inner(
+              id,
+              title,
+              event_date,
+              start_time
+            )
+          `)
+          .eq('user_id', user.id)
+          .eq('status', 'going')
+      ]);
 
-      if (error) throw error;
-      setBookings(data || []);
+      if (bookingsRes.error) throw bookingsRes.error;
+      setBookings(bookingsRes.data || []);
+
+      if (!eventsRes.error && eventsRes.data) {
+        const events = eventsRes.data.map((item: any) => item.events).filter(Boolean);
+        setAttendedEvents(events);
+      }
     } catch (error) {
       console.error('Error loading bookings:', error);
     } finally {
@@ -94,6 +122,13 @@ export default function ArtistCalendar() {
     const startingDayOfWeek = firstDay.getDay();
 
     return { daysInMonth, startingDayOfWeek };
+  }
+
+  function getItemsForDate(date: Date) {
+    const dateStr = date.toISOString().split('T')[0];
+    const dayBookings = bookings.filter(b => b.event_date === dateStr);
+    const dayEvents = attendedEvents.filter(e => e.event_date === dateStr);
+    return { bookings: dayBookings, events: dayEvents };
   }
 
   function getBookingsForDate(date: Date) {
@@ -125,7 +160,7 @@ export default function ArtistCalendar() {
 
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-      const dateBookings = getBookingsForDate(date);
+      const { bookings: dateBookings, events: dateEvents } = getItemsForDate(date);
       const isToday = date.toDateString() === today.toDateString();
       const isPast = date < today;
 
@@ -139,9 +174,9 @@ export default function ArtistCalendar() {
           <div className={`text-sm font-medium mb-1 ${isPast ? 'text-gray-600' : 'text-gray-300'}`}>
             {day}
           </div>
-          {dateBookings.length > 0 && (
+          {(dateBookings.length > 0 || dateEvents.length > 0) && (
             <div className="space-y-1">
-              {dateBookings.slice(0, 2).map((booking) => (
+              {dateBookings.slice(0, 1).map((booking) => (
                 <button
                   key={booking.id}
                   onClick={() => setSelectedBooking(booking)}
@@ -151,9 +186,19 @@ export default function ArtistCalendar() {
                   {booking.start_time.slice(0, 5)} {booking.planner.name}
                 </button>
               ))}
-              {dateBookings.length > 2 && (
+              {dateEvents.slice(0, 1).map((event) => (
+                <button
+                  key={event.id}
+                  onClick={() => navigate(`/events/${event.id}`)}
+                  className="w-full text-left text-xs bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded truncate"
+                  title={event.title}
+                >
+                  {event.start_time.slice(0, 5)} {event.title}
+                </button>
+              ))}
+              {(dateBookings.length + dateEvents.length) > 2 && (
                 <div className="text-xs text-gray-400 px-2">
-                  +{dateBookings.length - 2} more
+                  +{(dateBookings.length + dateEvents.length) - 2} more
                 </div>
               )}
             </div>
