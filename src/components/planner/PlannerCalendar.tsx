@@ -9,11 +9,13 @@ import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock } from "luci
 
 interface Booking {
   id: string;
+  planner_id: string;
   event_date: string;
   start_time: string;
   end_time: string;
   artist_profiles: {
     stage_name: string;
+    user_id: string;
   };
 }
 
@@ -55,7 +57,7 @@ export default function PlannerCalendar() {
       const [bookingsRes, eventsRes] = await Promise.all([
         supabase
           .from("bookings")
-          .select("*, artist_profiles(stage_name)")
+          .select("*, artist_profiles(stage_name, user_id)")
           .eq("planner_id", user.id)
           .eq("status", "accepted")
           .gte("event_date", startOfMonth.toISOString().split("T")[0])

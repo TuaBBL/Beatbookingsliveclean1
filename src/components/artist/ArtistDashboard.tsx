@@ -237,17 +237,17 @@ export default function ArtistDashboard() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <Link
-                  to="/artist/inbox"
-                  className="bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 p-8 rounded-lg shadow-lg hover:shadow-[0_0_30px_rgba(59,130,246,0.4)] transition-all duration-200 group"
+                  to="/artist/calendar"
+                  className="bg-gradient-to-br from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 p-8 rounded-lg shadow-lg hover:shadow-[0_0_30px_rgba(34,197,94,0.4)] transition-all duration-200 group"
                 >
                   <div className="flex flex-col items-center text-center gap-3">
                     <div className="p-3 bg-white/10 rounded-lg">
-                      <Inbox className="w-8 h-8" />
+                      <Calendar className="w-8 h-8" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold mb-1">Booking Requests</h3>
-                      <p className="text-blue-100 text-sm">
-                        View incoming requests
+                      <h3 className="text-xl font-bold mb-1">Confirmed Bookings</h3>
+                      <p className="text-green-100 text-sm">
+                        View your calendar
                       </p>
                     </div>
                   </div>

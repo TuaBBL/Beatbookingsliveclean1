@@ -1,10 +1,25 @@
-import { X, Calendar, Clock, MapPin, User, Mail, CheckCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, Calendar, Clock, MapPin, User, Mail, CheckCircle, MessageSquare, Send } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+
+interface Message {
+  id: string;
+  sender_id: string;
+  recipient_id: string;
+  content: string;
+  created_at: string;
+  sender?: {
+    name: string;
+    image_url: string | null;
+  };
+}
 
 interface BookingDetailProps {
   isOpen: boolean;
   onClose: () => void;
   booking: {
     id: string;
+    planner_id?: string;
     event_date: string;
     start_time: string;
     end_time: string;
@@ -18,12 +33,89 @@ interface BookingDetailProps {
     };
     artist_profiles?: {
       stage_name: string;
+      user_id?: string;
     };
   };
   userRole: 'artist' | 'planner';
 }
 
 export default function BookingDetailModal({ isOpen, onClose, booking, userRole }: BookingDetailProps) {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      loadMessages();
+      getCurrentUser();
+    }
+  }, [isOpen, booking.id]);
+
+  async function getCurrentUser() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) setCurrentUserId(user.id);
+  }
+
+  async function loadMessages() {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const recipientId = userRole === 'artist' ? booking.planner_id : booking.artist_profiles?.user_id;
+      if (!recipientId) return;
+
+      const { data, error } = await supabase
+        .from('messages')
+        .select(`
+          id,
+          sender_id,
+          recipient_id,
+          content,
+          created_at,
+          sender:profiles!messages_sender_id_fkey(name, image_url)
+        `)
+        .eq('booking_id', booking.id)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      setMessages(data || []);
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    }
+  }
+
+  async function sendMessage() {
+    if (!newMessage.trim() || sendingMessage) return;
+
+    try {
+      setSendingMessage(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const recipientId = userRole === 'artist' ? booking.planner_id : booking.artist_profiles?.user_id;
+      if (!recipientId) return;
+
+      const { error } = await supabase
+        .from('messages')
+        .insert({
+          sender_id: user.id,
+          recipient_id: recipientId,
+          booking_id: booking.id,
+          content: newMessage.trim()
+        });
+
+      if (error) throw error;
+
+      setNewMessage('');
+      loadMessages();
+    } catch (error) {
+      console.error('Error sending message:', error);
+    } finally {
+      setSendingMessage(false);
+    }
+  }
+
   if (!isOpen) return null;
 
   const displayName = userRole === 'artist'
@@ -130,6 +222,70 @@ export default function BookingDetailModal({ isOpen, onClose, booking, userRole 
                   </p>
                 </div>
               </div>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <h3 className="font-semibold text-lg text-orange-500 flex items-center gap-2">
+              <MessageSquare className="w-5 h-5" />
+              Messages
+            </h3>
+            <div className="bg-neutral-800 rounded-lg p-4 max-h-64 overflow-y-auto">
+              {messages.length === 0 ? (
+                <p className="text-gray-400 text-sm text-center py-4">No messages yet</p>
+              ) : (
+                <div className="space-y-3">
+                  {messages.map((message) => {
+                    const isOwnMessage = message.sender_id === currentUserId;
+                    return (
+                      <div
+                        key={message.id}
+                        className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
+                      >
+                        <div className={`max-w-[80%] ${isOwnMessage ? 'order-2' : 'order-1'}`}>
+                          <div className={`rounded-lg p-3 ${
+                            isOwnMessage
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-neutral-700 text-white'
+                          }`}>
+                            <p className="text-sm font-medium mb-1">
+                              {message.sender?.name || 'Unknown'}
+                            </p>
+                            <p className="text-sm">{message.content}</p>
+                            <p className="text-xs mt-1 opacity-70">
+                              {new Date(message.created_at).toLocaleString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                placeholder="Type a message..."
+                className="flex-1 px-4 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+              />
+              <button
+                onClick={sendMessage}
+                disabled={!newMessage.trim() || sendingMessage}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition flex items-center gap-2"
+              >
+                <Send className="w-4 h-4" />
+                Send
+              </button>
             </div>
           </div>
 
