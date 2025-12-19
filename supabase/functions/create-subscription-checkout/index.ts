@@ -108,9 +108,11 @@ Deno.serve(async (req) => {
     };
 
     const priceId = prices[plan];
-    if (!priceId) {
+    console.log(`Plan: ${plan}, PriceId: ${priceId}`);
+
+    if (!priceId || priceId.trim() === "") {
       return new Response(
-        JSON.stringify({ error: "Invalid plan" }),
+        JSON.stringify({ error: `Price not configured for plan: ${plan}` }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
