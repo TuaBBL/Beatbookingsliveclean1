@@ -83,7 +83,7 @@ export default function PlannerArtistProfile() {
       }
 
       if (artistProfile) {
-        setIsArtistActive(artistProfile.subscriptions?.is_active === true);
+        setIsArtistActive(artistProfile.type === 'demo' || artistProfile.subscriptions?.is_active === true);
 
         const { data: socialLinks } = await supabase
           .from('artist_social_links')
