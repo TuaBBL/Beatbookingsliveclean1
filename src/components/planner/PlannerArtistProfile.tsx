@@ -5,14 +5,21 @@ import Header from "../Header";
 import Footer from "../Footer";
 import PlannerProfileMenu from "./PlannerProfileMenu";
 import BookingRequestModal from "../artist/BookingRequestModal";
-import { Music, Heart, MessageSquare, ArrowLeft } from "lucide-react";
+import { Music, Heart, MessageSquare, ArrowLeft, Instagram, Youtube, Facebook, Radio, Play } from "lucide-react";
 import { mockArtists, Artist } from "../../data/mockArtists";
+
+interface MediaItem {
+  id: string;
+  media_type: 'image' | 'video';
+  url: string;
+}
 
 export default function PlannerArtistProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [artist, setArtist] = useState<Artist | null>(null);
   const [artistProfileId, setArtistProfileId] = useState<string | null>(null);
+  const [media, setMedia] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFavourite, setIsFavourite] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
@@ -117,6 +124,12 @@ export default function PlannerArtistProfile() {
           .select('artist_id, rating')
           .eq('artist_id', artistProfile.id);
 
+        const { data: mediaData } = await supabase
+          .from('artist_media')
+          .select('id, media_type, url')
+          .eq('artist_id', artistProfile.id)
+          .order('created_at', { ascending: false });
+
         const socialsMap = new Map<string, Record<string, string>>();
         (socialLinks || []).forEach((link: any) => {
           if (!socialsMap.has(link.artist_id)) {
@@ -164,6 +177,7 @@ export default function PlannerArtistProfile() {
           averageRating: ratings?.averageRating,
           reviewCount: ratings?.reviewCount,
         });
+        setMedia(mediaData || []);
       } else {
         setArtist(null);
       }
@@ -378,6 +392,124 @@ export default function PlannerArtistProfile() {
               </button>
             </div>
           </div>
+
+          {isLoggedIn && artist.socials && Object.keys(artist.socials).length > 0 && (
+            <div className="bg-neutral-900 rounded-lg border border-neutral-800 p-6 mb-6">
+              <h2 className="text-xl font-bold mb-4">Connect</h2>
+              <div className="flex flex-wrap gap-4">
+                {artist.socials.instagram && (
+                  <a
+                    href={artist.socials.instagram}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg transition text-white"
+                  >
+                    <Instagram className="w-5 h-5" />
+                    <span className="font-medium">Instagram</span>
+                  </a>
+                )}
+                {artist.socials.youtube && (
+                  <a
+                    href={artist.socials.youtube}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition text-white"
+                  >
+                    <Youtube className="w-5 h-5" />
+                    <span className="font-medium">YouTube</span>
+                  </a>
+                )}
+                {artist.socials.facebook && (
+                  <a
+                    href={artist.socials.facebook}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition text-white"
+                  >
+                    <Facebook className="w-5 h-5" />
+                    <span className="font-medium">Facebook</span>
+                  </a>
+                )}
+                {artist.socials.spotify && (
+                  <a
+                    href={artist.socials.spotify}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition text-white"
+                  >
+                    <Music className="w-5 h-5" />
+                    <span className="font-medium">Spotify</span>
+                  </a>
+                )}
+                {artist.socials.soundcloud && (
+                  <a
+                    href={artist.socials.soundcloud}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded-lg transition text-white"
+                  >
+                    <Radio className="w-5 h-5" />
+                    <span className="font-medium">SoundCloud</span>
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+
+          {isLoggedIn && artist.bio && (
+            <div className="bg-neutral-900 rounded-lg border border-neutral-800 p-6 mb-6">
+              <h2 className="text-xl font-bold mb-4">About</h2>
+              <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">{artist.bio}</p>
+            </div>
+          )}
+
+          {isLoggedIn && media.length > 0 && (
+            <div className="bg-neutral-900 rounded-lg border border-neutral-800 p-6 mb-6">
+              <h2 className="text-xl font-bold mb-4">Media Gallery</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {media.map((item) => (
+                  <div key={item.id} className="relative group rounded-lg overflow-hidden bg-neutral-800 aspect-square">
+                    {item.media_type === 'image' ? (
+                      <img
+                        src={item.url}
+                        alt="Artist media"
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="relative w-full h-full">
+                        <video
+                          src={item.url}
+                          className="w-full h-full object-cover"
+                          controls
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:bg-black/20 transition pointer-events-none">
+                          <Play className="w-12 h-12 text-white" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {!isLoggedIn && (
+            <div className="bg-neutral-900 rounded-lg border border-neutral-800 p-8 text-center">
+              <div className="max-w-md mx-auto">
+                <Music className="w-16 h-16 text-neutral-700 mx-auto mb-4" />
+                <h3 className="text-xl font-bold mb-2">Want to see more?</h3>
+                <p className="text-gray-400 mb-4">
+                  Sign in to view social links, about information, and media gallery
+                </p>
+                <Link
+                  to="/login"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-orange-600 hover:bg-orange-700 rounded-lg transition text-white font-semibold"
+                >
+                  Sign In
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
       </main>
 
