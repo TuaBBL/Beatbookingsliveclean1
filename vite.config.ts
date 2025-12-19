@@ -7,13 +7,6 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
-  build: {
-    rollupOptions: {
-      external: [
-        /supabase\/functions/,
-      ],
-    },
-  },
   server: {
     fs: {
       deny: [
