@@ -16,9 +16,7 @@ Deno.serve(async (req) => {
   }
 
   const signature = req.headers.get("stripe-signature");
-  if (!signature) {
-    return new Response("Missing signature", { status: 400 });
-  }
+  if (!signature) return new Response("Missing signature", { status: 400 });
 
   const body = await req.text();
 
@@ -36,47 +34,70 @@ Deno.serve(async (req) => {
 
   try {
     // =====================================
-    // SUBSCRIPTION CREATED / PAID
+    // 1) CHECKOUT COMPLETED (ACTIVATE)
     // =====================================
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
 
-      // Ignore non-subscription checkouts
       if (session.mode !== "subscription") {
         return new Response("OK", { status: 200 });
       }
 
-      const subscriptionId = session.metadata?.subscription_id;
-      if (!subscriptionId) {
-        console.error("Missing subscription_id metadata", session.id);
+      const artistId = session.metadata?.artist_id;
+      const plan = session.metadata?.plan; // may be "standard" | "premium" | "test"
+      const subscriptionId = session.subscription as string | null;
+      const customerId = session.customer as string | null;
+
+      if (!artistId || !plan) {
+        console.error("Missing artist_id or plan in metadata", session.id, session.metadata);
         return new Response("Missing metadata", { status: 400 });
       }
+      if (!subscriptionId || !customerId) {
+        console.error("Missing subscription/customer id", session.id);
+        return new Response("Missing stripe ids", { status: 400 });
+      }
 
-      // Activate subscription
+      // IMPORTANT: avoid writing "test" into enum fields
+      const tier =
+        plan === "premium" ? "premium"
+        : plan === "standard" ? "standard"
+        : "standard"; // plan === "test" → treat as standard tier for enum
+
+      // UPSERT by artist_id (requires unique on subscriptions.artist_id)
       await supabaseAdmin
         .from("subscriptions")
-        .update({
-          status: "active",
-          stripe_subscription_id: session.subscription as string,
-          stripe_customer_id: session.customer as string,
-          started_at: new Date().toISOString(),
-        })
-        .eq("id", subscriptionId);
+        .upsert(
+          {
+            artist_id: artistId,
+            plan, // keep "test" here if you want, because plan is TEXT in your schema
+            status: "active",
+            is_active: true,
+            stripe_subscription_id: subscriptionId,
+            stripe_customer_id: customerId,
+            started_at: new Date().toISOString(),
+            ends_at: null,
+            subscription_tier: tier,
+            entitlement_tier: tier,
+          },
+          { onConflict: "artist_id" },
+        );
 
       return new Response("OK", { status: 200 });
     }
 
     // =====================================
-    // SUBSCRIPTION UPDATED (CANCELLED)
+    // 2) SUBSCRIPTION UPDATED (CANCELLED)
     // =====================================
     if (event.type === "customer.subscription.updated") {
       const sub = event.data.object as Stripe.Subscription;
 
+      // We only handle full cancel here
       if (sub.status === "canceled") {
         await supabaseAdmin
           .from("subscriptions")
           .update({
             status: "cancelled",
+            is_active: false,
             ends_at: new Date().toISOString(),
           })
           .eq("stripe_subscription_id", sub.id);
@@ -86,7 +107,7 @@ Deno.serve(async (req) => {
     }
 
     // =====================================
-    // RECURRING PAYMENT FAILED
+    // 3) INVOICE PAYMENT FAILED (EXPIRED)
     // =====================================
     if (event.type === "invoice.payment_failed") {
       const invoice = event.data.object as Stripe.Invoice;
@@ -97,6 +118,7 @@ Deno.serve(async (req) => {
           .from("subscriptions")
           .update({
             status: "expired",
+            is_active: false,
           })
           .eq("stripe_subscription_id", stripeSubId);
       }
@@ -104,9 +126,7 @@ Deno.serve(async (req) => {
       return new Response("OK", { status: 200 });
     }
 
-    // Ignore everything else
     return new Response("OK", { status: 200 });
-
   } catch (e) {
     console.error("Webhook handler error", e);
     return new Response("Webhook handler error", { status: 500 });
