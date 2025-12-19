@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 import Header from "../Header";
 import Footer from "../Footer";
@@ -27,6 +27,7 @@ interface Event {
 }
 
 export default function PlannerCalendar() {
+  const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
@@ -195,13 +196,12 @@ export default function PlannerCalendar() {
                       day.toDateString() === new Date().toDateString();
 
                     return (
-                      <button
+                      <div
                         key={day.toISOString()}
-                        onClick={() => setSelectedDate(day)}
                         className={`aspect-square p-2 rounded-lg transition flex flex-col ${
                           isToday
                             ? "bg-orange-900/30 border border-orange-500"
-                            : "bg-neutral-800 border border-neutral-700 hover:border-neutral-600"
+                            : "bg-neutral-800 border border-neutral-700"
                         }`}
                       >
                         <span className="text-sm font-semibold mb-1">
@@ -210,29 +210,40 @@ export default function PlannerCalendar() {
                         {hasItems && (
                           <div className="flex-1 flex flex-col gap-1">
                             {dayBookings.slice(0, 2).map((booking) => (
-                              <div
+                              <button
                                 key={booking.id}
-                                className="text-xs bg-green-900/40 hover:bg-green-800/50 px-1 py-0.5 rounded truncate transition"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedBooking(booking);
+                                }}
+                                className="text-xs bg-green-900/40 hover:bg-green-700 px-1 py-0.5 rounded truncate transition text-left"
                               >
                                 {booking.artist_profiles.stage_name}
-                              </div>
+                              </button>
                             ))}
                             {dayEvents.slice(0, 2).map((event) => (
-                              <div
+                              <button
                                 key={event.id}
-                                className="text-xs bg-blue-900/40 hover:bg-blue-800/50 px-1 py-0.5 rounded truncate transition"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/events/${event.id}`);
+                                }}
+                                className="text-xs bg-blue-900/40 hover:bg-blue-700 px-1 py-0.5 rounded truncate transition text-left"
                               >
                                 {event.title}
-                              </div>
+                              </button>
                             ))}
                             {dayBookings.length + dayEvents.length > 2 && (
-                              <div className="text-xs text-gray-400">
+                              <button
+                                onClick={() => setSelectedDate(day)}
+                                className="text-xs text-gray-400 hover:text-white text-left"
+                              >
                                 +{dayBookings.length + dayEvents.length - 2} more
-                              </div>
+                              </button>
                             )}
                           </div>
                         )}
-                      </button>
+                      </div>
                     );
                   })}
                 </div>
