@@ -7,45 +7,52 @@ const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
 
 const supabaseAdmin = createClient(
   Deno.env.get("SUPABASE_URL")!,
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
 );
 
 Deno.serve(async (req) => {
-  const sig = req.headers.get("stripe-signature");
-  if (!sig) {
-    return new Response("Missing stripe-signature", { status: 400 });
+  if (req.method !== "POST") {
+    return new Response("Method not allowed", { status: 405 });
+  }
+
+  const signature = req.headers.get("stripe-signature");
+  if (!signature) {
+    return new Response("Missing signature", { status: 400 });
   }
 
   const body = await req.text();
-  let event: Stripe.Event;
 
+  let event: Stripe.Event;
   try {
     event = stripe.webhooks.constructEvent(
       body,
-      sig,
-      Deno.env.get("STRIPE_SUBSCRIPTION_WEBHOOK_SECRET")!
+      signature,
+      Deno.env.get("STRIPE_SUBSCRIPTION_WEBHOOK_SECRET")!,
     );
-  } catch (err) {
-    console.error("Invalid webhook signature", err);
+  } catch (e) {
+    console.error("Invalid signature", e);
     return new Response("Invalid signature", { status: 400 });
   }
 
   try {
-    // ====================================
-    // 1. CHECKOUT COMPLETED → ACTIVATE
-    // ====================================
+    // =====================================
+    // SUBSCRIPTION CREATED / PAID
+    // =====================================
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
 
+      // Ignore non-subscription checkouts
       if (session.mode !== "subscription") {
-        return new Response("Ignored non-subscription checkout", { status: 200 });
+        return new Response("OK", { status: 200 });
       }
 
       const subscriptionId = session.metadata?.subscription_id;
       if (!subscriptionId) {
-        throw new Error("Missing subscription_id in metadata");
+        console.error("Missing subscription_id metadata", session.id);
+        return new Response("Missing metadata", { status: 400 });
       }
 
+      // Activate subscription
       await supabaseAdmin
         .from("subscriptions")
         .update({
@@ -55,32 +62,35 @@ Deno.serve(async (req) => {
           started_at: new Date().toISOString(),
         })
         .eq("id", subscriptionId);
+
+      return new Response("OK", { status: 200 });
     }
 
-    // ====================================
-    // 2. SUBSCRIPTION UPDATED (CANCELLED)
-    // ====================================
+    // =====================================
+    // SUBSCRIPTION UPDATED (CANCELLED)
+    // =====================================
     if (event.type === "customer.subscription.updated") {
-      const stripeSub = event.data.object as Stripe.Subscription;
+      const sub = event.data.object as Stripe.Subscription;
 
-      // Stripe marks cancellations via status
-      if (stripeSub.status === "canceled") {
+      if (sub.status === "canceled") {
         await supabaseAdmin
           .from("subscriptions")
           .update({
             status: "cancelled",
             ends_at: new Date().toISOString(),
           })
-          .eq("stripe_subscription_id", stripeSub.id);
+          .eq("stripe_subscription_id", sub.id);
       }
+
+      return new Response("OK", { status: 200 });
     }
 
-    // ====================================
-    // 3. PAYMENT FAILED (RECURRING)
-    // ====================================
+    // =====================================
+    // RECURRING PAYMENT FAILED
+    // =====================================
     if (event.type === "invoice.payment_failed") {
       const invoice = event.data.object as Stripe.Invoice;
-      const stripeSubId = invoice.subscription as string;
+      const stripeSubId = invoice.subscription as string | null;
 
       if (stripeSubId) {
         await supabaseAdmin
@@ -90,11 +100,15 @@ Deno.serve(async (req) => {
           })
           .eq("stripe_subscription_id", stripeSubId);
       }
+
+      return new Response("OK", { status: 200 });
     }
 
-    return new Response("ok", { status: 200 });
-  } catch (err) {
-    console.error("Webhook processing error", err);
-    return new Response("Webhook error", { status: 500 });
+    // Ignore everything else
+    return new Response("OK", { status: 200 });
+
+  } catch (e) {
+    console.error("Webhook handler error", e);
+    return new Response("Webhook handler error", { status: 500 });
   }
 });
