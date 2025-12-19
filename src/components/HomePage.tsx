@@ -32,7 +32,6 @@ export default function HomePage() {
           bio,
           type,
           image_url,
-          profiles!artist_profiles_user_id_fkey(image_url),
           subscriptions!subscriptions_artist_id_fkey(is_active)
         `);
 
@@ -91,7 +90,7 @@ export default function HomePage() {
           city,
           state,
           country,
-          imageUrl: profile.image_url || profile.profiles?.image_url || '',
+          imageUrl: profile.image_url || '',
           socials: artistSocials,
           isDemo,
           bio: profile.bio,
