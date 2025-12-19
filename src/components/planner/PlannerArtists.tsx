@@ -96,7 +96,9 @@ export default function PlannerArtists() {
       });
 
       const activeProfiles = (artistProfiles || []).filter((profile: any) => {
-        return profile.type === 'demo' || profile.subscriptions?.is_active === true;
+        const hasActiveSubscription = Array.isArray(profile.subscriptions) &&
+          profile.subscriptions.some((sub: any) => sub.is_active === true);
+        return profile.type === 'demo' || hasActiveSubscription;
       });
 
       const artists: Artist[] = activeProfiles.map((profile: any) => {
