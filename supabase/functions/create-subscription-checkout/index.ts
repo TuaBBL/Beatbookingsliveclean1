@@ -134,6 +134,11 @@ Deno.serve(async (req) => {
       );
 
     const siteUrl = Deno.env.get("SITE_URL") || "http://localhost:5173";
+    console.log(`Using SITE_URL: ${siteUrl}`);
+
+    if (!Deno.env.get("SITE_URL")) {
+      console.warn("SITE_URL environment variable not set, using default localhost");
+    }
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
