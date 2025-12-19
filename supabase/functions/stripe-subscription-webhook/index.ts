@@ -11,35 +11,32 @@ const supabaseAdmin = createClient(
 );
 
 Deno.serve(async (req) => {
-  // Stripe requires raw body
   const sig = req.headers.get("stripe-signature");
   if (!sig) {
     return new Response("Missing stripe-signature", { status: 400 });
   }
 
   const body = await req.text();
-
   let event: Stripe.Event;
 
   try {
     event = stripe.webhooks.constructEvent(
       body,
       sig,
-      Deno.env.get("STRIPE_WEBHOOK_SECRET")!
+      Deno.env.get("STRIPE_SUBSCRIPTION_WEBHOOK_SECRET")!
     );
   } catch (err) {
-    console.error("Webhook signature verification failed:", err);
+    console.error("Invalid webhook signature", err);
     return new Response("Invalid signature", { status: 400 });
   }
 
   try {
-    // ================================
-    // CHECKOUT COMPLETED → ACTIVATE
-    // ================================
+    // ====================================
+    // 1. CHECKOUT COMPLETED → ACTIVATE
+    // ====================================
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
 
-      // Only handle subscription checkouts
       if (session.mode !== "subscription") {
         return new Response("Ignored non-subscription checkout", { status: 200 });
       }
@@ -60,39 +57,44 @@ Deno.serve(async (req) => {
         .eq("id", subscriptionId);
     }
 
-    // ================================
-    // SUBSCRIPTION CANCELLED
-    // ================================
-    if (event.type === "customer.subscription.deleted") {
+    // ====================================
+    // 2. SUBSCRIPTION UPDATED (CANCELLED)
+    // ====================================
+    if (event.type === "customer.subscription.updated") {
       const stripeSub = event.data.object as Stripe.Subscription;
 
-      await supabaseAdmin
-        .from("subscriptions")
-        .update({
-          status: "cancelled",
-          ends_at: new Date().toISOString(),
-        })
-        .eq("stripe_subscription_id", stripeSub.id);
+      // Stripe marks cancellations via status
+      if (stripeSub.status === "canceled") {
+        await supabaseAdmin
+          .from("subscriptions")
+          .update({
+            status: "cancelled",
+            ends_at: new Date().toISOString(),
+          })
+          .eq("stripe_subscription_id", stripeSub.id);
+      }
     }
 
-    // ================================
-    // PAYMENT FAILED (OPTIONAL BUT SMART)
-    // ================================
+    // ====================================
+    // 3. PAYMENT FAILED (RECURRING)
+    // ====================================
     if (event.type === "invoice.payment_failed") {
       const invoice = event.data.object as Stripe.Invoice;
       const stripeSubId = invoice.subscription as string;
 
-      await supabaseAdmin
-        .from("subscriptions")
-        .update({
-          status: "expired",
-        })
-        .eq("stripe_subscription_id", stripeSubId);
+      if (stripeSubId) {
+        await supabaseAdmin
+          .from("subscriptions")
+          .update({
+            status: "expired",
+          })
+          .eq("stripe_subscription_id", stripeSubId);
+      }
     }
 
     return new Response("ok", { status: 200 });
-  } catch (error) {
-    console.error("Webhook handler error:", error);
+  } catch (err) {
+    console.error("Webhook processing error", err);
     return new Response("Webhook error", { status: 500 });
   }
 });
