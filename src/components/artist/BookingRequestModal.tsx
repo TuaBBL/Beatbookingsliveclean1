@@ -54,6 +54,19 @@ export default function BookingRequestModal({
         return;
       }
 
+      const { data: artistProfile } = await supabase
+        .from('artist_profiles')
+        .select('id, subscriptions!subscriptions_artist_id_fkey(is_active)')
+        .or(`user_id.eq.${artistId},id.eq.${artistId}`)
+        .maybeSingle();
+
+      if (!artistProfile || artistProfile.subscriptions?.is_active !== true) {
+        setToast('Artist subscription inactive');
+        setTimeout(() => setToast(null), 3000);
+        setSending(false);
+        return;
+      }
+
       const { error } = await supabase
         .from('booking_requests')
         .insert({

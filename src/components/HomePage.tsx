@@ -32,7 +32,8 @@ export default function HomePage() {
           bio,
           type,
           image_url,
-          profiles!artist_profiles_user_id_fkey(image_url)
+          profiles!artist_profiles_user_id_fkey(image_url),
+          subscriptions!subscriptions_artist_id_fkey(is_active)
         `);
 
       const { data: socialLinks } = await supabase
@@ -65,7 +66,11 @@ export default function HomePage() {
         value.averageRating = Math.round((value.averageRating / value.reviewCount) * 10) / 10;
       });
 
-      const artists: Artist[] = (artistProfiles || []).map((profile: any) => {
+      const activeProfiles = (artistProfiles || []).filter((profile: any) => {
+        return profile.subscriptions?.is_active === true;
+      });
+
+      const artists: Artist[] = activeProfiles.map((profile: any) => {
         const locationParts = (profile.location || '').split(',').map((s: string) => s.trim());
         const city = locationParts[0] || '';
         const state = locationParts[1] || '';

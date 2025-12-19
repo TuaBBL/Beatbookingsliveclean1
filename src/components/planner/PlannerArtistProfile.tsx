@@ -16,6 +16,7 @@ export default function PlannerArtistProfile() {
   const [isFavourite, setIsFavourite] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isArtistActive, setIsArtistActive] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -49,7 +50,8 @@ export default function PlannerArtistProfile() {
           bio,
           type,
           image_url,
-          profiles!artist_profiles_user_id_fkey(image_url)
+          profiles!artist_profiles_user_id_fkey(image_url),
+          subscriptions!subscriptions_artist_id_fkey(is_active)
         `)
         .eq('user_id', id)
         .maybeSingle();
@@ -69,7 +71,8 @@ export default function PlannerArtistProfile() {
             bio,
             type,
             image_url,
-            profiles!artist_profiles_user_id_fkey(image_url)
+            profiles!artist_profiles_user_id_fkey(image_url),
+            subscriptions!subscriptions_artist_id_fkey(is_active)
           `)
           .eq('id', id)
           .maybeSingle();
@@ -80,6 +83,8 @@ export default function PlannerArtistProfile() {
       }
 
       if (artistProfile) {
+        setIsArtistActive(artistProfile.subscriptions?.is_active === true);
+
         const { data: socialLinks } = await supabase
           .from('artist_social_links')
           .select('artist_id, platform, url')
@@ -196,6 +201,9 @@ export default function PlannerArtistProfile() {
       navigate('/login');
       return;
     }
+    if (!isArtistActive) {
+      return;
+    }
     setShowBookingModal(true);
   }
 
@@ -287,7 +295,15 @@ export default function PlannerArtistProfile() {
                 )}
               </div>
 
-              {artist.isDemo && (
+              {!isArtistActive && (
+                <div className="mb-6 p-4 bg-neutral-800 border border-red-700/50 rounded-lg">
+                  <p className="text-red-400 text-center font-semibold">
+                    This artist is currently unavailable
+                  </p>
+                </div>
+              )}
+
+              {artist.isDemo && isArtistActive && (
                 <div className="mb-6 p-4 bg-neutral-800 border border-yellow-700/50 rounded-lg">
                   <p className="text-yellow-500 text-center font-semibold">
                     This is a demo artist profile. Booking is not available.
@@ -295,7 +311,7 @@ export default function PlannerArtistProfile() {
                 </div>
               )}
 
-              {!isLoggedIn && !artist.isDemo && (
+              {!isLoggedIn && !artist.isDemo && isArtistActive && (
                 <div className="mb-6 p-4 bg-neutral-800 border border-neutral-700 rounded-lg">
                   <p className="text-gray-300 text-center">
                     <Link to="/login" className="text-orange-500 hover:text-orange-400 font-semibold">
@@ -308,16 +324,24 @@ export default function PlannerArtistProfile() {
 
               <button
                 onClick={handleBookingClick}
-                disabled={artist.isDemo}
-                title={artist.isDemo ? "Demo artist – booking disabled" : undefined}
+                disabled={!isArtistActive || artist.isDemo}
+                title={
+                  !isArtistActive
+                    ? "Artist subscription inactive"
+                    : artist.isDemo
+                    ? "Demo artist – booking disabled"
+                    : undefined
+                }
                 className={`w-full flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-bold transition ${
-                  artist.isDemo
+                  !isArtistActive || artist.isDemo
                     ? "bg-neutral-700 text-neutral-500 cursor-not-allowed"
                     : "bg-orange-600 hover:bg-orange-700 text-white"
                 }`}
               >
                 <MessageSquare className="w-5 h-5" />
-                {artist.isDemo
+                {!isArtistActive
+                  ? 'Artist Unavailable'
+                  : artist.isDemo
                   ? 'Booking Not Available'
                   : isLoggedIn
                   ? 'Request Booking'

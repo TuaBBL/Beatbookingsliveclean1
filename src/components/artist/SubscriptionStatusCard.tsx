@@ -34,11 +34,7 @@ export default function SubscriptionStatusCard({ artistId }: SubscriptionStatusC
 
   const isActive = () => {
     if (!subscription) return false;
-
-    const isStatusActive = subscription.status === 'active';
-    const isNotExpired = !subscription.ends_at || new Date(subscription.ends_at) > new Date();
-
-    return isStatusActive && isNotExpired;
+    return subscription.is_active === true;
   };
 
   const getStatusConfig = () => {
@@ -49,8 +45,8 @@ export default function SubscriptionStatusCard({ artistId }: SubscriptionStatusC
         bgColor: 'bg-orange-500/10',
         borderColor: 'border-orange-500/30',
         title: 'Profile Inactive',
-        message: 'Your profile is hidden until you subscribe',
-        buttonText: 'Subscribe Now',
+        message: 'Your profile is inactive and hidden from planners',
+        buttonText: 'Activate Subscription',
         buttonColor: 'bg-orange-600 hover:bg-orange-700',
       };
     }
@@ -74,8 +70,8 @@ export default function SubscriptionStatusCard({ artistId }: SubscriptionStatusC
       bgColor: 'bg-red-500/10',
       borderColor: 'border-red-500/30',
       title: 'Subscription Inactive',
-      message: 'Your subscription has expired or been cancelled',
-      buttonText: 'Renew Subscription',
+      message: 'Your profile is inactive and hidden from planners',
+      buttonText: 'Activate Subscription',
       buttonColor: 'bg-red-600 hover:bg-red-700',
     };
   };
