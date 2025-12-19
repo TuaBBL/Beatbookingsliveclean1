@@ -51,82 +51,60 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ---------- INPUT ----------
-    const { subscriptionId, plan } = await req.json();
+   // ---------- INPUT ----------
+const { plan } = await req.json();
 
-    if (!subscriptionId || !plan) {
-      return new Response("Missing subscriptionId or plan", {
-        status: 400,
-        headers: corsHeaders,
-      });
-    }
+if (!plan) {
+  return new Response("Missing plan", {
+    status: 400,
+    headers: corsHeaders,
+  });
+}
 
-    // ---------- FETCH SUBSCRIPTION ----------
-    const { data: subscription, error: subError } = await supabaseAdmin
-      .from("subscriptions")
-      .select("id, artist_id, status")
-      .eq("id", subscriptionId)
-      .single();
+// ---------- FIND ARTIST ----------
+const { data: artistProfile } = await supabaseAdmin
+  .from("artist_profiles")
+  .select("id")
+  .eq("user_id", userData.user.id)
+  .single();
 
-    if (subError || !subscription) {
-      return new Response("Subscription not found", {
-        status: 404,
-        headers: corsHeaders,
-      });
-    }
+if (!artistProfile) {
+  return new Response("Artist profile not found", {
+    status: 400,
+    headers: corsHeaders,
+  });
+}
 
-    // ---------- OWNERSHIP CHECK ----------
-    const { data: artistProfile } = await supabaseAdmin
-      .from("artist_profiles")
-      .select("user_id")
-      .eq("id", subscription.artist_id)
-      .single();
+// ---------- UPSERT SUBSCRIPTION ----------
+const { data: subscription } = await supabaseAdmin
+  .from("subscriptions")
+  .upsert(
+    {
+      artist_id: artistProfile.id,
+      plan,
+      status: "pending",
+      subscription_tier: plan,
+      entitlement_tier: plan,
+      is_active: false,
+    },
+    { onConflict: "artist_id" }
+  )
+  .select()
+  .single();
 
-    if (!artistProfile || artistProfile.user_id !== userData.user.id) {
-      return new Response("Not authorised", {
-        status: 403,
-        headers: corsHeaders,
-      });
-    }
-
-    // ---------- STRIPE PRICE MAP ----------
-    const priceMap: Record<string, string | undefined> = {
-      standard: Deno.env.get("STRIPE_PRICE_STANDARD"),
-      premium: Deno.env.get("STRIPE_PRICE_PREMIUM"),
-      test: Deno.env.get("STRIPE_PRICE_TEST"),
-    };
-
-    const priceId = priceMap[plan];
-
-    if (!priceId) {
-      return new Response("Invalid plan", {
-        status: 400,
-        headers: corsHeaders,
-      });
-    }
-
-    // ---------- CREATE CHECKOUT ----------
-    const siteUrl = Deno.env.get("SITE_URL");
-    if (!siteUrl) {
-      throw new Error("SITE_URL env var not set");
-    }
-
-    const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
-      payment_method_types: ["card"],
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
-      success_url: `${siteUrl}/subscribe/success`,
-      cancel_url: `${siteUrl}/subscribe/cancel`,
-      metadata: {
-        subscription_id: subscription.id,
-        plan,
-      },
-    });
+// ---------- STRIPE CHECKOUT ----------
+const siteUrl = Deno.env.get("SITE_URL")!;
+const session = await stripe.checkout.sessions.create({
+  mode: "subscription",
+  payment_method_types: ["card"],
+  line_items: [{ price: priceId, quantity: 1 }],
+  success_url: `${siteUrl}/artist/dashboard?sub=success`,
+  cancel_url: `${siteUrl}/subscribe?sub=cancel`,
+  metadata: {
+    subscription_id: subscription.id,
+    artist_id: artistProfile.id,
+  },
+});
 
     return new Response(
       JSON.stringify({ url: session.url }),
