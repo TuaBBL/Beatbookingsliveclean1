@@ -12,22 +12,39 @@ export default function PlannerArtistProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [artist, setArtist] = useState<Artist | null>(null);
+  const [artistProfileId, setArtistProfileId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isFavourite, setIsFavourite] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [isArtistActive, setIsArtistActive] = useState(false);
 
   useEffect(() => {
     checkAuth();
     loadArtist();
-    checkFavourite();
   }, [id]);
+
+  useEffect(() => {
+    if (artistProfileId) {
+      checkFavourite();
+    }
+  }, [artistProfileId]);
 
   async function checkAuth() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       setIsLoggedIn(!!user);
+
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        setUserRole(profile?.role || null);
+      }
     } catch (error) {
       console.error("Error checking auth:", error);
       setIsLoggedIn(false);
@@ -131,6 +148,7 @@ export default function PlannerArtistProfile() {
         const artistSocials = socialsMap.get(artistProfile.id) || {};
         const ratings = ratingsMap.get(artistProfile.id);
 
+        setArtistProfileId(artistProfile.id);
         setArtist({
           id: artistProfile.user_id || artistProfile.id,
           name: artistProfile.stage_name || 'Unknown Artist',
@@ -160,13 +178,13 @@ export default function PlannerArtistProfile() {
   async function checkFavourite() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user || !artistProfileId) return;
 
       const { data } = await supabase
         .from("favourites")
         .select("id")
         .eq("planner_id", user.id)
-        .eq("artist_id", id)
+        .eq("artist_id", artistProfileId)
         .maybeSingle();
 
       setIsFavourite(!!data);
@@ -183,17 +201,19 @@ export default function PlannerArtistProfile() {
         return;
       }
 
+      if (!artistProfileId) return;
+
       if (isFavourite) {
         await supabase
           .from("favourites")
           .delete()
           .eq("planner_id", user.id)
-          .eq("artist_id", id);
+          .eq("artist_id", artistProfileId);
         setIsFavourite(false);
       } else {
         await supabase
           .from("favourites")
-          .insert({ planner_id: user.id, artist_id: id });
+          .insert({ planner_id: user.id, artist_id: artistProfileId });
         setIsFavourite(true);
       }
     } catch (error) {
@@ -329,7 +349,7 @@ export default function PlannerArtistProfile() {
 
               <button
                 onClick={handleBookingClick}
-                disabled={!isArtistActive || artist.isDemo}
+                disabled={!isArtistActive || artist.isDemo || (!isLoggedIn && isArtistActive && !artist.isDemo)}
                 title={
                   !isArtistActive
                     ? "Artist subscription inactive"
@@ -340,6 +360,8 @@ export default function PlannerArtistProfile() {
                 className={`w-full flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-bold transition ${
                   !isArtistActive || artist.isDemo
                     ? "bg-neutral-700 text-neutral-500 cursor-not-allowed"
+                    : !isLoggedIn
+                    ? "bg-neutral-700 text-gray-300 hover:bg-neutral-600"
                     : "bg-orange-600 hover:bg-orange-700 text-white"
                 }`}
               >
@@ -348,9 +370,11 @@ export default function PlannerArtistProfile() {
                   ? 'Artist Unavailable'
                   : artist.isDemo
                   ? 'Booking Not Available'
-                  : isLoggedIn
+                  : !isLoggedIn
+                  ? 'Check me out'
+                  : userRole === 'planner'
                   ? 'Request Booking'
-                  : 'Sign in to Request Booking'}
+                  : 'View Profile'}
               </button>
             </div>
           </div>

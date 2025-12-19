@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase';
 import Header from '../Header';
 import Footer from '../Footer';
 import PlannerProfileMenu from './PlannerProfileMenu';
-import { ArrowLeft, Calendar, MapPin, MessageSquare, User, FileText, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, MessageSquare, User, FileText, ShieldAlert, Edit, XCircle } from 'lucide-react';
 
 interface BookingRequest {
   id: string;
@@ -13,6 +13,8 @@ interface BookingRequest {
   event_date: string;
   event_location: string;
   message: string | null;
+  start_time: string | null;
+  end_time: string | null;
   status: string;
   created_at: string;
   artist: {
@@ -27,6 +29,8 @@ export default function PlannerRequestsPage() {
   const [requests, setRequests] = useState<BookingRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [accessDenied, setAccessDenied] = useState(false);
+  const [editingRequest, setEditingRequest] = useState<BookingRequest | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
     loadRequests();
@@ -54,7 +58,7 @@ export default function PlannerRequestsPage() {
 
       const { data: requestsData, error } = await supabase
         .from('booking_requests')
-        .select('id, artist_user_id, event_name, event_date, event_location, message, status, created_at')
+        .select('id, artist_user_id, event_name, event_date, event_location, message, start_time, end_time, status, created_at')
         .eq('planner_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -116,6 +120,55 @@ export default function PlannerRequestsPage() {
       day: 'numeric',
     });
   };
+
+  async function handleCancelRequest(requestId: string) {
+    try {
+      const { error } = await supabase
+        .from('booking_requests')
+        .update({ status: 'cancelled', responded_at: new Date().toISOString() })
+        .eq('id', requestId);
+
+      if (error) throw error;
+
+      setToast('Request cancelled successfully');
+      setTimeout(() => setToast(null), 3000);
+      loadRequests();
+    } catch (error) {
+      console.error('Error cancelling request:', error);
+      setToast('Failed to cancel request');
+      setTimeout(() => setToast(null), 3000);
+    }
+  }
+
+  async function handleUpdateRequest(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingRequest) return;
+
+    try {
+      const { error } = await supabase
+        .from('booking_requests')
+        .update({
+          event_name: editingRequest.event_name,
+          event_date: editingRequest.event_date,
+          event_location: editingRequest.event_location,
+          message: editingRequest.message,
+          start_time: editingRequest.start_time,
+          end_time: editingRequest.end_time,
+        })
+        .eq('id', editingRequest.id);
+
+      if (error) throw error;
+
+      setToast('Request updated successfully');
+      setEditingRequest(null);
+      setTimeout(() => setToast(null), 3000);
+      loadRequests();
+    } catch (error) {
+      console.error('Error updating request:', error);
+      setToast('Failed to update request');
+      setTimeout(() => setToast(null), 3000);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
@@ -234,6 +287,25 @@ export default function PlannerRequestsPage() {
                         </p>
                       </div>
                     </div>
+
+                    {request.status === 'pending' && (
+                      <div className="flex flex-col gap-2">
+                        <button
+                          onClick={() => setEditingRequest(request)}
+                          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition text-sm font-medium"
+                        >
+                          <Edit className="w-4 h-4" />
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleCancelRequest(request.id)}
+                          className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition text-sm font-medium"
+                        >
+                          <XCircle className="w-4 h-4" />
+                          Cancel
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -241,6 +313,114 @@ export default function PlannerRequestsPage() {
           )}
         </div>
       </main>
+
+      {editingRequest && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-neutral-900 rounded-lg border border-neutral-800 max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-2xl font-bold mb-4">Edit Booking Request</h2>
+            <form onSubmit={handleUpdateRequest} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Event Name
+                </label>
+                <input
+                  type="text"
+                  value={editingRequest.event_name}
+                  onChange={(e) => setEditingRequest({ ...editingRequest, event_name: e.target.value })}
+                  required
+                  className="w-full px-4 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Event Date
+                </label>
+                <input
+                  type="date"
+                  value={editingRequest.event_date}
+                  onChange={(e) => setEditingRequest({ ...editingRequest, event_date: e.target.value })}
+                  required
+                  className="w-full px-4 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Start Time (Optional)
+                  </label>
+                  <input
+                    type="time"
+                    value={editingRequest.start_time || ''}
+                    onChange={(e) => setEditingRequest({ ...editingRequest, start_time: e.target.value })}
+                    className="w-full px-4 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    End Time (Optional)
+                  </label>
+                  <input
+                    type="time"
+                    value={editingRequest.end_time || ''}
+                    onChange={(e) => setEditingRequest({ ...editingRequest, end_time: e.target.value })}
+                    className="w-full px-4 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Event Location
+                </label>
+                <input
+                  type="text"
+                  value={editingRequest.event_location}
+                  onChange={(e) => setEditingRequest({ ...editingRequest, event_location: e.target.value })}
+                  required
+                  className="w-full px-4 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Message (Optional)
+                </label>
+                <textarea
+                  value={editingRequest.message || ''}
+                  onChange={(e) => setEditingRequest({ ...editingRequest, message: e.target.value })}
+                  rows={4}
+                  className="w-full px-4 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setEditingRequest(null)}
+                  className="flex-1 px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-lg transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {toast && (
+        <div className="fixed bottom-4 right-4 bg-neutral-900 border-2 border-blue-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
+          {toast}
+        </div>
+      )}
 
       <Footer />
     </div>

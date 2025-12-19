@@ -268,7 +268,7 @@ export default function PlannerDashboard() {
                 </Link>
 
                 <Link
-                  to="/planner/bookings"
+                  to="/planner/calendar"
                   className="bg-neutral-900 hover:bg-neutral-800 p-8 rounded-lg border-2 border-neutral-700 hover:border-orange-500 shadow-lg hover:shadow-[0_0_20px_rgba(249,115,22,0.2)] transition-all duration-200 group"
                 >
                   <div className="flex items-center gap-4">
@@ -276,9 +276,9 @@ export default function PlannerDashboard() {
                       <Calendar className="w-8 h-8 text-orange-500" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold mb-1">View Bookings</h3>
+                      <h3 className="text-xl font-bold mb-1">Manage events/bookings</h3>
                       <p className="text-gray-400">
-                        Manage your booking requests and calendar
+                        View your calendar and manage events
                       </p>
                     </div>
                   </div>

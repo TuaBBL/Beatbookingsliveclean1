@@ -88,7 +88,8 @@ export default function PlannerFavourites() {
           const ratings = ratingsMap.get(profile.id);
 
           return {
-            id: profile.user_id || profile.id,
+            id: profile.id,
+            userId: profile.user_id,
             name: profile.stage_name || 'Unknown Artist',
             role: profile.category || 'DJ',
             genre: profile.genre || 'Electronic',
