@@ -17,160 +17,103 @@ const supabaseAdmin = createClient(
 );
 
 Deno.serve(async (req) => {
-  // ---------- CORS ----------
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   if (req.method !== "POST") {
-    return new Response("Method not allowed", {
-      status: 405,
-      headers: corsHeaders,
-    });
+    return new Response("Method not allowed", { status: 405, headers: corsHeaders });
   }
 
   try {
     // ---------- AUTH ----------
-    const authHeader = req.headers.get("Authorization") || "";
-    const token = authHeader.replace("Bearer ", "");
+    const token = (req.headers.get("Authorization") || "").replace("Bearer ", "");
+    if (!token) return new Response("Missing Authorization", { status: 401, headers: corsHeaders });
 
-    if (!token) {
-      return new Response("Missing Authorization", {
-        status: 401,
-        headers: corsHeaders,
-      });
-    }
-
-    const { data: userData, error: authError } =
-      await supabaseAdmin.auth.getUser(token);
-
-    if (authError || !userData?.user) {
-      return new Response("Invalid auth", {
-        status: 401,
-        headers: corsHeaders,
-      });
-    }
+    const { data: userData } = await supabaseAdmin.auth.getUser(token);
+    if (!userData?.user) return new Response("Invalid auth", { status: 401, headers: corsHeaders });
 
     // ---------- INPUT ----------
     const { plan } = await req.json();
+    if (!plan) return new Response("Missing plan", { status: 400, headers: corsHeaders });
 
-    if (!plan) {
-      return new Response("Missing plan", {
-        status: 400,
-        headers: corsHeaders,
-      });
-    }
-
-    // ---------- FIND ARTIST ----------
-    const { data: artistProfile } = await supabaseAdmin
+    // ---------- ARTIST ----------
+    const { data: artist } = await supabaseAdmin
       .from("artist_profiles")
       .select("id")
       .eq("user_id", userData.user.id)
       .single();
 
-    if (!artistProfile) {
-      return new Response("Artist profile not found", {
-        status: 400,
-        headers: corsHeaders,
-      });
+    if (!artist) {
+      return new Response("Artist profile not found", { status: 400, headers: corsHeaders });
     }
 
-    // ---------- ENUM MAPPING ----------
-    // Map "test" to "standard" for database enum compatibility
-    const dbTier = plan === "test" ? "standard" : plan;
-    const entitlementTier =
-      plan === "free_forever" || plan === "premium"
-        ? "premium"
-        : "standard";
-
-    // ---------- PLAN PRICING ----------
-    const planPrices: Record<string, string> = {
-      test: Deno.env.get("STRIPE_TEST_PRICE_ID")!,
-      standard: Deno.env.get("STRIPE_STANDARD_PRICE_ID")!,
-      premium: Deno.env.get("STRIPE_PREMIUM_PRICE_ID")!,
-    };
-
-    // ---------- FREE FOREVER HANDLING ----------
+    // ---------- FREE FOREVER ----------
     if (plan === "free_forever") {
-      // Check cap of 50 free spots
       const { count } = await supabaseAdmin
         .from("subscriptions")
         .select("*", { count: "exact", head: true })
-        .eq("subscription_tier", "free_forever");
+        .eq("plan", "free_forever");
 
       if ((count ?? 0) >= 50) {
         return new Response(
-          JSON.stringify({ error: "Free Forever spots are no longer available" }),
-          {
-            status: 400,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
+          JSON.stringify({ error: "Free Forever spots exhausted" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
-      // Activate immediately without Stripe
-      const now = new Date().toISOString();
       await supabaseAdmin
         .from("subscriptions")
         .upsert(
           {
-            artist_id: artistProfile.id,
+            artist_id: artist.id,
+            plan: "free_forever",
             subscription_tier: "free_forever",
             entitlement_tier: "premium",
             status: "active",
             is_active: true,
-            started_at: now,
+            started_at: new Date().toISOString(),
             ends_at: null,
           },
           { onConflict: "artist_id" }
         );
 
       return new Response(
-        JSON.stringify({ success: true, redirect: "/artist/dashboard?sub=success" }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        JSON.stringify({ redirect: "/artist/dashboard?sub=success" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // ---------- UPSERT SUBSCRIPTION (PENDING) ----------
-    const now = new Date().toISOString();
-    const endsAt = plan === "test"
-      ? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-      : null;
+    // ---------- PRICE MAP ----------
+    const prices: Record<string, string | undefined> = {
+      test: Deno.env.get("STRIPE_TEST_PRICE_ID"),
+      standard: Deno.env.get("STRIPE_STANDARD_PRICE_ID"),
+      premium: Deno.env.get("STRIPE_PREMIUM_PRICE_ID"),
+    };
 
-    const { data: subscription } = await supabaseAdmin
+    const priceId = prices[plan];
+    if (!priceId) {
+      return new Response("Invalid plan selected", { status: 400, headers: corsHeaders });
+    }
+
+    // ---------- PLACEHOLDER SUB ----------
+    const { data: sub } = await supabaseAdmin
       .from("subscriptions")
       .upsert(
         {
-          artist_id: artistProfile.id,
-          subscription_tier: dbTier,
-          entitlement_tier: entitlementTier,
+          artist_id: artist.id,
+          plan,
           status: "pending",
           is_active: false,
-          started_at: now,
-          ends_at: endsAt,
         },
         { onConflict: "artist_id" }
       )
       .select()
       .single();
 
-    // ---------- STRIPE CHECKOUT ----------
-    const priceId = planPrices[plan];
-
-    if (!priceId) {
-      return new Response(
-        JSON.stringify({ error: "Invalid plan selected" }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-
+    // ---------- STRIPE ----------
     const siteUrl = Deno.env.get("SITE_URL") || "http://localhost:5173";
+
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       payment_method_types: ["card"],
@@ -178,36 +121,20 @@ Deno.serve(async (req) => {
       success_url: `${siteUrl}/artist/dashboard?sub=success`,
       cancel_url: `${siteUrl}/subscribe?sub=cancel`,
       metadata: {
-        subscription_id: subscription.id,
-        artist_id: artistProfile.id,
-        plan: plan,
+        artist_id: artist.id,
+        plan,
       },
     });
 
     return new Response(
       JSON.stringify({ url: session.url }),
-      {
-        status: 200,
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/json",
-        },
-      }
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-  } catch (error: any) {
-    console.error("Subscription checkout error:", error);
-
+  } catch (e: any) {
+    console.error("Subscription checkout error:", e);
     return new Response(
-      JSON.stringify({
-        error: error.message || "Internal server error",
-      }),
-      {
-        status: 500,
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/json",
-        },
-      }
+      JSON.stringify({ error: e.message || "Internal error" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
