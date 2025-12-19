@@ -61,22 +61,19 @@ export default function BookingRequestModal({
         .maybeSingle();
 
       if (!artistProfile || artistProfile.subscriptions?.is_active !== true) {
-        setToast('Artist subscription inactive');
+        setToast('This artist is not currently accepting bookings');
         setTimeout(() => setToast(null), 3000);
         setSending(false);
         return;
       }
 
-      const { error } = await supabase
-        .from('booking_requests')
-        .insert({
-          planner_id: user.id,
-          artist_user_id: artistId,
-          event_name: formData.event_name,
-          event_date: formData.event_date,
-          event_location: formData.event_location,
-          message: formData.message || null,
-        });
+      const { error } = await supabase.rpc('create_booking_request', {
+        p_artist_user_id: artistId,
+        p_event_name: formData.event_name,
+        p_event_date: formData.event_date,
+        p_event_location: formData.event_location,
+        p_message: formData.message || null,
+      });
 
       if (error) throw error;
 
@@ -92,9 +89,10 @@ export default function BookingRequestModal({
           message: '',
         });
       }, 1500);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error sending booking request:', error);
-      setToast('Failed to send booking request');
+      const errorMessage = error?.message || 'Failed to send booking request';
+      setToast(errorMessage);
       setTimeout(() => setToast(null), 3000);
     } finally {
       setSending(false);
