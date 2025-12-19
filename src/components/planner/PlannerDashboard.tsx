@@ -32,16 +32,22 @@ export default function PlannerDashboard() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const [profileRes, bookingsRes, favouritesRes] = await Promise.all([
+      const [profileRes, requestsRes, bookingsRes, favouritesRes] = await Promise.all([
         supabase
           .from("profiles")
           .select("name, email, image_url")
           .eq("id", user.id)
           .maybeSingle(),
         supabase
+          .from("booking_requests")
+          .select("status")
+          .eq("planner_id", user.id)
+          .eq("status", "pending"),
+        supabase
           .from("bookings")
           .select("status")
-          .eq("planner_id", user.id),
+          .eq("planner_id", user.id)
+          .eq("status", "accepted"),
         supabase
           .from("favourites")
           .select("id")
@@ -52,14 +58,13 @@ export default function PlannerDashboard() {
         setProfile(profileRes.data);
       }
 
-      const bookings = bookingsRes.data || [];
-      const pending = bookings.filter((b) => b.status === "pending").length;
-      const confirmed = bookings.filter((b) => b.status === "accepted").length;
+      const pendingRequests = requestsRes.data?.length || 0;
+      const confirmedBookings = bookingsRes.data?.length || 0;
       const favourites = favouritesRes.data?.length || 0;
 
       setStats({
-        pendingRequests: pending,
-        confirmedBookings: confirmed,
+        pendingRequests,
+        confirmedBookings,
         favouriteArtists: favourites,
       });
     } catch (error) {

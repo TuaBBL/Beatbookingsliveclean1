@@ -53,25 +53,30 @@ export default function ArtistDashboard() {
       if (artistProfileRes.data) {
         setArtistProfile(artistProfileRes.data);
 
-        const [bookingsRes, mediaRes] = await Promise.all([
+        const [requestsRes, bookingsRes, mediaRes] = await Promise.all([
+          supabase
+            .from('booking_requests')
+            .select('status')
+            .eq('artist_user_id', user.id)
+            .eq('status', 'pending'),
           supabase
             .from('bookings')
             .select('status')
-            .eq('artist_id', artistProfileRes.data.id),
+            .eq('artist_id', artistProfileRes.data.id)
+            .eq('status', 'accepted'),
           supabase
             .from('artist_media')
             .select('id')
             .eq('artist_id', artistProfileRes.data.id)
         ]);
 
-        const bookings = bookingsRes.data || [];
-        const pending = bookings.filter((b) => b.status === 'pending').length;
-        const confirmed = bookings.filter((b) => b.status === 'accepted').length;
+        const pendingRequests = requestsRes.data?.length || 0;
+        const confirmedBookings = bookingsRes.data?.length || 0;
         const totalMedia = mediaRes.data?.length || 0;
 
         setStats({
-          pendingRequests: pending,
-          confirmedBookings: confirmed,
+          pendingRequests,
+          confirmedBookings,
           totalMedia,
         });
       }
