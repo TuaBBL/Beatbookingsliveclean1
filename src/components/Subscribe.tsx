@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
 type Plan = "free_forever" | "standard" | "premium" | "test";
@@ -123,6 +124,14 @@ export default function Subscribe() {
   return (
     <div className="min-h-screen bg-black text-white px-6 py-12">
       <div className="max-w-6xl mx-auto">
+        <button
+          onClick={() => navigate("/dashboard")}
+          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-6"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span>Back to Dashboard</span>
+        </button>
+
         <h1 className="text-4xl font-bold mb-2">
           Activate Your Artist Profile
         </h1>
