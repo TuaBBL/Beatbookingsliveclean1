@@ -12,8 +12,6 @@ export default function Subscribe() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
-
-  const [artistId, setArtistId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
@@ -31,19 +29,6 @@ export default function Subscribe() {
         .maybeSingle();
 
       setIsAdmin(profile?.is_admin === true);
-
-      const { data: artistProfile } = await supabase
-        .from("artist_profiles")
-        .select("id")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (!artistProfile) {
-        setError("Artist profile not found.");
-        return;
-      }
-
-      setArtistId(artistProfile.id);
       setLoading(false);
     };
 
@@ -51,64 +36,49 @@ export default function Subscribe() {
   }, [navigate]);
 
   async function activatePlan(plan: Plan) {
-    if (!artistId) return;
-
     try {
       setSubmitting(true);
       setError(null);
 
-      // Free Forever cap
-      if (plan === "free_forever") {
-        const { count } = await supabase
-          .from("subscriptions")
-          .select("*", { count: "exact", head: true })
-          .eq("subscription_tier", "free_forever");
-
-        if ((count ?? 0) >= 50) {
-          setError("Free Forever spots are no longer available.");
-          return;
-        }
+      // Get session token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        setError("Not authenticated");
+        return;
       }
 
-      const now = new Date();
-      const endsAt =
-        plan === "test"
-          ? new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString()
-          : null;
+      // Call Edge Function to handle subscription
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-subscription-checkout`;
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ plan }),
+      });
 
-      const status =
-        plan === "free_forever" || plan === "test"
-          ? "active"
-          : "pending";
+      const data = await response.json();
 
-      const entitlement =
-        plan === "free_forever" || plan === "premium"
-          ? "premium"
-          : "standard";
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to create subscription");
+      }
 
-      const { error } = await supabase
-        .from("subscriptions")
-        .upsert(
-          {
-            artist_id: artistId,
-            subscription_tier: plan,
-            entitlement_tier: entitlement,
-            status,
-            started_at: now.toISOString(),
-            ends_at: endsAt,
-          },
-          { onConflict: "artist_id" }
-        );
+      // If free plan, redirect directly
+      if (data.redirect) {
+        navigate(data.redirect);
+        return;
+      }
 
-      if (error) throw error;
-
-      // For now, return to dashboard.
-      // Stripe will be layered in later for pending plans.
-      navigate("/artist/dashboard");
+      // Otherwise, redirect to Stripe checkout
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error("No checkout URL returned");
+      }
     } catch (err: any) {
       console.error(err);
       setError(err.message ?? "Failed to activate subscription.");
-    } finally {
       setSubmitting(false);
     }
   }

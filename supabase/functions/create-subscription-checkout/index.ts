@@ -51,60 +51,138 @@ Deno.serve(async (req) => {
       });
     }
 
-   // ---------- INPUT ----------
-const { plan } = await req.json();
+    // ---------- INPUT ----------
+    const { plan } = await req.json();
 
-if (!plan) {
-  return new Response("Missing plan", {
-    status: 400,
-    headers: corsHeaders,
-  });
-}
+    if (!plan) {
+      return new Response("Missing plan", {
+        status: 400,
+        headers: corsHeaders,
+      });
+    }
 
-// ---------- FIND ARTIST ----------
-const { data: artistProfile } = await supabaseAdmin
-  .from("artist_profiles")
-  .select("id")
-  .eq("user_id", userData.user.id)
-  .single();
+    // ---------- FIND ARTIST ----------
+    const { data: artistProfile } = await supabaseAdmin
+      .from("artist_profiles")
+      .select("id")
+      .eq("user_id", userData.user.id)
+      .single();
 
-if (!artistProfile) {
-  return new Response("Artist profile not found", {
-    status: 400,
-    headers: corsHeaders,
-  });
-}
+    if (!artistProfile) {
+      return new Response("Artist profile not found", {
+        status: 400,
+        headers: corsHeaders,
+      });
+    }
 
-// ---------- UPSERT SUBSCRIPTION ----------
-const { data: subscription } = await supabaseAdmin
-  .from("subscriptions")
-  .upsert(
-    {
-      artist_id: artistProfile.id,
-      plan,
-      status: "pending",
-      subscription_tier: plan,
-      entitlement_tier: plan,
-      is_active: false,
-    },
-    { onConflict: "artist_id" }
-  )
-  .select()
-  .single();
+    // ---------- ENUM MAPPING ----------
+    // Map "test" to "standard" for database enum compatibility
+    const dbTier = plan === "test" ? "standard" : plan;
+    const entitlementTier =
+      plan === "free_forever" || plan === "premium"
+        ? "premium"
+        : "standard";
 
-// ---------- STRIPE CHECKOUT ----------
-const siteUrl = Deno.env.get("SITE_URL")!;
-const session = await stripe.checkout.sessions.create({
-  mode: "subscription",
-  payment_method_types: ["card"],
-  line_items: [{ price: priceId, quantity: 1 }],
-  success_url: `${siteUrl}/artist/dashboard?sub=success`,
-  cancel_url: `${siteUrl}/subscribe?sub=cancel`,
-  metadata: {
-    subscription_id: subscription.id,
-    artist_id: artistProfile.id,
-  },
-});
+    // ---------- PLAN PRICING ----------
+    const planPrices: Record<string, string> = {
+      test: Deno.env.get("STRIPE_TEST_PRICE_ID")!,
+      standard: Deno.env.get("STRIPE_STANDARD_PRICE_ID")!,
+      premium: Deno.env.get("STRIPE_PREMIUM_PRICE_ID")!,
+    };
+
+    // ---------- FREE FOREVER HANDLING ----------
+    if (plan === "free_forever") {
+      // Check cap of 50 free spots
+      const { count } = await supabaseAdmin
+        .from("subscriptions")
+        .select("*", { count: "exact", head: true })
+        .eq("subscription_tier", "free_forever");
+
+      if ((count ?? 0) >= 50) {
+        return new Response(
+          JSON.stringify({ error: "Free Forever spots are no longer available" }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      // Activate immediately without Stripe
+      const now = new Date().toISOString();
+      await supabaseAdmin
+        .from("subscriptions")
+        .upsert(
+          {
+            artist_id: artistProfile.id,
+            subscription_tier: "free_forever",
+            entitlement_tier: "premium",
+            status: "active",
+            is_active: true,
+            started_at: now,
+            ends_at: null,
+          },
+          { onConflict: "artist_id" }
+        );
+
+      return new Response(
+        JSON.stringify({ success: true, redirect: "/artist/dashboard?sub=success" }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // ---------- UPSERT SUBSCRIPTION (PENDING) ----------
+    const now = new Date().toISOString();
+    const endsAt = plan === "test"
+      ? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+      : null;
+
+    const { data: subscription } = await supabaseAdmin
+      .from("subscriptions")
+      .upsert(
+        {
+          artist_id: artistProfile.id,
+          subscription_tier: dbTier,
+          entitlement_tier: entitlementTier,
+          status: "pending",
+          is_active: false,
+          started_at: now,
+          ends_at: endsAt,
+        },
+        { onConflict: "artist_id" }
+      )
+      .select()
+      .single();
+
+    // ---------- STRIPE CHECKOUT ----------
+    const priceId = planPrices[plan];
+
+    if (!priceId) {
+      return new Response(
+        JSON.stringify({ error: "Invalid plan selected" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    const siteUrl = Deno.env.get("SITE_URL") || "http://localhost:5173";
+    const session = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      payment_method_types: ["card"],
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: `${siteUrl}/artist/dashboard?sub=success`,
+      cancel_url: `${siteUrl}/subscribe?sub=cancel`,
+      metadata: {
+        subscription_id: subscription.id,
+        artist_id: artistProfile.id,
+        plan: plan,
+      },
+    });
 
     return new Response(
       JSON.stringify({ url: session.url }),
