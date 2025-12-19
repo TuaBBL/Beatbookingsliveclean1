@@ -536,6 +536,7 @@ function SubscriptionsTab() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [deactivating, setDeactivating] = useState<string | null>(null);
 
   useEffect(() => {
     loadSubscriptions();
@@ -569,6 +570,33 @@ function SubscriptionsTab() {
     }
   };
 
+  const getStats = () => {
+    const total = subscriptions.length;
+    const active = subscriptions.filter((s) => s.is_active === true).length;
+    const inactive = subscriptions.filter((s) => s.is_active === false).length;
+    const founding = subscriptions.filter((s) => s.plan === 'free_forever').length;
+    const paid = subscriptions.filter(
+      (s) => s.plan === 'standard' || s.plan === 'premium'
+    ).length;
+    return { total, active, inactive, founding, paid };
+  };
+
+  const getEntitlementTier = (sub: any) => {
+    return sub.entitlement_tier || 'standard';
+  };
+
+  const getSubscriptionType = (plan: string) => {
+    if (plan === 'free_forever') return 'Free';
+    return 'Paid';
+  };
+
+  const canDelete = (sub: any) => {
+    if (sub.is_active && (sub.plan === 'standard' || sub.plan === 'premium')) {
+      return false;
+    }
+    return true;
+  };
+
   const handleDelete = async (subscriptionId: string) => {
     if (!confirm('Are you sure you want to delete this subscription?')) {
       return;
@@ -589,15 +617,59 @@ function SubscriptionsTab() {
     }
   };
 
+  const handleDeactivate = async (subscriptionId: string) => {
+    if (!confirm('Are you sure you want to deactivate this subscription? This will hide the artist from discovery.')) {
+      return;
+    }
+
+    setDeactivating(subscriptionId);
+    try {
+      const { error } = await supabase.rpc('admin_deactivate_subscription', {
+        subscription_id: subscriptionId,
+      });
+      if (error) throw error;
+      await loadSubscriptions();
+    } catch (err) {
+      console.error('Error deactivating subscription:', err);
+      alert('Failed to deactivate subscription');
+    } finally {
+      setDeactivating(null);
+    }
+  };
+
   if (loading) {
     return <p className="text-gray-400">Loading subscriptions...</p>;
   }
+
+  const stats = getStats();
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold">Subscriptions</h2>
-        <span className="text-sm text-gray-400">{filteredSubscriptions.length} subscriptions</span>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+        <div className="bg-neutral-800 rounded-lg p-4 border border-neutral-700">
+          <p className="text-gray-400 text-sm mb-1">Total</p>
+          <p className="text-2xl font-bold text-white">{stats.total}</p>
+        </div>
+        <div className="bg-neutral-800 rounded-lg p-4 border border-green-700/30">
+          <p className="text-gray-400 text-sm mb-1">Active</p>
+          <p className="text-2xl font-bold text-green-500">{stats.active}</p>
+        </div>
+        <div className="bg-neutral-800 rounded-lg p-4 border border-red-700/30">
+          <p className="text-gray-400 text-sm mb-1">Inactive</p>
+          <p className="text-2xl font-bold text-red-500">{stats.inactive}</p>
+        </div>
+        <div className="bg-neutral-800 rounded-lg p-4 border border-purple-700/30">
+          <p className="text-gray-400 text-sm mb-1">Founding Artists</p>
+          <p className="text-2xl font-bold text-purple-500">{stats.founding}</p>
+        </div>
+        <div className="bg-neutral-800 rounded-lg p-4 border border-blue-700/30">
+          <p className="text-gray-400 text-sm mb-1">Paid</p>
+          <p className="text-2xl font-bold text-blue-500">{stats.paid}</p>
+        </div>
       </div>
 
       <div className="mb-4">
@@ -623,6 +695,9 @@ function SubscriptionsTab() {
                 <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Name</th>
                 <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Stage Name</th>
                 <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Plan</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Tier</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Type</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Stripe</th>
                 <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Status</th>
                 <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Started</th>
                 <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Ends</th>
@@ -630,46 +705,105 @@ function SubscriptionsTab() {
               </tr>
             </thead>
             <tbody>
-              {filteredSubscriptions.map((sub) => (
-                <tr key={sub.id} className="border-b border-neutral-800 hover:bg-neutral-800/50">
-                  <td className="py-3 px-4">{sub.user_name || '-'}</td>
-                  <td className="py-3 px-4 text-gray-400 text-sm">{sub.stage_name || '-'}</td>
-                  <td className="py-3 px-4">
-                    <span className="px-2 py-1 rounded text-xs font-medium bg-blue-500/10 text-blue-400">
-                      {sub.plan}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span
-                      className={`px-2 py-1 rounded text-xs font-medium ${
-                        sub.status === 'active'
-                          ? 'bg-green-500/10 text-green-400'
-                          : sub.status === 'cancelled'
-                          ? 'bg-red-500/10 text-red-400'
-                          : 'bg-gray-500/10 text-gray-400'
-                      }`}
-                    >
-                      {sub.is_active ? 'Active' : sub.status}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-gray-400 text-sm">
-                    {sub.started_at ? new Date(sub.started_at).toLocaleDateString() : '-'}
-                  </td>
-                  <td className="py-3 px-4 text-gray-400 text-sm">
-                    {sub.ends_at ? new Date(sub.ends_at).toLocaleDateString() : '-'}
-                  </td>
-                  <td className="py-3 px-4">
-                    <button
-                      onClick={() => handleDelete(sub.id)}
-                      disabled={deleting === sub.id}
-                      className="p-2 hover:bg-red-500/10 rounded transition-colors disabled:opacity-50"
-                      title="Delete subscription"
-                    >
-                      <Trash2 className="w-4 h-4 text-red-400" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {filteredSubscriptions.map((sub) => {
+                const isDeletable = canDelete(sub);
+                const isActive = sub.is_active === true;
+                const isExpired = sub.ends_at && new Date(sub.ends_at) < new Date();
+                const isCancelled = sub.status === 'cancelled';
+
+                let statusBadge = { text: 'Unknown', color: 'bg-gray-500/10 text-gray-400' };
+                if (isActive) {
+                  statusBadge = { text: 'Active', color: 'bg-green-500/10 text-green-400' };
+                } else if (isCancelled) {
+                  statusBadge = { text: 'Cancelled', color: 'bg-red-500/10 text-red-400' };
+                } else if (isExpired) {
+                  statusBadge = { text: 'Expired', color: 'bg-gray-500/10 text-gray-400' };
+                } else {
+                  statusBadge = { text: 'Inactive', color: 'bg-orange-500/10 text-orange-400' };
+                }
+
+                return (
+                  <tr key={sub.id} className="border-b border-neutral-800 hover:bg-neutral-800/50">
+                    <td className="py-3 px-4">{sub.user_name || '-'}</td>
+                    <td className="py-3 px-4 text-gray-400 text-sm">{sub.stage_name || '-'}</td>
+                    <td className="py-3 px-4">
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-medium ${
+                          sub.plan === 'free_forever'
+                            ? 'bg-purple-500/10 text-purple-400'
+                            : sub.plan === 'premium'
+                            ? 'bg-blue-500/10 text-blue-400'
+                            : 'bg-gray-500/10 text-gray-400'
+                        }`}
+                      >
+                        {sub.plan}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-gray-400 text-sm">
+                      {getEntitlementTier(sub)}
+                    </td>
+                    <td className="py-3 px-4">
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-medium ${
+                          getSubscriptionType(sub.plan) === 'Free'
+                            ? 'bg-gray-500/10 text-gray-400'
+                            : 'bg-green-500/10 text-green-400'
+                        }`}
+                      >
+                        {getSubscriptionType(sub.plan)}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-medium ${
+                          sub.stripe_subscription_id
+                            ? 'bg-blue-500/10 text-blue-400'
+                            : 'bg-gray-500/10 text-gray-400'
+                        }`}
+                      >
+                        {sub.stripe_subscription_id ? 'Yes' : 'No'}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${statusBadge.color}`}>
+                        {statusBadge.text}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-gray-400 text-sm">
+                      {sub.started_at ? new Date(sub.started_at).toLocaleDateString() : '-'}
+                    </td>
+                    <td className="py-3 px-4 text-gray-400 text-sm">
+                      {sub.ends_at ? new Date(sub.ends_at).toLocaleDateString() : '-'}
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex gap-2">
+                        {isActive && (
+                          <button
+                            onClick={() => handleDeactivate(sub.id)}
+                            disabled={deactivating === sub.id}
+                            className="p-2 hover:bg-orange-500/10 rounded transition-colors disabled:opacity-50"
+                            title="Deactivate subscription"
+                          >
+                            <span className="text-xs text-orange-400">Deactivate</span>
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDelete(sub.id)}
+                          disabled={deleting === sub.id || !isDeletable}
+                          className="p-2 hover:bg-red-500/10 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          title={
+                            isDeletable
+                              ? 'Delete subscription'
+                              : 'Cannot delete active paid subscriptions'
+                          }
+                        >
+                          <Trash2 className="w-4 h-4 text-red-400" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
