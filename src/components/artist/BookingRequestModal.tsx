@@ -60,9 +60,14 @@ export default function BookingRequestModal({
         .or(`user_id.eq.${artistId},id.eq.${artistId}`)
         .maybeSingle();
 
+      const subscriptions = artistProfile?.subscriptions
+        ? Array.isArray(artistProfile.subscriptions)
+          ? artistProfile.subscriptions
+          : [artistProfile.subscriptions]
+        : [];
+
       const hasActiveSubscription = artistProfile &&
-        Array.isArray(artistProfile.subscriptions) &&
-        artistProfile.subscriptions.some((sub: any) => sub.is_active === true);
+        subscriptions.some((sub: any) => sub.is_active === true);
 
       if (!artistProfile || !hasActiveSubscription) {
         setToast('This artist is not currently accepting bookings');
