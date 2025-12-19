@@ -4,6 +4,7 @@ import { supabase } from "../../lib/supabase";
 import Header from "../Header";
 import Footer from "../Footer";
 import PlannerProfileMenu from "./PlannerProfileMenu";
+import BookingDetailModal from "../BookingDetailModal";
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock } from "lucide-react";
 
 interface Booking {
@@ -29,6 +30,7 @@ export default function PlannerCalendar() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
 
   useEffect(() => {
     loadData();
@@ -208,7 +210,7 @@ export default function PlannerCalendar() {
                             {dayBookings.slice(0, 2).map((booking) => (
                               <div
                                 key={booking.id}
-                                className="text-xs bg-green-900/40 px-1 py-0.5 rounded truncate"
+                                className="text-xs bg-green-900/40 hover:bg-green-800/50 px-1 py-0.5 rounded truncate transition"
                               >
                                 {booking.artist_profiles.stage_name}
                               </div>
@@ -216,7 +218,7 @@ export default function PlannerCalendar() {
                             {dayEvents.slice(0, 2).map((event) => (
                               <div
                                 key={event.id}
-                                className="text-xs bg-blue-900/40 px-1 py-0.5 rounded truncate"
+                                className="text-xs bg-blue-900/40 hover:bg-blue-800/50 px-1 py-0.5 rounded truncate transition"
                               >
                                 {event.title}
                               </div>
@@ -258,9 +260,10 @@ export default function PlannerCalendar() {
                         Confirmed Bookings
                       </h4>
                       {selectedDateItems.bookings.map((booking) => (
-                        <div
+                        <button
                           key={booking.id}
-                          className="bg-neutral-800 rounded-lg p-4 mb-2"
+                          onClick={() => setSelectedBooking(booking)}
+                          className="w-full bg-neutral-800 hover:bg-neutral-700 rounded-lg p-4 mb-2 transition cursor-pointer text-left"
                         >
                           <p className="font-semibold">
                             {booking.artist_profiles.stage_name}
@@ -269,7 +272,7 @@ export default function PlannerCalendar() {
                             <Clock className="w-4 h-4" />
                             {booking.start_time} - {booking.end_time}
                           </div>
-                        </div>
+                        </button>
                       ))}
                     </div>
                   )}
@@ -300,6 +303,15 @@ export default function PlannerCalendar() {
           )}
         </div>
       </main>
+
+      {selectedBooking && (
+        <BookingDetailModal
+          isOpen={!!selectedBooking}
+          onClose={() => setSelectedBooking(null)}
+          booking={selectedBooking}
+          userRole="planner"
+        />
+      )}
 
       <Footer />
     </div>

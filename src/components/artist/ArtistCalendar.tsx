@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import Header from '../Header';
 import Footer from '../Footer';
+import BookingDetailModal from '../BookingDetailModal';
 import { Calendar, Clock, MapPin, ArrowLeft, User } from 'lucide-react';
 
 interface Booking {
@@ -26,6 +27,7 @@ export default function ArtistCalendar() {
   const navigate = useNavigate();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
 
   useEffect(() => {
     loadBookings();
@@ -111,9 +113,10 @@ export default function ArtistCalendar() {
           ) : (
             <div className="space-y-4">
               {bookings.map((booking) => (
-                <div
+                <button
                   key={booking.id}
-                  className="bg-neutral-900 border-2 border-green-700 rounded-lg p-6 hover:border-green-500 transition"
+                  onClick={() => setSelectedBooking(booking)}
+                  className="w-full bg-neutral-900 border-2 border-green-700 rounded-lg p-6 hover:border-green-500 hover:bg-neutral-800 transition cursor-pointer text-left"
                 >
                   <div className="flex items-start gap-4">
                     <div className="w-12 h-12 rounded-full bg-neutral-800 flex items-center justify-center overflow-hidden border-2 border-green-700 flex-shrink-0">
@@ -174,12 +177,21 @@ export default function ArtistCalendar() {
                       </div>
                     </div>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           )}
         </div>
       </main>
+
+      {selectedBooking && (
+        <BookingDetailModal
+          isOpen={!!selectedBooking}
+          onClose={() => setSelectedBooking(null)}
+          booking={selectedBooking}
+          userRole="artist"
+        />
+      )}
 
       <Footer />
     </div>
