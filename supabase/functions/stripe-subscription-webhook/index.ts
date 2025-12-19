@@ -33,9 +33,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // =====================================
-    // 1) CHECKOUT COMPLETED (ACTIVATE)
-    // =====================================
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
 
@@ -44,12 +41,12 @@ Deno.serve(async (req) => {
       }
 
       const artistId = session.metadata?.artist_id;
-      const plan = session.metadata?.plan; // may be "standard" | "premium" | "test"
+      const plan = session.metadata?.plan;
       const subscriptionId = session.subscription as string | null;
       const customerId = session.customer as string | null;
 
       if (!artistId || !plan) {
-        console.error("Missing artist_id or plan in metadata", session.id, session.metadata);
+        console.error("Missing artist_id or plan in metadata", session.id);
         return new Response("Missing metadata", { status: 400 });
       }
       if (!subscriptionId || !customerId) {
@@ -57,19 +54,14 @@ Deno.serve(async (req) => {
         return new Response("Missing stripe ids", { status: 400 });
       }
 
-      // IMPORTANT: avoid writing "test" into enum fields
-      const tier =
-        plan === "premium" ? "premium"
-        : plan === "standard" ? "standard"
-        : "standard"; // plan === "test" → treat as standard tier for enum
+      const tier = plan === "premium" ? "premium" : "standard";
 
-      // UPSERT by artist_id (requires unique on subscriptions.artist_id)
       await supabaseAdmin
         .from("subscriptions")
         .upsert(
           {
             artist_id: artistId,
-            plan, // keep "test" here if you want, because plan is TEXT in your schema
+            plan,
             status: "active",
             is_active: true,
             stripe_subscription_id: subscriptionId,
@@ -85,13 +77,9 @@ Deno.serve(async (req) => {
       return new Response("OK", { status: 200 });
     }
 
-    // =====================================
-    // 2) SUBSCRIPTION UPDATED (CANCELLED)
-    // =====================================
     if (event.type === "customer.subscription.updated") {
       const sub = event.data.object as Stripe.Subscription;
 
-      // We only handle full cancel here
       if (sub.status === "canceled") {
         await supabaseAdmin
           .from("subscriptions")
@@ -106,9 +94,21 @@ Deno.serve(async (req) => {
       return new Response("OK", { status: 200 });
     }
 
-    // =====================================
-    // 3) INVOICE PAYMENT FAILED (EXPIRED)
-    // =====================================
+    if (event.type === "customer.subscription.deleted") {
+      const sub = event.data.object as Stripe.Subscription;
+
+      await supabaseAdmin
+        .from("subscriptions")
+        .update({
+          status: "cancelled",
+          is_active: false,
+          ends_at: new Date().toISOString(),
+        })
+        .eq("stripe_subscription_id", sub.id);
+
+      return new Response("OK", { status: 200 });
+    }
+
     if (event.type === "invoice.payment_failed") {
       const invoice = event.data.object as Stripe.Invoice;
       const stripeSubId = invoice.subscription as string | null;

@@ -40,14 +40,14 @@ export default function Subscribe() {
       setSubmitting(true);
       setError(null);
 
-      // Get session token
+      console.log("Sending plan:", plan);
+
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
         setError("Not authenticated");
         return;
       }
 
-      // Call Edge Function to handle subscription
       const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-subscription-checkout`;
       const response = await fetch(apiUrl, {
         method: "POST",
@@ -58,19 +58,22 @@ export default function Subscribe() {
         body: JSON.stringify({ plan }),
       });
 
-      const data = await response.json();
+      let data;
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error("Server returned invalid response");
+      }
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to create subscription");
       }
 
-      // If free plan, redirect directly
       if (data.redirect) {
         navigate(data.redirect);
         return;
       }
 
-      // Otherwise, redirect to Stripe checkout
       if (data.url) {
         window.location.href = data.url;
       } else {

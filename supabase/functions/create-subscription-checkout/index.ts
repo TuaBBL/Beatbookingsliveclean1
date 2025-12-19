@@ -4,7 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2?target=deno
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, Apikey",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
@@ -22,22 +22,37 @@ Deno.serve(async (req) => {
   }
 
   if (req.method !== "POST") {
-    return new Response("Method not allowed", { status: 405, headers: corsHeaders });
+    return new Response(
+      JSON.stringify({ error: "Method not allowed" }),
+      { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   }
 
   try {
-    // ---------- AUTH ----------
     const token = (req.headers.get("Authorization") || "").replace("Bearer ", "");
-    if (!token) return new Response("Missing Authorization", { status: 401, headers: corsHeaders });
+    if (!token) {
+      return new Response(
+        JSON.stringify({ error: "Missing Authorization" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const { data: userData } = await supabaseAdmin.auth.getUser(token);
-    if (!userData?.user) return new Response("Invalid auth", { status: 401, headers: corsHeaders });
+    if (!userData?.user) {
+      return new Response(
+        JSON.stringify({ error: "Invalid auth" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
-    // ---------- INPUT ----------
     const { plan } = await req.json();
-    if (!plan) return new Response("Missing plan", { status: 400, headers: corsHeaders });
+    if (!plan) {
+      return new Response(
+        JSON.stringify({ error: "Missing plan" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
-    // ---------- ARTIST ----------
     const { data: artist } = await supabaseAdmin
       .from("artist_profiles")
       .select("id")
@@ -45,10 +60,12 @@ Deno.serve(async (req) => {
       .single();
 
     if (!artist) {
-      return new Response("Artist profile not found", { status: 400, headers: corsHeaders });
+      return new Response(
+        JSON.stringify({ error: "Artist profile not found" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    // ---------- FREE FOREVER ----------
     if (plan === "free_forever") {
       const { count } = await supabaseAdmin
         .from("subscriptions")
@@ -84,34 +101,36 @@ Deno.serve(async (req) => {
       );
     }
 
-    // ---------- PRICE MAP ----------
     const prices: Record<string, string | undefined> = {
-      test: Deno.env.get("STRIPE_TEST_PRICE_ID"),
-      standard: Deno.env.get("STRIPE_STANDARD_PRICE_ID"),
-      premium: Deno.env.get("STRIPE_PREMIUM_PRICE_ID"),
+      test: Deno.env.get("STRIPE_PRICE_TEST"),
+      standard: Deno.env.get("STRIPE_PRICE_STANDARD"),
+      premium: Deno.env.get("STRIPE_PRICE_PREMIUM"),
     };
 
     const priceId = prices[plan];
     if (!priceId) {
-      return new Response("Invalid plan selected", { status: 400, headers: corsHeaders });
+      return new Response(
+        JSON.stringify({ error: "Invalid plan" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    // ---------- PLACEHOLDER SUB ----------
-    const { data: sub } = await supabaseAdmin
+    const dbTier = plan === "test" ? "standard" : plan;
+
+    await supabaseAdmin
       .from("subscriptions")
       .upsert(
         {
           artist_id: artist.id,
           plan,
+          subscription_tier: dbTier,
+          entitlement_tier: dbTier,
           status: "pending",
           is_active: false,
         },
         { onConflict: "artist_id" }
-      )
-      .select()
-      .single();
+      );
 
-    // ---------- STRIPE ----------
     const siteUrl = Deno.env.get("SITE_URL") || "http://localhost:5173";
 
     const session = await stripe.checkout.sessions.create({
