@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase';
 import Header from '../Header';
 import Footer from '../Footer';
 import BookingDetailModal from '../BookingDetailModal';
-import { Calendar, Clock, MapPin, ArrowLeft, User } from 'lucide-react';
+import { Calendar, Clock, MapPin, ArrowLeft, User, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface Booking {
   id: string;
@@ -28,6 +28,8 @@ export default function ArtistCalendar() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
 
   useEffect(() => {
     loadBookings();
@@ -72,7 +74,6 @@ export default function ArtistCalendar() {
         `)
         .eq('artist_id', artistProfile.id)
         .eq('status', 'accepted')
-        .gte('event_date', new Date().toISOString().split('T')[0])
         .order('event_date', { ascending: true });
 
       if (error) throw error;
@@ -82,6 +83,86 @@ export default function ArtistCalendar() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function getDaysInMonth(date: Date) {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
+
+    return { daysInMonth, startingDayOfWeek };
+  }
+
+  function getBookingsForDate(date: Date) {
+    const dateStr = date.toISOString().split('T')[0];
+    return bookings.filter(b => b.event_date === dateStr);
+  }
+
+  function navigateMonth(direction: 'prev' | 'next') {
+    setCurrentDate(prev => {
+      const newDate = new Date(prev);
+      if (direction === 'prev') {
+        newDate.setMonth(newDate.getMonth() - 1);
+      } else {
+        newDate.setMonth(newDate.getMonth() + 1);
+      }
+      return newDate;
+    });
+  }
+
+  function renderCalendar() {
+    const { daysInMonth, startingDayOfWeek } = getDaysInMonth(currentDate);
+    const days = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      days.push(<div key={`empty-${i}`} className="aspect-square" />);
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+      const dateBookings = getBookingsForDate(date);
+      const isToday = date.toDateString() === today.toDateString();
+      const isPast = date < today;
+
+      days.push(
+        <div
+          key={day}
+          className={`aspect-square border border-neutral-700 p-2 relative ${
+            isPast ? 'bg-neutral-900/50' : 'bg-neutral-900'
+          } ${isToday ? 'ring-2 ring-blue-500' : ''} hover:bg-neutral-800 transition`}
+        >
+          <div className={`text-sm font-medium mb-1 ${isPast ? 'text-gray-600' : 'text-gray-300'}`}>
+            {day}
+          </div>
+          {dateBookings.length > 0 && (
+            <div className="space-y-1">
+              {dateBookings.slice(0, 2).map((booking) => (
+                <button
+                  key={booking.id}
+                  onClick={() => setSelectedBooking(booking)}
+                  className="w-full text-left text-xs bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded truncate"
+                  title={booking.planner.name}
+                >
+                  {booking.start_time.slice(0, 5)} {booking.planner.name}
+                </button>
+              ))}
+              {dateBookings.length > 2 && (
+                <div className="text-xs text-gray-400 px-2">
+                  +{dateBookings.length - 2} more
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return days;
   }
 
   return (
@@ -98,10 +179,77 @@ export default function ArtistCalendar() {
             Back to Dashboard
           </button>
 
-          <h1 className="text-4xl font-bold mb-8">Confirmed Bookings</h1>
+          <div className="flex items-center justify-between mb-8">
+            <h1 className="text-4xl font-bold">Confirmed Bookings</h1>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setViewMode('calendar')}
+                className={`px-4 py-2 rounded-lg font-medium transition ${
+                  viewMode === 'calendar'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-neutral-800 text-gray-400 hover:text-white'
+                }`}
+              >
+                Calendar
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`px-4 py-2 rounded-lg font-medium transition ${
+                  viewMode === 'list'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-neutral-800 text-gray-400 hover:text-white'
+                }`}
+              >
+                List
+              </button>
+            </div>
+          </div>
 
           {loading ? (
             <p className="text-gray-400">Loading...</p>
+          ) : viewMode === 'calendar' ? (
+            <div>
+              <div className="bg-neutral-900 border-2 border-neutral-700 rounded-lg p-6 mb-4">
+                <div className="flex items-center justify-between mb-6">
+                  <button
+                    onClick={() => navigateMonth('prev')}
+                    className="p-2 hover:bg-neutral-800 rounded-lg transition"
+                  >
+                    <ChevronLeft className="w-6 h-6" />
+                  </button>
+                  <h2 className="text-2xl font-bold">
+                    {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                  </h2>
+                  <button
+                    onClick={() => navigateMonth('next')}
+                    className="p-2 hover:bg-neutral-800 rounded-lg transition"
+                  >
+                    <ChevronRight className="w-6 h-6" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-7 gap-2 mb-2">
+                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                    <div key={day} className="text-center text-sm font-semibold text-gray-400 py-2">
+                      {day}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-7 gap-2">
+                  {renderCalendar()}
+                </div>
+              </div>
+
+              {bookings.length === 0 && (
+                <div className="bg-neutral-900 border-2 border-neutral-700 rounded-lg p-8 text-center">
+                  <Calendar className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+                  <p className="text-gray-400">
+                    No confirmed bookings yet. Accepted bookings will appear on the calendar.
+                  </p>
+                </div>
+              )}
+            </div>
           ) : bookings.length === 0 ? (
             <div className="bg-neutral-900 border-2 border-neutral-700 rounded-lg p-12 text-center">
               <Calendar className="w-16 h-16 text-gray-600 mx-auto mb-4" />

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import Header from '../Header';
 import Footer from '../Footer';
-import { ArrowLeft, Calendar, MapPin, MessageSquare, User, FileText, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, MessageSquare, User, FileText, ShieldAlert, CheckCircle, XCircle, Clock, Send } from 'lucide-react';
 
 interface BookingRequest {
   id: string;
@@ -14,6 +14,8 @@ interface BookingRequest {
   message: string | null;
   status: string;
   created_at: string;
+  start_time: string | null;
+  end_time: string | null;
   planner: {
     name: string;
     email: string;
@@ -26,6 +28,13 @@ export default function ArtistInboxPage() {
   const [requests, setRequests] = useState<BookingRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [accessDenied, setAccessDenied] = useState(false);
+  const [processing, setProcessing] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<BookingRequest | null>(null);
+  const [actionType, setActionType] = useState<'accept' | 'decline' | null>(null);
+  const [startTime, setStartTime] = useState('18:00');
+  const [endTime, setEndTime] = useState('23:00');
+  const [responseMessage, setResponseMessage] = useState('');
 
   useEffect(() => {
     loadRequests();
@@ -62,6 +71,8 @@ export default function ArtistInboxPage() {
           message,
           status,
           created_at,
+          start_time,
+          end_time,
           planner:profiles!booking_requests_planner_id_fkey(
             name,
             email,
@@ -69,6 +80,7 @@ export default function ArtistInboxPage() {
           )
         `)
         .eq('artist_user_id', user.id)
+        .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -103,6 +115,70 @@ export default function ArtistInboxPage() {
     });
   };
 
+  async function handleAccept() {
+    if (!selectedRequest) return;
+
+    try {
+      setProcessing(selectedRequest.id);
+      const { error } = await supabase.rpc('accept_booking_request', {
+        p_request_id: selectedRequest.id,
+        p_start_time: startTime,
+        p_end_time: endTime,
+        p_response_message: responseMessage || null
+      });
+
+      if (error) throw error;
+
+      setToast('Booking accepted! It now appears in your calendar.');
+      setSelectedRequest(null);
+      setActionType(null);
+      setResponseMessage('');
+      setTimeout(() => setToast(null), 3000);
+      loadRequests();
+    } catch (error: any) {
+      console.error('Error accepting booking:', error);
+      setToast(error.message || 'Failed to accept booking');
+      setTimeout(() => setToast(null), 3000);
+    } finally {
+      setProcessing(null);
+    }
+  }
+
+  async function handleDecline() {
+    if (!selectedRequest) return;
+
+    try {
+      setProcessing(selectedRequest.id);
+      const { error } = await supabase.rpc('decline_booking_request', {
+        p_request_id: selectedRequest.id,
+        p_response_message: responseMessage || null
+      });
+
+      if (error) throw error;
+
+      setToast('Booking declined');
+      setSelectedRequest(null);
+      setActionType(null);
+      setResponseMessage('');
+      setTimeout(() => setToast(null), 3000);
+      loadRequests();
+    } catch (error: any) {
+      console.error('Error declining booking:', error);
+      setToast(error.message || 'Failed to decline booking');
+      setTimeout(() => setToast(null), 3000);
+    } finally {
+      setProcessing(null);
+    }
+  }
+
+  function openActionModal(request: BookingRequest, action: 'accept' | 'decline') {
+    setSelectedRequest(request);
+    setActionType(action);
+    setResponseMessage('');
+    setStartTime(request.start_time || '18:00');
+    setEndTime(request.end_time || '23:00');
+  }
+
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
       <Header />
@@ -132,7 +208,7 @@ export default function ArtistInboxPage() {
           ) : requests.length === 0 ? (
             <div className="bg-neutral-900 border-2 border-neutral-700 rounded-lg p-12 text-center">
               <MessageSquare className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold mb-2">No booking requests yet</h3>
+              <h3 className="text-xl font-semibold mb-2">No pending requests</h3>
               <p className="text-gray-400">
                 When planners send you booking requests, they'll appear here
               </p>
@@ -217,6 +293,25 @@ export default function ArtistInboxPage() {
                         </p>
                       </div>
                     </div>
+
+                    <div className="flex flex-col gap-2">
+                      <button
+                        onClick={() => openActionModal(request, 'accept')}
+                        disabled={processing === request.id}
+                        className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition text-white font-medium disabled:opacity-50 whitespace-nowrap"
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                        Accept
+                      </button>
+                      <button
+                        onClick={() => openActionModal(request, 'decline')}
+                        disabled={processing === request.id}
+                        className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition text-white font-medium disabled:opacity-50 whitespace-nowrap"
+                      >
+                        <XCircle className="w-4 h-4" />
+                        Decline
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -224,6 +319,102 @@ export default function ArtistInboxPage() {
           )}
         </div>
       </main>
+
+      {selectedRequest && actionType && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-neutral-900 rounded-lg border-2 border-neutral-700 max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-2xl font-bold mb-2">
+              {actionType === 'accept' ? 'Accept Booking' : 'Decline Booking'}
+            </h2>
+            <p className="text-gray-400 mb-6">
+              {selectedRequest.event_name} on {formatDate(selectedRequest.event_date)}
+            </p>
+
+            {actionType === 'accept' && (
+              <div className="space-y-4 mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    <Clock className="w-4 h-4 inline mr-2" />
+                    Start Time
+                  </label>
+                  <input
+                    type="time"
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value)}
+                    className="w-full px-4 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white focus:outline-none focus:border-green-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    <Clock className="w-4 h-4 inline mr-2" />
+                    End Time
+                  </label>
+                  <input
+                    type="time"
+                    value={endTime}
+                    onChange={(e) => setEndTime(e.target.value)}
+                    className="w-full px-4 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white focus:outline-none focus:border-green-500"
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                <MessageSquare className="w-4 h-4 inline mr-2" />
+                Message to Planner (Optional)
+              </label>
+              <textarea
+                value={responseMessage}
+                onChange={(e) => setResponseMessage(e.target.value)}
+                placeholder={actionType === 'accept'
+                  ? "E.g., 'Looking forward to performing at your event!'"
+                  : "E.g., 'Unfortunately I'm not available on this date.'"}
+                rows={4}
+                className="w-full px-4 py-3 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setSelectedRequest(null);
+                  setActionType(null);
+                  setResponseMessage('');
+                }}
+                className="flex-1 px-4 py-3 bg-neutral-800 hover:bg-neutral-700 text-white rounded-lg transition font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={actionType === 'accept' ? handleAccept : handleDecline}
+                disabled={processing === selectedRequest.id}
+                className={`flex-1 px-4 py-3 rounded-lg transition font-medium text-white disabled:opacity-50 flex items-center justify-center gap-2 ${
+                  actionType === 'accept'
+                    ? 'bg-green-600 hover:bg-green-700'
+                    : 'bg-red-600 hover:bg-red-700'
+                }`}
+              >
+                {processing === selectedRequest.id ? (
+                  'Processing...'
+                ) : (
+                  <>
+                    <Send className="w-4 h-4" />
+                    {actionType === 'accept' ? 'Confirm & Accept' : 'Confirm & Decline'}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {toast && (
+        <div className="fixed bottom-4 right-4 bg-neutral-900 border-2 border-blue-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
+          {toast}
+        </div>
+      )}
 
       <Footer />
     </div>
