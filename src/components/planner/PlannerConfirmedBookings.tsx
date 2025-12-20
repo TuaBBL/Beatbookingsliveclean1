@@ -199,8 +199,8 @@ export default function PlannerConfirmedBookings() {
       </main>
 
       {showMessages && selectedBooking && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-          <div className="bg-neutral-900 rounded-lg max-w-2xl w-full max-h-[80vh] flex flex-col border border-neutral-800">
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50" onClick={() => setShowMessages(false)}>
+          <div className="bg-neutral-900 rounded-lg max-w-2xl w-full max-h-[80vh] flex flex-col border border-neutral-800" onClick={(e) => e.stopPropagation()}>
             <div className="p-6 border-b border-neutral-800">
               <div className="flex items-center justify-between">
                 <div>
