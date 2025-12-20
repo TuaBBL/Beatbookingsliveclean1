@@ -5,7 +5,8 @@ import Header from "../Header";
 import Footer from "../Footer";
 import PlannerProfileMenu from "./PlannerProfileMenu";
 import BookingRequestModal from "../artist/BookingRequestModal";
-import { Music, Heart, MessageSquare, ArrowLeft, Instagram, Youtube, Facebook, Radio, Play } from "lucide-react";
+import ReviewModal from "./ReviewModal";
+import { Music, Heart, MessageSquare, ArrowLeft, Instagram, Youtube, Facebook, Radio, Play, Star } from "lucide-react";
 import { mockArtists, Artist } from "../../data/mockArtists";
 
 interface MediaItem {
@@ -14,18 +15,33 @@ interface MediaItem {
   url: string;
 }
 
+interface Review {
+  id: string;
+  planner_id: string;
+  rating: number;
+  review_text: string;
+  created_at: string;
+  profiles: {
+    name: string;
+    image_url: string;
+  };
+}
+
 export default function PlannerArtistProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [artist, setArtist] = useState<Artist | null>(null);
   const [artistProfileId, setArtistProfileId] = useState<string | null>(null);
   const [media, setMedia] = useState<MediaItem[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFavourite, setIsFavourite] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isArtistActive, setIsArtistActive] = useState(false);
+  const [userHasReview, setUserHasReview] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -35,6 +51,7 @@ export default function PlannerArtistProfile() {
   useEffect(() => {
     if (artistProfileId) {
       checkFavourite();
+      loadReviews();
     }
   }, [artistProfileId]);
 
@@ -248,6 +265,54 @@ export default function PlannerArtistProfile() {
 
   function handleBookingSuccess() {
     setShowBookingModal(false);
+  }
+
+  async function loadReviews() {
+    if (!artistProfileId) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('artist_reviews')
+        .select(`
+          id,
+          planner_id,
+          rating,
+          review_text,
+          created_at,
+          profiles!artist_reviews_planner_id_fkey (
+            name,
+            image_url
+          )
+        `)
+        .eq('artist_id', artistProfileId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      setReviews(data || []);
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const hasReview = (data || []).some((review: any) => review.planner_id === user.id);
+        setUserHasReview(hasReview);
+      }
+    } catch (error) {
+      console.error('Error loading reviews:', error);
+      setReviews([]);
+    }
+  }
+
+  function handleReviewSuccess() {
+    loadReviews();
+    loadArtist();
+  }
+
+  function handleWriteReview() {
+    if (!isLoggedIn) {
+      navigate('/login');
+      return;
+    }
+    setShowReviewModal(true);
   }
 
   if (loading) {
@@ -493,6 +558,112 @@ export default function PlannerArtistProfile() {
             </div>
           )}
 
+          <div className="bg-neutral-900 rounded-lg border border-neutral-800 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold">Reviews</h2>
+              {isLoggedIn && userRole === 'planner' && (
+                <button
+                  onClick={handleWriteReview}
+                  className="px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded-lg font-semibold transition text-sm"
+                >
+                  {userHasReview ? 'Edit My Review' : 'Write a Review'}
+                </button>
+              )}
+            </div>
+
+            {artist && artist.reviewCount !== undefined && artist.reviewCount > 0 && (
+              <div className="flex items-center gap-4 mb-6 pb-6 border-b border-neutral-800">
+                <div className="text-center">
+                  <div className="text-5xl font-bold text-white mb-1">
+                    {artist.averageRating}
+                  </div>
+                  <div className="flex items-center justify-center gap-1 mb-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        className={`w-4 h-4 ${
+                          star <= Math.round(artist.averageRating || 0)
+                            ? 'fill-yellow-400 text-yellow-400'
+                            : 'text-gray-600'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-sm text-gray-400">
+                    {artist.reviewCount} review{artist.reviewCount !== 1 ? 's' : ''}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {reviews.length === 0 ? (
+              <div className="text-center py-8">
+                <Star className="w-12 h-12 text-neutral-700 mx-auto mb-3" />
+                <p className="text-gray-400 mb-4">No reviews yet</p>
+                {isLoggedIn && userRole === 'planner' && (
+                  <p className="text-gray-500 text-sm">Be the first to review this artist</p>
+                )}
+                {!isLoggedIn && (
+                  <p className="text-gray-500 text-sm">
+                    <Link to="/login" className="text-orange-500 hover:text-orange-400">
+                      Sign in
+                    </Link>
+                    {' '}to leave a review
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {reviews.map((review) => (
+                  <div key={review.id} className="border-b border-neutral-800 pb-4 last:border-0">
+                    <div className="flex items-start gap-3 mb-2">
+                      <div className="w-10 h-10 rounded-full bg-neutral-800 flex items-center justify-center overflow-hidden flex-shrink-0">
+                        {review.profiles?.image_url ? (
+                          <img
+                            src={review.profiles.image_url}
+                            alt={review.profiles.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-gray-600 text-sm font-medium">
+                            {review.profiles?.name?.charAt(0) || '?'}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-semibold text-white">
+                            {review.profiles?.name || 'Anonymous'}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {new Date(review.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1 mb-2">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              className={`w-4 h-4 ${
+                                star <= review.rating
+                                  ? 'fill-yellow-400 text-yellow-400'
+                                  : 'text-gray-600'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        {review.review_text && (
+                          <p className="text-gray-300 text-sm leading-relaxed">
+                            {review.review_text}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {!isLoggedIn && (
             <div className="bg-neutral-900 rounded-lg border border-neutral-800 p-8 text-center">
               <div className="max-w-md mx-auto">
@@ -519,6 +690,14 @@ export default function PlannerArtistProfile() {
         artistId={id || ''}
         artistName={artist?.name || ''}
         onSuccess={handleBookingSuccess}
+      />
+
+      <ReviewModal
+        isOpen={showReviewModal}
+        onClose={() => setShowReviewModal(false)}
+        artistId={artistProfileId || ''}
+        artistName={artist?.name || ''}
+        onSuccess={handleReviewSuccess}
       />
 
       <Footer />
