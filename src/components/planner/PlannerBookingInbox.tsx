@@ -106,23 +106,23 @@ export default function PlannerBookingInbox() {
   }
 
   async function cancelBooking(bookingId: string) {
-    if (!confirm("Are you sure you want to cancel this booking request?")) return;
+    if (!confirm("Are you sure you want to cancel this booking?")) return;
 
     try {
-      const { error } = await supabase
-        .from("bookings")
-        .update({ status: "cancelled" })
-        .eq("id", bookingId);
+      const { error } = await supabase.rpc('cancel_confirmed_booking', {
+        p_booking_id: bookingId
+      });
 
       if (error) throw error;
       loadUserAndBookings();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error cancelling booking:", error);
+      alert(error.message || "Failed to cancel booking");
     }
   }
 
   async function deleteBooking(bookingId: string) {
-    if (!confirm("Are you sure you want to delete this booking?")) return;
+    if (!confirm("Are you sure you want to delete this booking? This will also delete all messages.")) return;
 
     try {
       await supabase.from("messages").delete().eq("booking_id", bookingId);
@@ -131,6 +131,7 @@ export default function PlannerBookingInbox() {
       setSelectedBooking(null);
     } catch (error) {
       console.error("Error deleting booking:", error);
+      alert("Failed to delete booking");
     }
   }
 
@@ -245,15 +246,15 @@ export default function PlannerBookingInbox() {
                       </div>
 
                       <div className="flex gap-2">
-                        {selectedBooking.status === "pending" && (
+                        {(selectedBooking.status === "pending" || selectedBooking.status === "accepted") && (
                           <button
                             onClick={() => cancelBooking(selectedBooking.id)}
                             className="flex-1 px-4 py-2 bg-neutral-800 hover:bg-neutral-700 rounded-lg text-sm transition"
                           >
-                            Cancel Request
+                            Cancel Booking
                           </button>
                         )}
-                        {selectedBooking.status !== "accepted" && (
+                        {(selectedBooking.status === "declined" || selectedBooking.status === "cancelled") && (
                           <button
                             onClick={() => deleteBooking(selectedBooking.id)}
                             className="flex-1 px-4 py-2 bg-red-900/20 hover:bg-red-900/30 text-red-500 rounded-lg text-sm transition"

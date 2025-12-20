@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Calendar, Clock, MapPin, User, Mail, CheckCircle, MessageSquare, Send } from 'lucide-react';
+import { X, Calendar, Clock, MapPin, User, Mail, CheckCircle, MessageSquare, Send, XCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface Message {
@@ -37,13 +37,15 @@ interface BookingDetailProps {
     };
   };
   userRole: 'artist' | 'planner';
+  onCancel?: () => void;
 }
 
-export default function BookingDetailModal({ isOpen, onClose, booking, userRole }: BookingDetailProps) {
+export default function BookingDetailModal({ isOpen, onClose, booking, userRole, onCancel }: BookingDetailProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -113,6 +115,29 @@ export default function BookingDetailModal({ isOpen, onClose, booking, userRole 
       console.error('Error sending message:', error);
     } finally {
       setSendingMessage(false);
+    }
+  }
+
+  async function handleCancelBooking() {
+    if (!confirm('Are you sure you want to cancel this booking?')) return;
+
+    try {
+      setCancelling(true);
+      const { error } = await supabase.rpc('cancel_confirmed_booking', {
+        p_booking_id: booking.id
+      });
+
+      if (error) throw error;
+
+      if (onCancel) {
+        onCancel();
+      }
+      onClose();
+    } catch (error: any) {
+      console.error('Error cancelling booking:', error);
+      alert(error.message || 'Failed to cancel booking');
+    } finally {
+      setCancelling(false);
     }
   }
 
@@ -289,10 +314,18 @@ export default function BookingDetailModal({ isOpen, onClose, booking, userRole 
             </div>
           </div>
 
-          <div className="pt-4 border-t border-neutral-800">
+          <div className="pt-4 border-t border-neutral-800 flex gap-3">
+            <button
+              onClick={handleCancelBooking}
+              disabled={cancelling || booking.status === 'cancelled'}
+              className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 disabled:bg-neutral-700 disabled:text-neutral-500 disabled:cursor-not-allowed rounded-lg font-semibold transition"
+            >
+              <XCircle className="w-5 h-5" />
+              {cancelling ? 'Cancelling...' : booking.status === 'cancelled' ? 'Already Cancelled' : 'Cancel Booking'}
+            </button>
             <button
               onClick={onClose}
-              className="w-full px-6 py-3 bg-neutral-800 hover:bg-neutral-700 rounded-lg font-semibold transition"
+              className="flex-1 px-6 py-3 bg-neutral-800 hover:bg-neutral-700 rounded-lg font-semibold transition"
             >
               Close
             </button>

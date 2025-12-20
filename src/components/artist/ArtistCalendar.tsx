@@ -383,6 +383,10 @@ export default function ArtistCalendar() {
           onClose={() => setSelectedBooking(null)}
           booking={selectedBooking}
           userRole="artist"
+          onCancel={() => {
+            setSelectedBooking(null);
+            loadBookings();
+          }}
         />
       )}
 

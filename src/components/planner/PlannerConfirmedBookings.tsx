@@ -4,7 +4,7 @@ import { supabase } from "../../lib/supabase";
 import Header from "../Header";
 import Footer from "../Footer";
 import PlannerProfileMenu from "./PlannerProfileMenu";
-import { Calendar, Clock, CheckCircle, MessageSquare } from "lucide-react";
+import { Calendar, Clock, CheckCircle, MessageSquare, XCircle } from "lucide-react";
 
 interface Booking {
   id: string;
@@ -84,6 +84,23 @@ export default function PlannerConfirmedBookings() {
     setShowMessages(true);
   }
 
+  async function cancelBooking(bookingId: string) {
+    if (!confirm("Are you sure you want to cancel this booking?")) return;
+
+    try {
+      const { error } = await supabase.rpc('cancel_confirmed_booking', {
+        p_booking_id: bookingId
+      });
+
+      if (error) throw error;
+      loadConfirmedBookings();
+      setShowMessages(false);
+    } catch (error: any) {
+      console.error("Error cancelling booking:", error);
+      alert(error.message || "Failed to cancel booking");
+    }
+  }
+
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
       <Header />
@@ -157,13 +174,22 @@ export default function PlannerConfirmedBookings() {
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => viewMessages(booking)}
-                      className="flex items-center gap-2 px-4 py-2 bg-neutral-800 hover:bg-neutral-700 rounded-lg transition"
-                    >
-                      <MessageSquare className="w-4 h-4" />
-                      View Messages
-                    </button>
+                    <div className="flex flex-col gap-2">
+                      <button
+                        onClick={() => viewMessages(booking)}
+                        className="flex items-center gap-2 px-4 py-2 bg-neutral-800 hover:bg-neutral-700 rounded-lg transition text-sm"
+                      >
+                        <MessageSquare className="w-4 h-4" />
+                        View Messages
+                      </button>
+                      <button
+                        onClick={() => cancelBooking(booking.id)}
+                        className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition text-sm"
+                      >
+                        <XCircle className="w-4 h-4" />
+                        Cancel Booking
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase';
 import Header from '../Header';
 import Footer from '../Footer';
 import PlannerProfileMenu from './PlannerProfileMenu';
-import { ArrowLeft, Calendar, MapPin, MessageSquare, User, FileText, ShieldAlert, Edit, XCircle, Send } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, MessageSquare, User, FileText, ShieldAlert, Edit, XCircle, Send, Trash2 } from 'lucide-react';
 
 interface BookingRequest {
   id: string;
@@ -128,20 +128,41 @@ export default function PlannerRequestsPage() {
   };
 
   async function handleCancelRequest(requestId: string) {
+    if (!confirm('Are you sure you want to cancel this booking request?')) return;
+
     try {
-      const { error } = await supabase
-        .from('booking_requests')
-        .update({ status: 'cancelled', responded_at: new Date().toISOString() })
-        .eq('id', requestId);
+      const { error } = await supabase.rpc('cancel_booking_request_planner', {
+        p_request_id: requestId
+      });
 
       if (error) throw error;
 
       setToast('Request cancelled successfully');
       setTimeout(() => setToast(null), 3000);
       loadRequests();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error cancelling request:', error);
-      setToast('Failed to cancel request');
+      setToast(error.message || 'Failed to cancel request');
+      setTimeout(() => setToast(null), 3000);
+    }
+  }
+
+  async function handleDeleteRequest(requestId: string) {
+    if (!confirm('Are you sure you want to delete this booking request?')) return;
+
+    try {
+      const { error } = await supabase.rpc('delete_booking_request', {
+        p_request_id: requestId
+      });
+
+      if (error) throw error;
+
+      setToast('Request deleted successfully');
+      setTimeout(() => setToast(null), 3000);
+      loadRequests();
+    } catch (error: any) {
+      console.error('Error deleting request:', error);
+      setToast(error.message || 'Failed to delete request');
       setTimeout(() => setToast(null), 3000);
     }
   }
@@ -383,6 +404,15 @@ export default function PlannerRequestsPage() {
                             Cancel
                           </button>
                         </>
+                      )}
+                      {(request.status === 'declined' || request.status === 'cancelled') && (
+                        <button
+                          onClick={() => handleDeleteRequest(request.id)}
+                          className="flex items-center gap-2 px-4 py-2 bg-red-900/30 hover:bg-red-900/50 text-red-400 rounded-lg transition text-sm font-medium"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Delete
+                        </button>
                       )}
                     </div>
                   </div>
