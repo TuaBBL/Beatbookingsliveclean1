@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
-import { X, Upload, User } from "lucide-react";
+import { X, Upload, User, LogOut } from "lucide-react";
 
 interface EditProfileModalProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ export default function EditProfileModal({
   onClose,
   onSave,
 }: EditProfileModalProps) {
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile>({
     name: "",
     email: "",
@@ -129,6 +131,15 @@ export default function EditProfileModal({
       return null;
     } finally {
       setUploading(false);
+    }
+  }
+
+  async function handleSignOut() {
+    try {
+      await supabase.auth.signOut();
+      navigate('/', { replace: true });
+    } catch (error) {
+      console.error("Error signing out:", error);
     }
   }
 
@@ -324,21 +335,33 @@ export default function EditProfileModal({
           </div>
         </div>
 
-        <div className="sticky bottom-0 bg-neutral-900 p-6 border-t border-neutral-800 flex gap-3">
-          <button
-            onClick={onClose}
-            disabled={loading || uploading}
-            className="flex-1 px-6 py-3 bg-neutral-800 hover:bg-neutral-700 rounded-lg font-bold transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={loading || uploading}
-            className="flex-1 px-6 py-3 bg-orange-600 hover:bg-orange-700 rounded-lg font-bold transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading || uploading ? "Saving..." : "Save Changes"}
-          </button>
+        <div className="sticky bottom-0 bg-neutral-900 border-t border-neutral-800">
+          <div className="p-6 flex gap-3">
+            <button
+              onClick={onClose}
+              disabled={loading || uploading}
+              className="flex-1 px-6 py-3 bg-neutral-800 hover:bg-neutral-700 rounded-lg font-bold transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={loading || uploading}
+              className="flex-1 px-6 py-3 bg-orange-600 hover:bg-orange-700 rounded-lg font-bold transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading || uploading ? "Saving..." : "Save Changes"}
+            </button>
+          </div>
+          <div className="px-6 pb-6">
+            <button
+              onClick={handleSignOut}
+              disabled={loading || uploading}
+              className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 rounded-lg font-bold transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <LogOut className="w-5 h-5" />
+              Sign Out
+            </button>
+          </div>
         </div>
       </div>
     </div>

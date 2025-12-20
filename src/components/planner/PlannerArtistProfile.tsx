@@ -346,23 +346,33 @@ export default function PlannerArtistProfile() {
       <main className="flex-1 px-6 py-12">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
+            {isLoggedIn ? (
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => navigate('/planner/dashboard')}
+                  className="flex items-center gap-2 text-gray-400 hover:text-white transition"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                  Back to Dashboard
+                </button>
+                <span className="text-gray-600">|</span>
+                <Link
+                  to="/planner/artists"
+                  className="text-gray-400 hover:text-white transition text-sm"
+                >
+                  Back to Artists
+                </Link>
+              </div>
+            ) : (
               <button
-                onClick={() => navigate('/planner/dashboard')}
+                onClick={() => navigate('/')}
                 className="flex items-center gap-2 text-gray-400 hover:text-white transition"
               >
                 <ArrowLeft className="w-5 h-5" />
-                Back to Dashboard
+                Back to Home
               </button>
-              <span className="text-gray-600">|</span>
-              <Link
-                to="/planner/artists"
-                className="text-gray-400 hover:text-white transition text-sm"
-              >
-                Back to Artists
-              </Link>
-            </div>
-            <PlannerProfileMenu />
+            )}
+            {isLoggedIn && <PlannerProfileMenu />}
           </div>
 
           <div className="bg-neutral-900 rounded-lg border border-neutral-800 overflow-hidden">
