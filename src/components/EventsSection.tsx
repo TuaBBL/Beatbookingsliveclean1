@@ -16,7 +16,7 @@ interface Event {
   profiles: {
     name: string;
     role: string;
-  };
+  } | null;
 }
 
 export default function EventsSection() {
@@ -133,13 +133,17 @@ export default function EventsSection() {
                         <h3 className="text-xl font-bold text-white mb-1">
                           {event.type}
                         </h3>
-                        <p className="text-neon-green text-sm font-semibold">
-                          {event.profiles.name}
-                        </p>
+                        {event.profiles && (
+                          <p className="text-neon-green text-sm font-semibold">
+                            {event.profiles.name}
+                          </p>
+                        )}
                       </div>
-                      <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded capitalize">
-                        {event.profiles.role}
-                      </span>
+                      {event.profiles && (
+                        <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded capitalize">
+                          {event.profiles.role}
+                        </span>
+                      )}
                     </div>
 
                     <div className="space-y-2 text-sm text-gray-400">
