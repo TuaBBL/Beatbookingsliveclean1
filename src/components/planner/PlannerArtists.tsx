@@ -4,6 +4,7 @@ import Header from "../Header";
 import Footer from "../Footer";
 import PlannerProfileMenu from "./PlannerProfileMenu";
 import SearchFilters, { FilterState } from "../SearchFilters";
+import { ArtistCard } from "../ArtistCard";
 import { Music } from "lucide-react";
 import { mockArtists, Artist } from "../../data/mockArtists";
 import { supabase } from "../../lib/supabase";
@@ -225,30 +226,7 @@ export default function PlannerArtists() {
               <p className="text-gray-400 mb-6">{filteredArtists.length} artist{filteredArtists.length !== 1 ? 's' : ''} found</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredArtists.map((artist) => (
-                  <Link
-                    key={artist.id}
-                    to={`/planner/artists/${artist.userId || artist.id}`}
-                    className="bg-neutral-900 rounded-lg border-2 border-neutral-700 hover:border-orange-500 hover:shadow-xl hover:shadow-orange-500/20 transition-all duration-200 overflow-hidden group"
-                  >
-                    <div className="h-56 bg-neutral-800 flex items-center justify-center overflow-hidden">
-                      {artist.imageUrl ? (
-                        <img
-                          src={artist.imageUrl}
-                          alt={artist.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                        />
-                      ) : (
-                        <Music className="w-16 h-16 text-neutral-700" />
-                      )}
-                    </div>
-                    <div className="p-5 bg-neutral-900">
-                      <h3 className="text-xl font-bold mb-2 text-white group-hover:text-orange-500 transition">
-                        {artist.name}
-                      </h3>
-                      <p className="text-sm text-orange-400 font-medium mb-2">{artist.genre}</p>
-                      <p className="text-sm text-gray-400">{artist.city}, {artist.state}</p>
-                    </div>
-                  </Link>
+                  <ArtistCard key={artist.id} artist={artist} />
                 ))}
               </div>
             </>
