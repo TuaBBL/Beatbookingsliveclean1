@@ -304,6 +304,7 @@ export default function ArtistDashboard() {
 
                 <Link
                   to="/artist/calendar"
+                  state={{ openFirstBooking: true }}
                   className="bg-neutral-900 p-6 rounded-lg border-2 border-neutral-700 hover:border-green-500 hover:shadow-[0_0_20px_rgba(34,197,94,0.3)] transition-all duration-200 cursor-pointer"
                 >
                   <div className="flex items-center gap-3 mb-4">
@@ -338,6 +339,7 @@ export default function ArtistDashboard() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <Link
                   to="/artist/calendar"
+                  state={{ openFirstBooking: true }}
                   className="bg-gradient-to-br from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 p-8 rounded-lg shadow-lg hover:shadow-[0_0_30px_rgba(34,197,94,0.4)] transition-all duration-200 group"
                 >
                   <div className="flex flex-col items-center text-center gap-3">

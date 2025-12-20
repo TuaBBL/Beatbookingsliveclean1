@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import Header from '../Header';
 import Footer from '../Footer';
@@ -32,6 +32,7 @@ interface AttendedEvent {
 
 export default function ArtistCalendar() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [attendedEvents, setAttendedEvents] = useState<AttendedEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,6 +43,13 @@ export default function ArtistCalendar() {
   useEffect(() => {
     loadBookings();
   }, []);
+
+  useEffect(() => {
+    if (location.state?.openFirstBooking && bookings.length > 0 && !selectedBooking) {
+      setSelectedBooking(bookings[0]);
+      window.history.replaceState({}, document.title);
+    }
+  }, [bookings, location.state, selectedBooking]);
 
   async function loadBookings() {
     try {
