@@ -82,6 +82,10 @@ export default function HomePage() {
         const country = locationParts[2] || 'Australia';
 
         const isDemo = profile.type === 'demo';
+        const subscriptions = Array.isArray(profile.subscriptions)
+          ? profile.subscriptions
+          : profile.subscriptions ? [profile.subscriptions] : [];
+        const isPremium = !isDemo && subscriptions.some((sub: any) => sub.is_active === true);
         const ratings = ratingsMap.get(profile.id);
         const artistSocials = socialsMap.get(profile.id) || {};
 
@@ -97,6 +101,7 @@ export default function HomePage() {
           imageUrl: profile.image_url || '',
           socials: artistSocials,
           isDemo,
+          isPremium,
           bio: profile.bio,
           averageRating: ratings?.averageRating,
           reviewCount: ratings?.reviewCount,
@@ -177,8 +182,21 @@ export default function HomePage() {
       {/* SEARCH / FILTER BAR */}
       <SearchFilters onFilterChange={handleFilterChange} />
 
-      {/* FEATURED SECTION (visual only) */}
+      {/* BROWSE ARTISTS */}
       <section className="relative z-10 px-6 pt-12">
+        <h2 className="mb-6 text-2xl font-bold text-white">
+          Browse Artists
+        </h2>
+
+        {loading ? (
+          <p className="text-gray-400">Loading artists...</p>
+        ) : (
+          <ArtistGrid artists={filteredArtists} />
+        )}
+      </section>
+
+      {/* FEATURED SECTION */}
+      <section className="relative z-10 px-6 py-16">
         <h2 className="mb-6 text-2xl font-bold text-white">
           Featured This Month
         </h2>
@@ -195,19 +213,6 @@ export default function HomePage() {
 
       {/* EVENTS SECTION */}
       <EventsSection />
-
-      {/* ALL ARTISTS */}
-      <section className="relative z-10 px-6 py-16">
-        <h2 className="mb-6 text-2xl font-bold text-white">
-          Browse Artists
-        </h2>
-
-        {loading ? (
-          <p className="text-gray-400">Loading artists...</p>
-        ) : (
-          <ArtistGrid artists={filteredArtists} />
-        )}
-      </section>
 
       {/* FOOTER */}
       <Footer />

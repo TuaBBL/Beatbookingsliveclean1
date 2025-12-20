@@ -6,6 +6,7 @@ import {
   Music,
   Radio,
   Star,
+  Crown,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -143,13 +144,19 @@ export function ArtistCard({ artist, showRank = false, onFavouriteChange }: Arti
           {[artist.city, artist.state, artist.country].filter(Boolean).join(', ')}
         </p>
 
-        {artist.isDemo && (
-          <div className="mb-2">
+        <div className="flex gap-2 mb-2">
+          {artist.isDemo && (
             <span className="inline-block px-2 py-0.5 bg-orange-500/20 border border-orange-500/40 rounded text-orange-500 text-xs font-bold">
               DEMO
             </span>
-          </div>
-        )}
+          )}
+          {artist.isPremium && !artist.isDemo && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/40 rounded text-yellow-500 text-xs font-bold">
+              <Crown className="w-3 h-3" />
+              PREMIUM
+            </span>
+          )}
+        </div>
 
         {artist.reviewCount !== undefined && artist.reviewCount > 0 ? (
           <div className="flex items-center gap-1 mb-2 text-sm">

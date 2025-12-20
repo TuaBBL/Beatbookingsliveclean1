@@ -17,6 +17,7 @@ export interface Artist {
   };
   trending?: number;
   isDemo?: boolean;
+  isPremium?: boolean;
   bio?: string;
   averageRating?: number;
   reviewCount?: number;
