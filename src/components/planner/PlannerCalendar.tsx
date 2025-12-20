@@ -24,6 +24,8 @@ interface Event {
   title: string;
   event_date: string;
   start_time: string;
+  is_creator?: boolean;
+  type?: string;
 }
 
 export default function PlannerCalendar() {
@@ -37,6 +39,16 @@ export default function PlannerCalendar() {
 
   useEffect(() => {
     loadData();
+  }, [currentDate]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadData();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [currentDate]);
 
   async function loadData() {
@@ -55,7 +67,7 @@ export default function PlannerCalendar() {
         0
       );
 
-      const [bookingsRes, eventsRes] = await Promise.all([
+      const [bookingsRes, createdEventsRes, attendingEventsRes] = await Promise.all([
         supabase
           .from("bookings")
           .select("*, artist_profiles(stage_name, user_id)")
@@ -65,15 +77,50 @@ export default function PlannerCalendar() {
           .lte("event_date", endOfMonth.toISOString().split("T")[0]),
         supabase
           .from("events")
-          .select("id, title, event_date, start_time")
+          .select("id, title, event_date, start_time, type")
           .eq("creator_id", user.id)
           .eq("status", "published")
           .gte("event_date", startOfMonth.toISOString().split("T")[0])
           .lte("event_date", endOfMonth.toISOString().split("T")[0]),
+        supabase
+          .from("event_attendance")
+          .select(`
+            event_id,
+            events!inner(
+              id,
+              title,
+              event_date,
+              start_time,
+              type,
+              creator_id
+            )
+          `)
+          .eq("user_id", user.id)
+          .eq("status", "going")
+          .gte("events.event_date", startOfMonth.toISOString().split("T")[0])
+          .lte("events.event_date", endOfMonth.toISOString().split("T")[0]),
       ]);
 
       setBookings(bookingsRes.data || []);
-      setEvents(eventsRes.data || []);
+
+      const createdEvents = (createdEventsRes.data || []).map((event: any) => ({
+        ...event,
+        is_creator: true,
+      }));
+
+      const attendingEvents = (attendingEventsRes.data || [])
+        .map((attendance: any) => ({
+          id: attendance.events.id,
+          title: attendance.events.title,
+          event_date: attendance.events.event_date,
+          start_time: attendance.events.start_time,
+          type: attendance.events.type,
+          is_creator: attendance.events.creator_id === user.id,
+        }))
+        .filter((event: any) => event.is_creator === false);
+
+      const allEvents = [...createdEvents, ...attendingEvents];
+      setEvents(allEvents);
     } catch (error) {
       console.error("Error loading calendar data:", error);
     } finally {
@@ -228,7 +275,11 @@ export default function PlannerCalendar() {
                                   e.stopPropagation();
                                   navigate(`/events/${event.id}`);
                                 }}
-                                className="text-xs bg-blue-900/40 hover:bg-blue-700 px-1 py-0.5 rounded truncate transition text-left"
+                                className={`text-xs px-1 py-0.5 rounded truncate transition text-left ${
+                                  event.is_creator
+                                    ? "bg-blue-900/40 hover:bg-blue-700"
+                                    : "bg-purple-900/40 hover:bg-purple-700"
+                                }`}
                               >
                                 {event.title}
                               </button>
@@ -306,41 +357,94 @@ export default function PlannerCalendar() {
                   </div>
                 )}
 
-                {events.length > 0 && (
+                {events.filter((e) => e.is_creator).length > 0 && (
                   <div>
                     <h3 className="text-lg font-semibold text-blue-500 mb-3">
-                      My Events ({events.length})
+                      My Events ({events.filter((e) => e.is_creator).length})
                     </h3>
                     <div className="space-y-3">
-                      {events.map((event) => (
-                        <Link
-                          key={event.id}
-                          to={`/events/${event.id}`}
-                          className="block w-full bg-neutral-900 border-2 border-blue-700 rounded-lg p-4 hover:border-blue-500 hover:bg-neutral-800 transition text-left"
-                        >
-                          <div className="flex items-center justify-between gap-4">
-                            <div className="flex-1">
-                              <p className="font-semibold text-white mb-1">{event.title}</p>
-                              <div className="flex flex-wrap items-center gap-3 text-sm text-gray-400">
-                                <div className="flex items-center gap-1">
-                                  <CalendarIcon className="w-3.5 h-3.5" />
-                                  {new Date(event.event_date).toLocaleDateString("en-US", {
-                                    month: "short",
-                                    day: "numeric",
-                                  })}
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <Clock className="w-3.5 h-3.5" />
-                                  {event.start_time.slice(0, 5)}
+                      {events
+                        .filter((e) => e.is_creator)
+                        .map((event) => (
+                          <Link
+                            key={event.id}
+                            to={`/events/${event.id}`}
+                            className="block w-full bg-neutral-900 border-2 border-blue-700 rounded-lg p-4 hover:border-blue-500 hover:bg-neutral-800 transition text-left"
+                          >
+                            <div className="flex items-center justify-between gap-4">
+                              <div className="flex-1">
+                                <p className="font-semibold text-white mb-1">{event.title}</p>
+                                <div className="flex flex-wrap items-center gap-3 text-sm text-gray-400">
+                                  <div className="flex items-center gap-1">
+                                    <CalendarIcon className="w-3.5 h-3.5" />
+                                    {new Date(event.event_date).toLocaleDateString("en-US", {
+                                      month: "short",
+                                      day: "numeric",
+                                    })}
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="w-3.5 h-3.5" />
+                                    {event.start_time.slice(0, 5)}
+                                  </div>
+                                  {event.type && (
+                                    <span className="text-xs px-2 py-0.5 bg-blue-900/40 rounded">
+                                      {event.type}
+                                    </span>
+                                  )}
                                 </div>
                               </div>
+                              <span className="px-2.5 py-1 bg-blue-500/10 text-blue-500 border border-blue-500 rounded-full text-xs font-medium flex-shrink-0">
+                                Created
+                              </span>
                             </div>
-                            <span className="px-2.5 py-1 bg-blue-500/10 text-blue-500 border border-blue-500 rounded-full text-xs font-medium flex-shrink-0">
-                              Event
-                            </span>
-                          </div>
-                        </Link>
-                      ))}
+                          </Link>
+                        ))}
+                    </div>
+                  </div>
+                )}
+
+                {events.filter((e) => !e.is_creator).length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-purple-500 mb-3">
+                      Events I'm Attending ({events.filter((e) => !e.is_creator).length})
+                    </h3>
+                    <div className="space-y-3">
+                      {events
+                        .filter((e) => !e.is_creator)
+                        .map((event) => (
+                          <Link
+                            key={event.id}
+                            to={`/events/${event.id}`}
+                            className="block w-full bg-neutral-900 border-2 border-purple-700 rounded-lg p-4 hover:border-purple-500 hover:bg-neutral-800 transition text-left"
+                          >
+                            <div className="flex items-center justify-between gap-4">
+                              <div className="flex-1">
+                                <p className="font-semibold text-white mb-1">{event.title}</p>
+                                <div className="flex flex-wrap items-center gap-3 text-sm text-gray-400">
+                                  <div className="flex items-center gap-1">
+                                    <CalendarIcon className="w-3.5 h-3.5" />
+                                    {new Date(event.event_date).toLocaleDateString("en-US", {
+                                      month: "short",
+                                      day: "numeric",
+                                    })}
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="w-3.5 h-3.5" />
+                                    {event.start_time.slice(0, 5)}
+                                  </div>
+                                  {event.type && (
+                                    <span className="text-xs px-2 py-0.5 bg-purple-900/40 rounded">
+                                      {event.type}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <span className="px-2.5 py-1 bg-purple-500/10 text-purple-500 border border-purple-500 rounded-full text-xs font-medium flex-shrink-0">
+                                Attending
+                              </span>
+                            </div>
+                          </Link>
+                        ))}
                     </div>
                   </div>
                 )}
@@ -387,24 +491,49 @@ export default function PlannerCalendar() {
                     </div>
                   )}
 
-                  {selectedDateItems.events.length > 0 && (
+                  {selectedDateItems.events.filter((e) => e.is_creator).length > 0 && (
                     <div>
                       <h4 className="font-semibold text-blue-500 mb-2">
                         Your Events
                       </h4>
-                      {selectedDateItems.events.map((event) => (
-                        <Link
-                          key={event.id}
-                          to={`/events/${event.id}`}
-                          className="block bg-neutral-800 rounded-lg p-4 mb-2 hover:bg-neutral-700 transition"
-                        >
-                          <p className="font-semibold">{event.title}</p>
-                          <div className="flex items-center gap-2 text-sm text-gray-400 mt-1">
-                            <Clock className="w-4 h-4" />
-                            {event.start_time}
-                          </div>
-                        </Link>
-                      ))}
+                      {selectedDateItems.events
+                        .filter((e) => e.is_creator)
+                        .map((event) => (
+                          <Link
+                            key={event.id}
+                            to={`/events/${event.id}`}
+                            className="block bg-neutral-800 rounded-lg p-4 mb-2 hover:bg-neutral-700 transition"
+                          >
+                            <p className="font-semibold">{event.title}</p>
+                            <div className="flex items-center gap-2 text-sm text-gray-400 mt-1">
+                              <Clock className="w-4 h-4" />
+                              {event.start_time}
+                            </div>
+                          </Link>
+                        ))}
+                    </div>
+                  )}
+
+                  {selectedDateItems.events.filter((e) => !e.is_creator).length > 0 && (
+                    <div>
+                      <h4 className="font-semibold text-purple-500 mb-2">
+                        Events You're Attending
+                      </h4>
+                      {selectedDateItems.events
+                        .filter((e) => !e.is_creator)
+                        .map((event) => (
+                          <Link
+                            key={event.id}
+                            to={`/events/${event.id}`}
+                            className="block bg-neutral-800 rounded-lg p-4 mb-2 hover:bg-neutral-700 transition"
+                          >
+                            <p className="font-semibold">{event.title}</p>
+                            <div className="flex items-center gap-2 text-sm text-gray-400 mt-1">
+                              <Clock className="w-4 h-4" />
+                              {event.start_time}
+                            </div>
+                          </Link>
+                        ))}
                     </div>
                   )}
                 </div>
