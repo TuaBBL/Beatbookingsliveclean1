@@ -383,7 +383,7 @@ export default function ArtistDashboard() {
                     <div>
                       <h3 className="text-xl font-bold mb-1">My Calendar</h3>
                       <p className="text-gray-400 text-sm">
-                        View confirmed bookings
+                        View bookings and events I'm attending
                       </p>
                     </div>
                   </div>
