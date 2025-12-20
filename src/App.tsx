@@ -87,6 +87,10 @@ export default function App() {
     <Route path="/about" element={<About />} />
     <Route path="/terms" element={<Terms />} />
     <Route path="/privacy" element={<Privacy />} />
+    {/* FAQ */}
+<Route path="/faq" element={<FaqHome />} />
+<Route path="/faq/artists" element={<ArtistFaq />} />
+<Route path="/faq/planners" element={<PlannerFaq />} />
     <Route path="/login" element={<Login />} />
     <Route path="/artists/:userId" element={<ArtistProfilePage />} />
 
