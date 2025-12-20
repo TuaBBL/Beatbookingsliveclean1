@@ -11,10 +11,19 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
 
   useEffect(() => {
     checkAdminAccess();
   }, []);
+
+  useEffect(() => {
+    if (!loading) {
+      loadUnreadCount();
+      const interval = setInterval(loadUnreadCount, 7000);
+      return () => clearInterval(interval);
+    }
+  }, [loading]);
 
   const checkAdminAccess = async () => {
     try {
@@ -42,6 +51,20 @@ export default function AdminDashboard() {
     }
   };
 
+  const loadUnreadCount = async () => {
+    try {
+      const { count } = await supabase
+        .from('admin_messages')
+        .select('id', { count: 'exact', head: true })
+        .eq('sender', 'user')
+        .is('read_at', null);
+
+      setUnreadMessageCount(count || 0);
+    } catch (err) {
+      console.error('Error loading unread count:', err);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -56,16 +79,30 @@ export default function AdminDashboard() {
 
       <main className="flex-1 px-6 py-12">
         <div className="max-w-7xl mx-auto">
-          <div className="flex items-center gap-3 mb-8">
+          <div className="flex items-center justify-between gap-3 mb-8">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => navigate('/planner/dashboard')}
+                className="p-2 hover:bg-neutral-800 rounded-lg transition-colors"
+                title="Back to dashboard"
+              >
+                <ArrowLeft className="w-6 h-6 text-gray-400 hover:text-white" />
+              </button>
+              <Shield className="w-8 h-8 text-purple-500" />
+              <h1 className="text-3xl md:text-4xl font-bold">Admin Dashboard</h1>
+            </div>
             <button
-              onClick={() => navigate('/planner/dashboard')}
-              className="p-2 hover:bg-neutral-800 rounded-lg transition-colors"
-              title="Back to dashboard"
+              onClick={() => navigate('/admin/messages')}
+              className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg transition font-semibold relative"
             >
-              <ArrowLeft className="w-6 h-6 text-gray-400 hover:text-white" />
+              <MessageCircle className="w-5 h-5" />
+              Messages
+              {unreadMessageCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                  {unreadMessageCount}
+                </span>
+              )}
             </button>
-            <Shield className="w-8 h-8 text-purple-500" />
-            <h1 className="text-3xl md:text-4xl font-bold">Admin Dashboard</h1>
           </div>
 
           <div className="flex flex-wrap gap-2 mb-8 border-b border-neutral-800">
@@ -299,7 +336,7 @@ function UsersTab() {
   };
 
   const handleMessage = (userId: string) => {
-    navigate('/planner/inbox');
+    navigate('/admin/messages');
   };
 
   if (loading) {
