@@ -9,33 +9,37 @@ export default function FaqHome() {
     <div className="min-h-screen bg-black text-white flex flex-col">
       <Header />
 
-      <main className="flex-1 px-6 py-16 max-w-4xl mx-auto text-center">
-        <h1 className="text-4xl font-bold mb-6">Help & FAQs</h1>
-        <p className="text-gray-400 mb-12">
-          Choose your role to see relevant answers
-        </p>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <button
-            onClick={() => navigate("/faq/artists")}
-            className="bg-neutral-900 border border-green-600 hover:border-green-400 rounded-xl p-8 transition"
-          >
-            <h3 className="text-2xl font-semibold mb-2">Artists</h3>
-            <p className="text-gray-400">
-              Subscriptions, bookings, calendars, events
+      <main className="flex-1 bg-black">
+        <section className="max-w-6xl mx-auto px-6 py-16">
+          <div className="text-center mb-12">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">Help & FAQs</h1>
+            <p className="text-gray-400 mb-10 max-w-2xl mx-auto">
+              Choose your role to see relevant answers
             </p>
-          </button>
+          </div>
 
-          <button
-            onClick={() => navigate("/faq/planners")}
-            className="bg-neutral-900 border border-red-600 hover:border-red-400 rounded-xl p-8 transition"
-          >
-            <h3 className="text-2xl font-semibold mb-2">Planners</h3>
-            <p className="text-gray-400">
-              Booking requests, payments, calendars
-            </p>
-          </button>
-        </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+            <button
+              onClick={() => navigate("/faq/artists")}
+              className="bg-neutral-900 border border-neutral-700 hover:border-neon-green rounded-xl p-8 transition"
+            >
+              <h3 className="text-2xl font-semibold mb-2 text-white">Artists</h3>
+              <p className="text-gray-400">
+                Subscriptions, bookings, calendars, events
+              </p>
+            </button>
+
+            <button
+              onClick={() => navigate("/faq/planners")}
+              className="bg-neutral-900 border border-neutral-700 hover:border-neon-green rounded-xl p-8 transition"
+            >
+              <h3 className="text-2xl font-semibold mb-2 text-white">Planners</h3>
+              <p className="text-gray-400">
+                Booking requests, payments, calendars
+              </p>
+            </button>
+          </div>
+        </section>
       </main>
 
       <Footer />

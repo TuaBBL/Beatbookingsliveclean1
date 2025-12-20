@@ -35,9 +35,14 @@ export default function ArtistFaq() {
     <div className="min-h-screen bg-black text-white flex flex-col">
       <Header />
 
-      <main className="flex-1 px-6 py-12 max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold mb-8">Artist FAQ</h1>
-        <FaqAccordion items={artistFaq} />
+      <main className="flex-1 bg-black">
+        <section className="max-w-6xl mx-auto px-6 py-16">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">Artist FAQ</h1>
+          <p className="text-gray-400 mb-10 max-w-2xl">
+            Everything artists need to know about bookings, subscriptions, and events.
+          </p>
+          <FaqAccordion items={artistFaq} />
+        </section>
       </main>
 
       <Footer />

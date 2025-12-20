@@ -35,9 +35,14 @@ export default function PlannerFaq() {
     <div className="min-h-screen bg-black text-white flex flex-col">
       <Header />
 
-      <main className="flex-1 px-6 py-12 max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold mb-8">Planner FAQ</h1>
-        <FaqAccordion items={plannerFaq} />
+      <main className="flex-1 bg-black">
+        <section className="max-w-6xl mx-auto px-6 py-16">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">Planner FAQ</h1>
+          <p className="text-gray-400 mb-10 max-w-2xl">
+            Answers for planners about booking artists, events, and payments.
+          </p>
+          <FaqAccordion items={plannerFaq} />
+        </section>
       </main>
 
       <Footer />
