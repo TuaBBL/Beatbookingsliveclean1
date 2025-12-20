@@ -1,3 +1,6 @@
+import FaqHome from "./pages/faq/FaqHome";
+import ArtistFaq from "./pages/faq/ArtistFaq";
+import PlannerFaq from "./pages/faq/PlannerFaq";
 import Subscribe from "./components/Subscribe";
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
