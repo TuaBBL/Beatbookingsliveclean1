@@ -85,6 +85,14 @@ Deno.serve(async (req) => {
       });
     }
 
+    // CRITICAL: Artists should never pay to publish events
+    if (eventRow.creator_role === "artist") {
+      return new Response("Artists can publish events for free", {
+        status: 400,
+        headers: corsHeaders,
+      });
+    }
+
     // Price: $30 one-time publish fee (AUD cents)
     const unitAmount = 3000;
     const currency = "aud";

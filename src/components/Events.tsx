@@ -212,6 +212,7 @@ export default function Events() {
 
       const eligibility = await canPublishEvent({
         creatorRole: profile.role as "artist" | "planner",
+        creatorId: profile.id,
       });
 
       if (eligibility.requiresPayment) {
@@ -866,6 +867,11 @@ function MyEventCard({
 
         {event.status === 'draft' && (
           <div className="mb-3 space-y-2">
+            {userRole === 'artist' && (
+              <p className="text-sm text-green-400 mb-2 text-center">
+                Publish unlimited events as part of your subscription
+              </p>
+            )}
             {userRole === 'planner' && publishedCount === 0 && (
               <p className="text-sm text-blue-400 mb-2 text-center">
                 1 free publish remaining
@@ -879,11 +885,11 @@ function MyEventCard({
               className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-neon-green hover:bg-neon-green/90 text-black rounded-lg font-semibold transition shadow-[0_0_25px_rgba(57,255,20,0.5)] hover:shadow-[0_0_35px_rgba(57,255,20,0.7)]"
             >
               <Check className="w-4 h-4" />
-              {userRole === 'planner' && publishedCount >= 1
-                ? 'Publish ($30)'
-                : userRole === 'planner'
-                ? 'Publish (Free)'
-                : 'Publish'}
+              {userRole === 'artist'
+                ? 'Publish Event'
+                : userRole === 'planner' && publishedCount >= 1
+                ? 'Pay & Publish ($30)'
+                : 'Publish (Free)'}
             </button>
             <button
               onClick={(e) => {
