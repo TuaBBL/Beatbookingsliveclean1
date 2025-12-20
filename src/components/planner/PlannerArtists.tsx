@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import Header from "../Header";
 import Footer from "../Footer";
+import SoundBarsBackground from "../SoundBarsBackground";
 import PlannerProfileMenu from "./PlannerProfileMenu";
 import SearchFilters, { FilterState } from "../SearchFilters";
 import { ArtistCard } from "../ArtistCard";
@@ -194,12 +195,13 @@ export default function PlannerArtists() {
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
       <Header />
+      <SoundBarsBackground />
 
-      <div className="flex items-center justify-end px-6 pt-6">
+      <div className="flex items-center justify-end px-6 pt-6 relative z-10">
         <div className="flex items-center gap-4">
           <Link
             to={userRole === 'artist' ? '/artist/dashboard' : '/planner/dashboard'}
-            className="text-gray-400 hover:text-white transition"
+            className="text-gray-300 hover:text-neon-green hover:drop-shadow-[0_0_10px_rgba(0,255,136,0.8)] transition-all duration-300"
           >
             Back to Dashboard
           </Link>
@@ -209,9 +211,9 @@ export default function PlannerArtists() {
 
       <SearchFilters onFilterChange={handleFilterChange} initialSearch={initialSearch} />
 
-      <main className="flex-1 px-6 py-12">
+      <main className="flex-1 px-6 py-12 relative z-10">
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-4xl font-bold mb-8">Browse Artists</h1>
+          <h1 className="text-4xl font-bold mb-8 text-white drop-shadow-[0_0_15px_rgba(0,255,136,0.5)]">Browse Artists</h1>
 
           {loading ? (
             <p className="text-gray-400">Loading artists...</p>

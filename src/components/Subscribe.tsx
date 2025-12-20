@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { supabase } from "../lib/supabase";
+import SoundBarsBackground from './SoundBarsBackground';
 
 type Plan = "free_forever" | "standard" | "premium" | "test";
 
@@ -95,20 +96,21 @@ export default function Subscribe() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white px-6 py-12">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-black text-white px-6 py-12 relative">
+      <SoundBarsBackground />
+      <div className="max-w-6xl mx-auto relative z-10">
         <button
           onClick={() => navigate("/dashboard")}
-          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-6"
+          className="flex items-center gap-2 text-gray-300 hover:text-neon-green hover:drop-shadow-[0_0_10px_rgba(0,255,136,0.8)] transition-all duration-300 mb-6"
         >
           <ArrowLeft className="w-5 h-5" />
           <span>Back to Dashboard</span>
         </button>
 
-        <h1 className="text-4xl font-bold mb-2">
+        <h1 className="text-4xl font-bold mb-2 text-white drop-shadow-[0_0_20px_rgba(0,255,136,0.6)]">
           Activate Your Artist Profile
         </h1>
-        <p className="text-gray-400 mb-8">
+        <p className="text-gray-300 mb-8">
           Choose a plan to make your profile visible and start receiving bookings.
         </p>
 

@@ -6,6 +6,7 @@ import Footer from "../Footer";
 import EditProfileModal from "./EditProfileModal";
 import AnimatedArtistHero from "../dashboard/AnimatedArtistHero";
 import AdminMessageBox from '../AdminMessageBox';
+import SoundBarsBackground from '../SoundBarsBackground';
 import { ArtistGrid } from '../ArtistGrid';
 import EventsSection from '../EventsSection';
 import { Artist } from '../../data/mockArtists';
@@ -207,13 +208,14 @@ export default function PlannerDashboard() {
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
       <Header />
+      <SoundBarsBackground />
 
       <main className="flex-1 px-6 py-12 relative">
         <AnimatedArtistHero className="h-80" />
 
         <div className="max-w-6xl mx-auto relative z-20">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
-            <h1 className="text-3xl md:text-4xl font-bold">Planner Dashboard</h1>
+            <h1 className="text-3xl md:text-4xl font-bold text-white drop-shadow-[0_0_15px_rgba(255,43,43,0.5)]">Planner Dashboard</h1>
             <div className="flex items-center gap-3 md:gap-4 w-full md:w-auto">
               {profile && (
                 <>
@@ -221,7 +223,7 @@ export default function PlannerDashboard() {
                     <p className="font-semibold text-sm md:text-base">{profile.name}</p>
                     <p className="text-xs md:text-sm text-gray-400">{profile.email}</p>
                   </div>
-                  <div className="w-12 h-12 rounded-full bg-neutral-800 flex items-center justify-center overflow-hidden border-2 border-neutral-700 flex-shrink-0">
+                  <div className="w-12 h-12 rounded-full bg-neutral-800 flex items-center justify-center overflow-hidden border-2 border-neon-red shadow-neon-red flex-shrink-0">
                     {profile.image_url ? (
                       <img
                         src={profile.image_url}
@@ -236,7 +238,7 @@ export default function PlannerDashboard() {
               )}
               <button
                 onClick={handleAdminAccess}
-                className="flex items-center gap-2 px-3 md:px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition text-white font-medium text-sm md:text-base shadow-lg hover:shadow-purple-500/50 flex-shrink-0"
+                className="flex items-center gap-2 px-3 md:px-4 py-2 bg-neon-red/10 border border-neon-red hover:bg-neon-red/20 rounded-lg transition-all duration-300 text-neon-red font-medium text-sm md:text-base shadow-neon-red hover:shadow-neon-red-lg flex-shrink-0"
                 title="Admin"
               >
                 <Shield className="w-4 h-4 md:w-5 md:h-5" />
@@ -244,7 +246,7 @@ export default function PlannerDashboard() {
               </button>
               <button
                 onClick={() => setShowEditModal(true)}
-                className="flex items-center gap-2 px-3 md:px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded-lg transition text-white font-medium text-sm md:text-base shadow-lg hover:shadow-orange-500/50 flex-shrink-0"
+                className="flex items-center gap-2 px-3 md:px-4 py-2 bg-neon-red/10 border border-neon-red hover:bg-neon-red/20 rounded-lg transition-all duration-300 text-neon-red font-medium text-sm md:text-base shadow-neon-red hover:shadow-neon-red-lg flex-shrink-0"
                 title="Edit Profile"
               >
                 <Settings className="w-4 h-4 md:w-5 md:h-5" />
@@ -253,7 +255,7 @@ export default function PlannerDashboard() {
               </button>
               <button
                 onClick={handleSignOut}
-                className="flex items-center gap-2 px-3 md:px-4 py-2 bg-neon-red hover:bg-neon-red/90 rounded-lg transition text-white font-semibold text-sm md:text-base flex-shrink-0"
+                className="flex items-center gap-2 px-3 md:px-4 py-2 bg-neon-red/10 border border-neon-red hover:bg-neon-red/20 rounded-lg transition-all duration-300 text-neon-red font-semibold text-sm md:text-base shadow-neon-red hover:shadow-neon-red-lg flex-shrink-0"
                 title="Sign Out"
               >
                 <LogOut className="w-4 h-4 md:w-5 md:h-5" />
@@ -269,50 +271,50 @@ export default function PlannerDashboard() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
                 <Link
                   to="/planner/bookings"
-                  className="bg-neutral-900 p-6 rounded-lg border-2 border-neutral-700 hover:border-orange-500 hover:shadow-[0_0_20px_rgba(249,115,22,0.3)] transition-all duration-200 cursor-pointer"
+                  className="bg-black/60 backdrop-blur-md p-6 rounded-lg border border-neon-red hover:border-neon-red shadow-neon-red hover:shadow-neon-red-lg transition-all duration-300 cursor-pointer hover:scale-105"
                 >
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-orange-500/10 rounded-lg">
-                      <MessageSquare className="w-6 h-6 text-orange-500" />
+                    <div className="p-2 bg-neon-red/20 rounded-lg">
+                      <MessageSquare className="w-6 h-6 text-neon-red" />
                     </div>
                     <h3 className="text-lg font-semibold text-white">Pending Requests</h3>
                   </div>
-                  <p className="text-5xl font-bold text-orange-500">
+                  <p className="text-5xl font-bold text-neon-red">
                     {stats.pendingRequests}
                   </p>
-                  <p className="text-sm text-gray-400 mt-2">Awaiting response</p>
+                  <p className="text-sm text-gray-300 mt-2">Awaiting response</p>
                 </Link>
 
                 <Link
                   to="/planner/confirmed"
-                  className="bg-neutral-900 p-6 rounded-lg border-2 border-neutral-700 hover:border-green-500 hover:shadow-[0_0_20px_rgba(34,197,94,0.3)] transition-all duration-200 cursor-pointer"
+                  className="bg-black/60 backdrop-blur-md p-6 rounded-lg border border-neon-green hover:border-neon-green shadow-neon-green hover:shadow-neon-green-lg transition-all duration-300 cursor-pointer hover:scale-105"
                 >
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-green-500/10 rounded-lg">
-                      <Calendar className="w-6 h-6 text-green-500" />
+                    <div className="p-2 bg-neon-green/20 rounded-lg">
+                      <Calendar className="w-6 h-6 text-neon-green" />
                     </div>
                     <h3 className="text-lg font-semibold text-white">Confirmed Bookings</h3>
                   </div>
-                  <p className="text-5xl font-bold text-green-500">
+                  <p className="text-5xl font-bold text-neon-green">
                     {stats.confirmedBookings}
                   </p>
-                  <p className="text-sm text-gray-400 mt-2">Upcoming events</p>
+                  <p className="text-sm text-gray-300 mt-2">Upcoming events</p>
                 </Link>
 
                 <Link
                   to="/planner/favourites"
-                  className="bg-neutral-900 p-6 rounded-lg border-2 border-neutral-700 hover:border-pink-500 hover:shadow-[0_0_20px_rgba(236,72,153,0.3)] transition-all duration-200 cursor-pointer"
+                  className="bg-black/60 backdrop-blur-md p-6 rounded-lg border border-neon-red hover:border-neon-red shadow-neon-red hover:shadow-neon-red-lg transition-all duration-300 cursor-pointer hover:scale-105"
                 >
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-pink-500/10 rounded-lg">
-                      <Heart className="w-6 h-6 text-pink-500" />
+                    <div className="p-2 bg-neon-red/20 rounded-lg">
+                      <Heart className="w-6 h-6 text-neon-red" />
                     </div>
                     <h3 className="text-lg font-semibold text-white">Favourite Artists</h3>
                   </div>
-                  <p className="text-5xl font-bold text-pink-500">
+                  <p className="text-5xl font-bold text-neon-red">
                     {stats.favouriteArtists}
                   </p>
-                  <p className="text-sm text-gray-400 mt-2">Saved for later</p>
+                  <p className="text-sm text-gray-300 mt-2">Saved for later</p>
                 </Link>
               </div>
 

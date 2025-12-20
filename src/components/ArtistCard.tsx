@@ -92,7 +92,7 @@ export function ArtistCard({ artist, showRank = false, onFavouriteChange }: Arti
   return (
     <div
       onClick={handleClick}
-      className="group relative bg-neutral-900 rounded-xl overflow-hidden border border-neutral-800 hover:border-orange-500/50 transition-all duration-300 hover:-translate-y-1 cursor-pointer shadow-lg"
+      className="group relative bg-black/70 backdrop-blur-sm rounded-xl overflow-hidden border border-neon-green/30 hover:border-neon-green hover:shadow-neon-green-lg transition-all duration-300 hover:-translate-y-2 hover:scale-105 cursor-pointer"
     >
       {showRank && artist.trending && (
         <div className="absolute top-3 left-3 z-10">
@@ -108,11 +108,11 @@ export function ArtistCard({ artist, showRank = false, onFavouriteChange }: Arti
         onClick={toggleFavourite}
         disabled={isCheckingFavourite}
         title={!isLoggedIn ? "Log in to save favourites" : isFavourite ? "Remove from favourites" : "Add to favourites"}
-        className={`absolute top-3 right-3 z-10 p-2 rounded-full transition ${
+        className={`absolute top-3 right-3 z-10 p-2 rounded-full transition-all duration-300 ${
           isLoggedIn
             ? isFavourite
-              ? "bg-pink-600 text-white hover:bg-pink-700"
-              : "bg-black/60 text-gray-300 hover:bg-pink-600 hover:text-white"
+              ? "bg-neon-red text-white shadow-neon-red animate-pulse hover:scale-110"
+              : "bg-black/60 text-gray-300 hover:bg-neon-red hover:text-white hover:shadow-neon-red hover:scale-110"
             : "bg-black/40 text-gray-500 cursor-not-allowed"
         }`}
       >
@@ -146,12 +146,12 @@ export function ArtistCard({ artist, showRank = false, onFavouriteChange }: Arti
 
         <div className="flex gap-2 mb-2">
           {artist.isDemo && (
-            <span className="inline-block px-2 py-0.5 bg-orange-500/20 border border-orange-500/40 rounded text-orange-500 text-xs font-bold">
+            <span className="inline-block px-2 py-0.5 bg-neon-red/20 border border-neon-red/60 rounded text-neon-red text-xs font-bold shadow-[0_0_10px_rgba(255,43,43,0.3)]">
               DEMO
             </span>
           )}
           {artist.isPremium && !artist.isDemo && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/40 rounded text-yellow-500 text-xs font-bold">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-neon-green/20 to-neon-green/10 border border-neon-green/60 rounded text-neon-green text-xs font-bold shadow-[0_0_10px_rgba(0,255,136,0.3)]">
               <Crown className="w-3 h-3" />
               PREMIUM
             </span>
@@ -179,7 +179,7 @@ export function ArtistCard({ artist, showRank = false, onFavouriteChange }: Arti
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
-                  className="hover:text-orange-500 transition"
+                  className="hover:text-neon-green hover:drop-shadow-[0_0_5px_rgba(0,255,136,0.8)] transition-all duration-300"
                 >
                   <Instagram size={16} />
                 </a>
@@ -190,7 +190,7 @@ export function ArtistCard({ artist, showRank = false, onFavouriteChange }: Arti
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
-                  className="hover:text-orange-500 transition"
+                  className="hover:text-neon-green hover:drop-shadow-[0_0_5px_rgba(0,255,136,0.8)] transition-all duration-300"
                 >
                   <Youtube size={16} />
                 </a>
@@ -201,7 +201,7 @@ export function ArtistCard({ artist, showRank = false, onFavouriteChange }: Arti
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
-                  className="hover:text-orange-500 transition"
+                  className="hover:text-neon-green hover:drop-shadow-[0_0_5px_rgba(0,255,136,0.8)] transition-all duration-300"
                 >
                   <Facebook size={16} />
                 </a>
@@ -212,7 +212,7 @@ export function ArtistCard({ artist, showRank = false, onFavouriteChange }: Arti
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
-                  className="hover:text-orange-500 transition"
+                  className="hover:text-neon-green hover:drop-shadow-[0_0_5px_rgba(0,255,136,0.8)] transition-all duration-300"
                 >
                   <Music size={16} />
                 </a>
@@ -223,7 +223,7 @@ export function ArtistCard({ artist, showRank = false, onFavouriteChange }: Arti
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
-                  className="hover:text-orange-500 transition"
+                  className="hover:text-neon-green hover:drop-shadow-[0_0_5px_rgba(0,255,136,0.8)] transition-all duration-300"
                 >
                   <Radio size={16} />
                 </a>

@@ -25,7 +25,7 @@ export default function Hero({ artists = [] }: HeroProps) {
           return (
             <div
               key={i}
-              className={`w-2 ${heightClass} bg-gradient-to-t from-neon-green via-yellow-400 to-neon-red animate-wave rounded-sm shadow-[0_0_20px_rgba(57,255,20,0.6)]`}
+              className={`w-2 ${heightClass} bg-gradient-to-t from-neon-green via-yellow-400 to-neon-red animate-wave rounded-sm shadow-[0_0_30px_rgba(0,255,136,0.8)]`}
               style={{
                 animationDelay: `${i * 0.08}s`,
                 animationDuration: `${0.6 + (i % 5) * 0.15}s`
@@ -93,12 +93,12 @@ export default function Hero({ artists = [] }: HeroProps) {
       {/* Center content */}
       <div className="relative z-20 mt-24 px-6 text-center">
         <h1 className="text-5xl md:text-6xl font-extrabold leading-tight">
-          <span className="text-neon-red glow-text-red">Book the Beat</span>
+          <span className="text-neon-red drop-shadow-[0_0_20px_rgba(255,43,43,0.9)]">Book the Beat</span>
           <span className="text-gray-500"> — </span>
-          <span className="text-neon-green glow-text-green">Live the Moment</span>
+          <span className="text-neon-green drop-shadow-[0_0_20px_rgba(0,255,136,0.9)]">Live the Moment</span>
         </h1>
 
-        <p className="mt-6 max-w-2xl mx-auto text-gray-300 text-lg">
+        <p className="mt-6 max-w-2xl mx-auto text-gray-200 text-lg">
           Discover, book, and manage live music talent across Australia & New Zealand.
         </p>
 
@@ -106,7 +106,7 @@ export default function Hero({ artists = [] }: HeroProps) {
           <button
             type="button"
             onClick={() => navigate("/login")}
-            className="px-10 py-4 rounded-lg bg-neon-red text-white font-bold text-lg hover:bg-neon-red/90 transition shadow-[0_0_25px_rgba(255,45,45,0.5)] hover:shadow-[0_0_35px_rgba(255,45,45,0.7)]"
+            className="px-10 py-4 rounded-lg bg-neon-red text-white font-bold text-lg hover:scale-105 transition-all duration-300 shadow-[0_0_30px_rgba(255,43,43,0.7)] hover:shadow-[0_0_50px_rgba(255,43,43,0.9)]"
           >
             Check it out
           </button>
