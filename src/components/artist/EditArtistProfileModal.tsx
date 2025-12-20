@@ -20,6 +20,7 @@ export default function EditArtistProfileModal({
   const [activeTab, setActiveTab] = useState('basic');
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [mediaList, setMediaList] = useState<any[]>([]);
   const [socialLinks, setSocialLinks] = useState<any[]>([]);
   const [subscription, setSubscription] = useState<any>(null);
@@ -168,13 +169,20 @@ export default function EditArtistProfileModal({
     if (!file) return;
 
     setUploading(true);
+    setUploadError(null);
+
     try {
+      if (!file.type.startsWith('image/')) {
+        throw new Error('Please select a valid image file');
+      }
+
+      if (file.size > 10 * 1024 * 1024) {
+        throw new Error('Image size must be less than 10MB');
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        console.error('Not authenticated');
-        e.target.value = '';
-        setUploading(false);
-        return;
+        throw new Error('Not authenticated. Please log in again.');
       }
 
       const fileExt = file.name.split('.').pop();
@@ -188,7 +196,7 @@ export default function EditArtistProfileModal({
 
       if (uploadError) {
         console.error('Upload error:', uploadError);
-        throw uploadError;
+        throw new Error(`Upload failed: ${uploadError.message}`);
       }
 
       console.log('Upload successful:', uploadData);
@@ -207,7 +215,7 @@ export default function EditArtistProfileModal({
 
       if (updateError) {
         console.error('Profile update error:', updateError);
-        throw updateError;
+        throw new Error(`Failed to update profile: ${updateError.message}`);
       }
 
       console.log('Profile updated successfully:', updateData);
@@ -221,7 +229,7 @@ export default function EditArtistProfileModal({
 
         if (artistUpdateError) {
           console.error('Artist profile update error:', artistUpdateError);
-          throw artistUpdateError;
+          throw new Error(`Failed to update artist profile: ${artistUpdateError.message}`);
         }
 
         console.log('Artist profile image_url updated successfully:', artistUpdateData);
@@ -229,8 +237,9 @@ export default function EditArtistProfileModal({
 
       e.target.value = '';
       onSave();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error uploading image:', err);
+      setUploadError(err.message || 'Failed to upload image. Please try again.');
       e.target.value = '';
     } finally {
       setUploading(false);
@@ -246,13 +255,25 @@ export default function EditArtistProfileModal({
     const limit = type === 'image' ? limits.images : limits.videos;
 
     if (currentCount >= limit) {
-      console.error(`${type} limit reached: ${limit}`);
+      setUploadError(`${type === 'image' ? 'Image' : 'Video'} limit reached: ${limit} maximum`);
       e.target.value = '';
       return;
     }
 
     setUploading(true);
+    setUploadError(null);
+
     try {
+      const expectedType = type === 'image' ? 'image/' : 'video/';
+      if (!file.type.startsWith(expectedType)) {
+        throw new Error(`Please select a valid ${type} file`);
+      }
+
+      const maxSize = type === 'image' ? 10 * 1024 * 1024 : 100 * 1024 * 1024;
+      if (file.size > maxSize) {
+        throw new Error(`${type === 'image' ? 'Image' : 'Video'} size must be less than ${type === 'image' ? '10MB' : '100MB'}`);
+      }
+
       const fileExt = file.name.split('.').pop();
       const fileName = `artist-media/${artistProfile.id}-${Date.now()}.${fileExt}`;
 
@@ -264,7 +285,7 @@ export default function EditArtistProfileModal({
 
       if (uploadError) {
         console.error('Upload error:', uploadError);
-        throw uploadError;
+        throw new Error(`Upload failed: ${uploadError.message}`);
       }
 
       console.log('Upload successful:', uploadData);
@@ -286,15 +307,16 @@ export default function EditArtistProfileModal({
 
       if (insertError) {
         console.error('Insert error:', insertError);
-        throw insertError;
+        throw new Error(`Failed to save media: ${insertError.message}`);
       }
 
       console.log('Media record created:', insertData);
 
       e.target.value = '';
       loadMediaAndSocial();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error uploading media:', err);
+      setUploadError(err.message || 'Failed to upload media. Please try again.');
       e.target.value = '';
     } finally {
       setUploading(false);
@@ -409,7 +431,10 @@ export default function EditArtistProfileModal({
 
         <div className="flex border-b border-neutral-800">
           <button
-            onClick={() => setActiveTab('basic')}
+            onClick={() => {
+              setActiveTab('basic');
+              setUploadError(null);
+            }}
             className={`px-6 py-3 font-medium transition-colors ${
               activeTab === 'basic'
                 ? 'text-blue-500 border-b-2 border-blue-500'
@@ -419,7 +444,10 @@ export default function EditArtistProfileModal({
             Basic Info
           </button>
           <button
-            onClick={() => setActiveTab('media')}
+            onClick={() => {
+              setActiveTab('media');
+              setUploadError(null);
+            }}
             className={`px-6 py-3 font-medium transition-colors ${
               activeTab === 'media'
                 ? 'text-blue-500 border-b-2 border-blue-500'
@@ -429,7 +457,10 @@ export default function EditArtistProfileModal({
             Media
           </button>
           <button
-            onClick={() => setActiveTab('social')}
+            onClick={() => {
+              setActiveTab('social');
+              setUploadError(null);
+            }}
             className={`px-6 py-3 font-medium transition-colors ${
               activeTab === 'social'
                 ? 'text-blue-500 border-b-2 border-blue-500'
@@ -735,7 +766,13 @@ export default function EditArtistProfileModal({
                 disabled={uploading}
                 className="w-full px-4 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-blue-600 file:text-white hover:file:bg-blue-700 disabled:opacity-50"
               />
-              <p className="text-xs text-gray-400 mt-1">Used for artist cards and profile</p>
+              <p className="text-xs text-gray-400 mt-1">Used for artist cards and profile (max 10MB)</p>
+              {uploading && (
+                <p className="text-xs text-blue-400 mt-2">Uploading image...</p>
+              )}
+              {uploadError && (
+                <p className="text-xs text-red-400 mt-2">{uploadError}</p>
+              )}
             </div>
 
             <div className="flex gap-3 pt-4">
@@ -759,6 +796,16 @@ export default function EditArtistProfileModal({
 
         {activeTab === 'media' && (
           <div className="p-6 space-y-6">
+            {uploadError && (
+              <div className="bg-red-900/30 border border-red-800 text-red-400 px-4 py-3 rounded-lg">
+                {uploadError}
+              </div>
+            )}
+            {uploading && (
+              <div className="bg-blue-900/30 border border-blue-800 text-blue-400 px-4 py-3 rounded-lg">
+                Uploading...
+              </div>
+            )}
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-white">Images ({imageCount}/{limits.images})</h3>
