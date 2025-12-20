@@ -8,6 +8,7 @@ import AnimatedArtistHero from '../dashboard/AnimatedArtistHero';
 import SubscriptionStatusCard from './SubscriptionStatusCard';
 import { ArtistGrid } from '../ArtistGrid';
 import EventsSection from '../EventsSection';
+import AdminMessageBox from '../AdminMessageBox';
 import { Artist } from '../../data/mockArtists';
 import { Calendar, MessageSquare, User, Settings, LogOut, Shield, Image, Video, Inbox } from 'lucide-react';
 
@@ -500,6 +501,8 @@ export default function ArtistDashboard() {
           {toast}
         </div>
       )}
+
+      <AdminMessageBox />
 
       <Footer />
     </div>

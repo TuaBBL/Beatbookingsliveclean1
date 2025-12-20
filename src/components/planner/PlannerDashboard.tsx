@@ -5,6 +5,7 @@ import Header from "../Header";
 import Footer from "../Footer";
 import EditProfileModal from "./EditProfileModal";
 import AnimatedArtistHero from "../dashboard/AnimatedArtistHero";
+import AdminMessageBox from '../AdminMessageBox';
 import { ArtistGrid } from '../ArtistGrid';
 import EventsSection from '../EventsSection';
 import { Artist } from '../../data/mockArtists';
@@ -431,6 +432,8 @@ export default function PlannerDashboard() {
           {toast}
         </div>
       )}
+
+      <AdminMessageBox />
 
       <Footer />
     </div>
