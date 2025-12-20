@@ -28,6 +28,7 @@ export default function EditArtistProfileModal({
     name: profile?.name || '',
     stage_name: artistProfile?.stage_name || '',
     email: profile?.email || '',
+    phone_country_code: profile?.phone_country_code || '+61',
     phone_number: profile?.phone_number || '',
     city: profile?.city || '',
     state: profile?.state || '',
@@ -36,6 +37,11 @@ export default function EditArtistProfileModal({
     genre: artistProfile?.genre || '',
     category: artistProfile?.category || '',
     type: artistProfile?.type || 'real',
+    equipment: artistProfile?.equipment || '',
+    price_tier_1: artistProfile?.price_tier_1 || '',
+    price_tier_1_description: artistProfile?.price_tier_1_description || '',
+    price_tier_2: artistProfile?.price_tier_2 || '',
+    price_tier_2_description: artistProfile?.price_tier_2_description || '',
   });
 
   useEffect(() => {
@@ -96,6 +102,7 @@ export default function EditArtistProfileModal({
 
       const profileUpdates: any = {
         name: formData.name,
+        phone_country_code: formData.phone_country_code,
         phone_number: formData.phone_number,
         city: formData.city,
         state: formData.state,
@@ -121,6 +128,11 @@ export default function EditArtistProfileModal({
             category: formData.category,
             type: formData.type,
             location: location,
+            equipment: formData.equipment,
+            price_tier_1: formData.price_tier_1 ? parseFloat(formData.price_tier_1) : null,
+            price_tier_1_description: formData.price_tier_1_description,
+            price_tier_2: formData.price_tier_2 ? parseFloat(formData.price_tier_2) : null,
+            price_tier_2_description: formData.price_tier_2_description,
           })
           .eq('id', artistProfile.id);
       } else {
@@ -134,6 +146,11 @@ export default function EditArtistProfileModal({
             category: formData.category,
             type: formData.type,
             location: location,
+            equipment: formData.equipment,
+            price_tier_1: formData.price_tier_1 ? parseFloat(formData.price_tier_1) : null,
+            price_tier_1_description: formData.price_tier_1_description,
+            price_tier_2: formData.price_tier_2 ? parseFloat(formData.price_tier_2) : null,
+            price_tier_2_description: formData.price_tier_2_description,
           });
       }
 
@@ -472,14 +489,35 @@ export default function EditArtistProfileModal({
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   Phone Number
                 </label>
-                <input
-                  type="tel"
-                  value={formData.phone_number}
-                  onChange={(e) =>
-                    setFormData({ ...formData, phone_number: e.target.value })
-                  }
-                  className="w-full px-4 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
-                />
+                <div className="flex gap-2">
+                  <select
+                    value={formData.phone_country_code}
+                    onChange={(e) =>
+                      setFormData({ ...formData, phone_country_code: e.target.value })
+                    }
+                    className="w-32 px-4 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="+61">+61 (AU)</option>
+                    <option value="+64">+64 (NZ)</option>
+                    <option value="+1">+1 (US/CA)</option>
+                    <option value="+44">+44 (UK)</option>
+                    <option value="+49">+49 (DE)</option>
+                    <option value="+33">+33 (FR)</option>
+                    <option value="+81">+81 (JP)</option>
+                    <option value="+82">+82 (KR)</option>
+                    <option value="+86">+86 (CN)</option>
+                    <option value="+91">+91 (IN)</option>
+                  </select>
+                  <input
+                    type="tel"
+                    value={formData.phone_number}
+                    onChange={(e) =>
+                      setFormData({ ...formData, phone_number: e.target.value })
+                    }
+                    placeholder="123 456 789"
+                    className="flex-1 px-4 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+                  />
+                </div>
               </div>
 
               <div>
@@ -601,6 +639,89 @@ export default function EditArtistProfileModal({
                 className="w-full px-4 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 resize-none"
                 placeholder="Tell planners about yourself..."
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Equipment
+              </label>
+              <textarea
+                value={formData.equipment}
+                onChange={(e) =>
+                  setFormData({ ...formData, equipment: e.target.value })
+                }
+                rows={3}
+                className="w-full px-4 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 resize-none"
+                placeholder="List your equipment (e.g., Pioneer DDJ-1000, Shure SM58, etc.)"
+              />
+            </div>
+
+            <div className="space-y-4 border-t border-neutral-700 pt-4">
+              <h3 className="text-lg font-semibold text-white">Pricing</h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Price Option 1 ($)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.price_tier_1}
+                    onChange={(e) =>
+                      setFormData({ ...formData, price_tier_1: e.target.value })
+                    }
+                    placeholder="500"
+                    className="w-full px-4 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Price Option 2 ($)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.price_tier_2}
+                    onChange={(e) =>
+                      setFormData({ ...formData, price_tier_2: e.target.value })
+                    }
+                    placeholder="1000"
+                    className="w-full px-4 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Description for Option 1
+                  </label>
+                  <textarea
+                    value={formData.price_tier_1_description}
+                    onChange={(e) =>
+                      setFormData({ ...formData, price_tier_1_description: e.target.value })
+                    }
+                    rows={3}
+                    className="w-full px-4 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 resize-none"
+                    placeholder="E.g., 2-hour set, basic setup..."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Description for Option 2
+                  </label>
+                  <textarea
+                    value={formData.price_tier_2_description}
+                    onChange={(e) =>
+                      setFormData({ ...formData, price_tier_2_description: e.target.value })
+                    }
+                    rows={3}
+                    className="w-full px-4 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 resize-none"
+                    placeholder="E.g., 4-hour set, full production..."
+                  />
+                </div>
+              </div>
             </div>
 
             <div>

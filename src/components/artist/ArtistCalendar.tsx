@@ -4,7 +4,8 @@ import { supabase } from '../../lib/supabase';
 import Header from '../Header';
 import Footer from '../Footer';
 import BookingDetailModal from '../BookingDetailModal';
-import { Calendar, Clock, MapPin, ArrowLeft, User, ChevronLeft, ChevronRight } from 'lucide-react';
+import ManualEntryModal from './ManualEntryModal';
+import { Calendar, Clock, MapPin, ArrowLeft, User, ChevronLeft, ChevronRight, Plus, X, Edit2, Trash2 } from 'lucide-react';
 
 interface Booking {
   id: string;
@@ -30,15 +31,28 @@ interface AttendedEvent {
   start_time: string;
 }
 
+interface ManualEntry {
+  id: string;
+  title: string;
+  event_date: string;
+  start_time: string;
+  end_time: string;
+  description?: string;
+}
+
 export default function ArtistCalendar() {
   const navigate = useNavigate();
   const location = useLocation();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [attendedEvents, setAttendedEvents] = useState<AttendedEvent[]>([]);
+  const [manualEntries, setManualEntries] = useState<ManualEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<ManualEntry | null>(null);
+  const [artistProfileId, setArtistProfileId] = useState<string | null>(null);
 
   useEffect(() => {
     loadBookings();
@@ -70,6 +84,8 @@ export default function ArtistCalendar() {
         return;
       }
 
+      setArtistProfileId(artistProfile.id);
+
       const startOfMonth = new Date(
         currentDate.getFullYear(),
         currentDate.getMonth(),
@@ -81,7 +97,7 @@ export default function ArtistCalendar() {
         0
       );
 
-      const [bookingsRes, eventsRes] = await Promise.all([
+      const [bookingsRes, eventsRes, manualRes] = await Promise.all([
         supabase
           .from('bookings')
           .select(`
@@ -119,7 +135,14 @@ export default function ArtistCalendar() {
           .eq('user_id', user.id)
           .eq('status', 'going')
           .gte('events.event_date', startOfMonth.toISOString().split('T')[0])
-          .lte('events.event_date', endOfMonth.toISOString().split('T')[0])
+          .lte('events.event_date', endOfMonth.toISOString().split('T')[0]),
+        supabase
+          .from('artist_availability')
+          .select('*')
+          .eq('artist_id', artistProfile.id)
+          .gte('event_date', startOfMonth.toISOString().split('T')[0])
+          .lte('event_date', endOfMonth.toISOString().split('T')[0])
+          .order('event_date', { ascending: true })
       ]);
 
       if (bookingsRes.error) throw bookingsRes.error;
@@ -128,6 +151,10 @@ export default function ArtistCalendar() {
       if (!eventsRes.error && eventsRes.data) {
         const events = eventsRes.data.map((item: any) => item.events).filter(Boolean);
         setAttendedEvents(events);
+      }
+
+      if (!manualRes.error && manualRes.data) {
+        setManualEntries(manualRes.data);
       }
     } catch (error) {
       console.error('Error loading bookings:', error);
@@ -151,7 +178,8 @@ export default function ArtistCalendar() {
     const dateStr = date.toISOString().split('T')[0];
     const dayBookings = bookings.filter(b => b.event_date === dateStr);
     const dayEvents = attendedEvents.filter(e => e.event_date === dateStr);
-    return { bookings: dayBookings, events: dayEvents };
+    const dayManualEntries = manualEntries.filter(e => e.event_date === dateStr);
+    return { bookings: dayBookings, events: dayEvents, manualEntries: dayManualEntries };
   }
 
   function getBookingsForDate(date: Date) {
@@ -171,6 +199,17 @@ export default function ArtistCalendar() {
     });
   }
 
+  async function handleDeleteManualEntry(id: string) {
+    if (!confirm('Delete this calendar entry?')) return;
+
+    try {
+      await supabase.from('artist_availability').delete().eq('id', id);
+      loadBookings();
+    } catch (error) {
+      console.error('Error deleting manual entry:', error);
+    }
+  }
+
   function renderCalendar() {
     const { daysInMonth, startingDayOfWeek } = getDaysInMonth(currentDate);
     const days = [];
@@ -183,9 +222,10 @@ export default function ArtistCalendar() {
 
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-      const { bookings: dateBookings, events: dateEvents } = getItemsForDate(date);
+      const { bookings: dateBookings, events: dateEvents, manualEntries: dateManualEntries } = getItemsForDate(date);
       const isToday = date.toDateString() === today.toDateString();
       const isPast = date < today;
+      const totalItems = dateBookings.length + dateEvents.length + dateManualEntries.length;
 
       days.push(
         <div
@@ -197,7 +237,7 @@ export default function ArtistCalendar() {
           <div className={`text-sm font-medium mb-1 ${isPast ? 'text-gray-600' : 'text-gray-300'}`}>
             {day}
           </div>
-          {(dateBookings.length > 0 || dateEvents.length > 0) && (
+          {totalItems > 0 && (
             <div className="space-y-1">
               {dateBookings.slice(0, 1).map((booking) => (
                 <button
@@ -219,9 +259,28 @@ export default function ArtistCalendar() {
                   {event.start_time.slice(0, 5)} {event.title}
                 </button>
               ))}
-              {(dateBookings.length + dateEvents.length) > 2 && (
+              {dateManualEntries.slice(0, 1).map((entry) => (
+                <div
+                  key={entry.id}
+                  className="w-full text-left text-xs bg-orange-600 hover:bg-orange-700 text-white px-2 py-1 rounded truncate flex items-center justify-between group"
+                  title={entry.title}
+                >
+                  <span className="truncate">{entry.start_time.slice(0, 5)} {entry.title}</span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingEntry(entry);
+                      setShowAddModal(true);
+                    }}
+                    className="opacity-0 group-hover:opacity-100 flex-shrink-0 ml-1"
+                  >
+                    <Edit2 className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+              {totalItems > 2 && (
                 <div className="text-xs text-gray-400 px-2">
-                  +{(dateBookings.length + dateEvents.length) - 2} more
+                  +{totalItems - 2} more
                 </div>
               )}
             </div>
@@ -250,6 +309,16 @@ export default function ArtistCalendar() {
           <div className="flex items-center justify-between mb-8">
             <h1 className="text-4xl font-bold">Confirmed Bookings</h1>
             <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  setEditingEntry(null);
+                  setShowAddModal(true);
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition"
+              >
+                <Plus className="w-4 h-4" />
+                Add Availability
+              </button>
               <button
                 onClick={() => setViewMode('calendar')}
                 className={`px-4 py-2 rounded-lg font-medium transition ${
@@ -515,6 +584,23 @@ export default function ArtistCalendar() {
           userRole="artist"
           onCancel={() => {
             setSelectedBooking(null);
+            loadBookings();
+          }}
+        />
+      )}
+
+      {artistProfileId && (
+        <ManualEntryModal
+          isOpen={showAddModal}
+          onClose={() => {
+            setShowAddModal(false);
+            setEditingEntry(null);
+          }}
+          artistId={artistProfileId}
+          entry={editingEntry}
+          onSave={() => {
+            setShowAddModal(false);
+            setEditingEntry(null);
             loadBookings();
           }}
         />
