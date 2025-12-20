@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 
@@ -11,6 +12,14 @@ export default function FaqHome() {
 
       <main className="flex-1 bg-black">
         <section className="max-w-6xl mx-auto px-6 py-16">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2 text-gray-400 hover:text-neon-green transition-colors mb-6"
+          >
+            <ArrowLeft size={20} />
+            <span>Back</span>
+          </button>
+
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">Help & FAQs</h1>
             <p className="text-gray-400 mb-10 max-w-2xl mx-auto">

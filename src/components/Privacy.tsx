@@ -1,13 +1,24 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import Header from './Header';
 import Footer from './Footer';
 
 export default function Privacy() {
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen bg-black text-white">
       <Header />
 
       <div className="container mx-auto px-6 py-16 max-w-4xl">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-gray-400 hover:text-neon-green transition-colors mb-6"
+        >
+          <ArrowLeft size={20} />
+          <span>Back</span>
+        </button>
+
         <h1 className="text-4xl md:text-5xl font-bold text-neon-red mb-8 glow-text-red">
           Privacy Policy
         </h1>
