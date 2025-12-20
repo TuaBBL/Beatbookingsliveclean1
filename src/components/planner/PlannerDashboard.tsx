@@ -5,6 +5,7 @@ import Header from "../Header";
 import Footer from "../Footer";
 import EditProfileModal from "./EditProfileModal";
 import AnimatedArtistHero from "../dashboard/AnimatedArtistHero";
+import NotificationsBox from '../NotificationsBox';
 import AdminMessageBox from '../AdminMessageBox';
 import SoundBarsBackground from '../SoundBarsBackground';
 import { ArtistGrid } from '../ArtistGrid';
@@ -268,6 +269,10 @@ export default function PlannerDashboard() {
             <p className="text-gray-400">Loading...</p>
           ) : (
             <>
+              <div className="mb-8">
+                <NotificationsBox />
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
                 <Link
                   to="/planner/bookings"

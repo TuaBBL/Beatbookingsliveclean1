@@ -6,6 +6,7 @@ import Footer from '../Footer';
 import EditArtistProfileModal from './EditArtistProfileModal';
 import AnimatedArtistHero from '../dashboard/AnimatedArtistHero';
 import SubscriptionStatusCard from './SubscriptionStatusCard';
+import NotificationsBox from '../NotificationsBox';
 import { ArtistGrid } from '../ArtistGrid';
 import EventsSection from '../EventsSection';
 import AdminMessageBox from '../AdminMessageBox';
@@ -287,6 +288,10 @@ export default function ArtistDashboard() {
                   <SubscriptionStatusCard artistId={artistProfile.id} />
                 </div>
               )}
+
+              <div className="mb-8">
+                <NotificationsBox />
+              </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
                 <Link
