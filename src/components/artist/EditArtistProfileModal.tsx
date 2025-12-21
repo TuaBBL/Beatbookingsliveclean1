@@ -168,18 +168,24 @@ export default function EditArtistProfileModal({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setUploading(true);
     setUploadError(null);
 
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      setUploadError('Please select a valid image file (JPG, PNG, or WEBP)');
+      e.target.value = '';
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setUploadError('Image size must be less than 10MB');
+      e.target.value = '';
+      return;
+    }
+
+    setUploading(true);
+
     try {
-      if (!file.type.startsWith('image/')) {
-        throw new Error('Please select a valid image file');
-      }
-
-      if (file.size > 10 * 1024 * 1024) {
-        throw new Error('Image size must be less than 10MB');
-      }
-
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         throw new Error('Not authenticated. Please log in again.');
@@ -341,11 +347,13 @@ export default function EditArtistProfileModal({
   const handleSetAsProfileImage = async (imageUrl: string) => {
     if (!confirm('Set this image as your profile picture?')) return;
 
+    setUploading(true);
+    setUploadError(null);
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        console.error('Not authenticated');
-        return;
+        throw new Error('Not authenticated. Please log in again.');
       }
 
       const { error: profileError } = await supabase
@@ -355,7 +363,7 @@ export default function EditArtistProfileModal({
 
       if (profileError) {
         console.error('Profile update error:', profileError);
-        throw profileError;
+        throw new Error(`Failed to update profile: ${profileError.message}`);
       }
 
       if (artistProfile?.id) {
@@ -366,13 +374,16 @@ export default function EditArtistProfileModal({
 
         if (artistError) {
           console.error('Artist profile update error:', artistError);
-          throw artistError;
+          throw new Error(`Failed to update artist profile: ${artistError.message}`);
         }
       }
 
       onSave();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error setting profile image:', err);
+      setUploadError(err.message || 'Failed to set profile image. Please try again.');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -473,6 +484,16 @@ export default function EditArtistProfileModal({
 
         {activeTab === 'basic' && (
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            {uploadError && (
+              <div className="bg-red-900/30 border border-red-800 text-red-400 px-4 py-3 rounded-lg">
+                {uploadError}
+              </div>
+            )}
+            {uploading && (
+              <div className="bg-blue-900/30 border border-blue-800 text-blue-400 px-4 py-3 rounded-lg">
+                Uploading image...
+              </div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
