@@ -87,9 +87,13 @@ export default function AdminMessages() {
         return;
       }
 
-      const isAdmin = user.email === 'genetua@gtrax.net';
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', user.id)
+        .maybeSingle();
 
-      if (!isAdmin) {
+      if (!profile?.is_admin) {
         navigate('/planner/dashboard');
         return;
       }

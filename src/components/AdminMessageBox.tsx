@@ -17,8 +17,30 @@ export default function AdminMessageBox() {
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isAdmin, setIsAdmin] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    checkIfAdmin();
+  }, []);
+
+  const checkIfAdmin = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      setIsAdmin(profile?.is_admin === true);
+    } catch (error) {
+      console.error('Error checking admin status:', error);
+    }
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -165,6 +187,10 @@ export default function AdminMessageBox() {
     }
     return 'Just now';
   };
+
+  if (isAdmin) {
+    return null;
+  }
 
   if (!isOpen) {
     return (
