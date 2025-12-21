@@ -13,7 +13,7 @@ import EventsSection from '../EventsSection';
 import AdminMessageBox from '../AdminMessageBox';
 import SoundBarsBackground from '../SoundBarsBackground';
 import { Artist } from '../../data/mockArtists';
-import { Calendar, MessageSquare, User, Settings, LogOut, Shield, Image, Video, Inbox } from 'lucide-react';
+import { Calendar, MessageSquare, User, Settings, LogOut, Shield, Image, Video, Inbox, Music } from 'lucide-react';
 
 export default function ArtistDashboard() {
   const navigate = useNavigate();

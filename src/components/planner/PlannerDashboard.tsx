@@ -11,7 +11,7 @@ import SoundBarsBackground from '../SoundBarsBackground';
 import { ArtistGrid } from '../ArtistGrid';
 import EventsSection from '../EventsSection';
 import { Artist } from '../../data/mockArtists';
-import { Calendar, Users, MessageSquare, Heart, User, Settings, CalendarDays, LogOut, Shield, Send } from "lucide-react";
+import { Calendar, Users, MessageSquare, Heart, User, Settings, CalendarDays, LogOut, Shield, Send, Music } from "lucide-react";
 
 export default function PlannerDashboard() {
   const navigate = useNavigate();
