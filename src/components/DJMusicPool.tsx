@@ -36,6 +36,7 @@ export default function DJMusicPool() {
   const [userLink, setUserLink] = useState<MusicPoolLink | null>(null);
   const [editingLink, setEditingLink] = useState<MusicPoolLink | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [hasArtistProfile, setHasArtistProfile] = useState<boolean>(false);
 
   useEffect(() => {
     checkAuth();
@@ -65,6 +66,14 @@ export default function DJMusicPool() {
       if (profile) {
         setUserRole(profile.role);
       }
+
+      const { data: artistProfile } = await supabase
+        .from('artist_profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      setHasArtistProfile(!!artistProfile);
     } catch (error) {
       console.error('Error checking auth:', error);
       navigate('/login');
@@ -135,12 +144,10 @@ export default function DJMusicPool() {
         <div className="max-w-7xl mx-auto">
           <button
             onClick={() => {
-              if (userRole === 'artist') {
+              if (hasArtistProfile) {
                 navigate('/artist/dashboard');
-              } else if (userRole === 'planner') {
-                navigate('/planner/dashboard');
               } else {
-                navigate('/dashboard');
+                navigate('/planner/dashboard');
               }
             }}
             className="inline-flex items-center gap-2 px-4 py-2 mb-8 text-gray-300 hover:text-white bg-neutral-800/50 hover:bg-neutral-800 rounded-lg transition-all duration-300 border border-neutral-700 hover:border-neutral-600"
