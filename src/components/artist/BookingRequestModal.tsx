@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { X, Calendar, MapPin, FileText, MessageSquare } from 'lucide-react';
+import { X, Calendar, MapPin, FileText, MessageSquare, Clock } from 'lucide-react';
 
 interface BookingRequestModalProps {
   isOpen: boolean;
@@ -22,6 +22,8 @@ export default function BookingRequestModal({
     event_date: '',
     event_location: '',
     message: '',
+    start_time: '',
+    end_time: '',
   });
   const [sending, setSending] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -82,6 +84,8 @@ export default function BookingRequestModal({
         p_event_date: formData.event_date,
         p_event_location: formData.event_location,
         p_message: formData.message || null,
+        p_start_time: formData.start_time || null,
+        p_end_time: formData.end_time || null,
       });
 
       if (error) throw error;
@@ -96,6 +100,8 @@ export default function BookingRequestModal({
           event_date: '',
           event_location: '',
           message: '',
+          start_time: '',
+          end_time: '',
         });
       }, 1500);
     } catch (error: any) {
@@ -159,6 +165,38 @@ export default function BookingRequestModal({
               className="w-full px-4 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
               required
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                <Clock className="w-4 h-4 inline mr-2" />
+                From Time
+              </label>
+              <input
+                type="time"
+                value={formData.start_time}
+                onChange={(e) =>
+                  setFormData({ ...formData, start_time: e.target.value })
+                }
+                className="w-full px-4 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                <Clock className="w-4 h-4 inline mr-2" />
+                To Time
+              </label>
+              <input
+                type="time"
+                value={formData.end_time}
+                onChange={(e) =>
+                  setFormData({ ...formData, end_time: e.target.value })
+                }
+                className="w-full px-4 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+              />
+            </div>
           </div>
 
           <div>

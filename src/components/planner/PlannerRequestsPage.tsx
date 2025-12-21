@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase';
 import Header from '../Header';
 import Footer from '../Footer';
 import PlannerProfileMenu from './PlannerProfileMenu';
-import { ArrowLeft, Calendar, MapPin, MessageSquare, User, FileText, ShieldAlert, Edit, XCircle, Send, Trash2 } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, MapPin, MessageSquare, User, FileText, ShieldAlert, Edit, XCircle, Send, Trash2 } from 'lucide-react';
 
 interface BookingRequest {
   id: string;
@@ -349,6 +349,18 @@ export default function PlannerRequestsPage() {
                             <span className="font-medium">Date:</span>
                             <span>{formatDate(request.event_date)}</span>
                           </div>
+
+                          {(request.start_time || request.end_time) && (
+                            <div className="flex items-center gap-2 text-gray-300">
+                              <Clock className="w-4 h-4 text-purple-400" />
+                              <span className="font-medium">Time:</span>
+                              <span>
+                                {request.start_time && request.end_time
+                                  ? `${request.start_time} - ${request.end_time}`
+                                  : request.start_time || request.end_time}
+                              </span>
+                            </div>
+                          )}
 
                           <div className="flex items-center gap-2 text-gray-300">
                             <MapPin className="w-4 h-4 text-orange-400" />

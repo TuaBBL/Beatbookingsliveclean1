@@ -202,6 +202,16 @@ export default function ArtistBookingInbox() {
                               })}
                             </span>
                           </div>
+                          {(request.start_time || request.end_time) && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <Clock className="w-4 h-4 text-purple-500" />
+                              <span>
+                                {request.start_time && request.end_time
+                                  ? `${request.start_time} - ${request.end_time}`
+                                  : request.start_time || request.end_time}
+                              </span>
+                            </div>
+                          )}
                           <div className="flex items-center gap-2 text-sm">
                             <MapPin className="w-4 h-4 text-orange-500" />
                             <span>{request.event_location}</span>
