@@ -130,7 +130,7 @@ export default function Hero({ artists = [] }: HeroProps) {
             className="px-10 py-4 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold text-lg hover:scale-105 transition-all duration-300 shadow-[0_0_30px_rgba(59,130,246,0.7)] hover:shadow-[0_0_50px_rgba(59,130,246,0.9)] flex items-center gap-2"
           >
             <Music className="w-5 h-5" />
-            {isLoggedIn ? "DJ Music Pool" : "Sign in to view"}
+            DJ Music Pool
           </button>
         </div>
       </div>
