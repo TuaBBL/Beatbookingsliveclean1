@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import Header from '../Header';
@@ -53,17 +53,18 @@ export default function ArtistCalendar() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingEntry, setEditingEntry] = useState<ManualEntry | null>(null);
   const [artistProfileId, setArtistProfileId] = useState<string | null>(null);
+  const hasOpenedFirstBooking = useRef(false);
 
   useEffect(() => {
     loadBookings();
   }, [currentDate]);
 
   useEffect(() => {
-    if (location.state?.openFirstBooking && bookings.length > 0 && !selectedBooking) {
+    if (location.state?.openFirstBooking && bookings.length > 0 && !hasOpenedFirstBooking.current) {
       setSelectedBooking(bookings[0]);
-      window.history.replaceState({}, document.title);
+      hasOpenedFirstBooking.current = true;
     }
-  }, [bookings, location.state, selectedBooking]);
+  }, [bookings, location.state]);
 
   async function loadBookings() {
     try {
