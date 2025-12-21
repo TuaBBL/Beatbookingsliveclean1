@@ -394,7 +394,7 @@ export default function ArtistCalendar() {
                   {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} Schedule
                 </h2>
 
-                {bookings.length === 0 && attendedEvents.length === 0 ? (
+                {bookings.length === 0 && attendedEvents.length === 0 && manualEntries.length === 0 ? (
                   <div className="bg-neutral-900 border-2 border-neutral-700 rounded-lg p-8 text-center">
                     <Calendar className="w-12 h-12 text-gray-600 mx-auto mb-3" />
                     <p className="text-gray-400">
@@ -497,6 +497,63 @@ export default function ArtistCalendar() {
                                 </span>
                               </div>
                             </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {manualEntries.length > 0 && (
+                      <div>
+                        <h3 className="text-lg font-semibold text-orange-500 mb-3">
+                          My Availability Blocks ({manualEntries.length})
+                        </h3>
+                        <div className="space-y-3">
+                          {manualEntries.map((entry) => (
+                            <div
+                              key={entry.id}
+                              className="w-full bg-neutral-900 border-2 border-orange-700 rounded-lg p-4 text-left"
+                            >
+                              <div className="flex items-center justify-between gap-4">
+                                <div className="flex-1">
+                                  <p className="font-semibold text-white mb-1">{entry.title}</p>
+                                  {entry.description && (
+                                    <p className="text-gray-400 text-sm mb-2">{entry.description}</p>
+                                  )}
+                                  <div className="flex flex-wrap items-center gap-3 text-sm text-gray-400">
+                                    <div className="flex items-center gap-1">
+                                      <Calendar className="w-3.5 h-3.5" />
+                                      {new Date(entry.event_date).toLocaleDateString('en-US', {
+                                        month: 'short',
+                                        day: 'numeric',
+                                      })}
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <Clock className="w-3.5 h-3.5" />
+                                      {entry.start_time.slice(0, 5)} - {entry.end_time.slice(0, 5)}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => {
+                                      setEditingEntry(entry);
+                                      setShowAddModal(true);
+                                    }}
+                                    className="p-2 hover:bg-neutral-800 rounded-lg transition"
+                                    title="Edit"
+                                  >
+                                    <Edit2 className="w-4 h-4 text-orange-500" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteManualEntry(entry.id)}
+                                    className="p-2 hover:bg-neutral-800 rounded-lg transition"
+                                    title="Delete"
+                                  >
+                                    <Trash2 className="w-4 h-4 text-red-500" />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
                           ))}
                         </div>
                       </div>
