@@ -1136,10 +1136,136 @@ function AnnouncementsTab() {
 }
 
 function UtilitiesTab() {
+  const [calculating, setCalculating] = useState(false);
+  const [featuredArtists, setFeaturedArtists] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadFeaturedArtists();
+  }, []);
+
+  const loadFeaturedArtists = async () => {
+    try {
+      const currentMonth = new Date();
+      currentMonth.setDate(1);
+      currentMonth.setHours(0, 0, 0, 0);
+
+      const { data, error } = await supabase
+        .from('featured_artists')
+        .select(`
+          *,
+          artist_profiles(stage_name, image_url)
+        `)
+        .eq('month', currentMonth.toISOString().split('T')[0])
+        .order('score', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+      setFeaturedArtists(data || []);
+    } catch (err) {
+      console.error('Error loading featured artists:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCalculateFeatured = async () => {
+    if (!confirm('Calculate featured artists for the current month? This will update the leaderboard.')) {
+      return;
+    }
+
+    setCalculating(true);
+    try {
+      const { error } = await supabase.rpc('calculate_featured_artists');
+      if (error) throw error;
+
+      alert('Featured artists calculated successfully!');
+      loadFeaturedArtists();
+    } catch (err) {
+      console.error('Error calculating featured artists:', err);
+      alert('Failed to calculate featured artists');
+    } finally {
+      setCalculating(false);
+    }
+  };
+
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-4">Utilities</h2>
-      <p className="text-gray-400">Data loading...</p>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold">Utilities</h2>
+      </div>
+
+      <div className="space-y-6">
+        <div className="bg-neutral-800 rounded-lg p-6 border border-neutral-700">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Featured Artists Calculator</h3>
+              <p className="text-sm text-gray-400">
+                Calculate featured artists for the current month based on views, bookings, and reviews.
+              </p>
+            </div>
+            <button
+              onClick={handleCalculateFeatured}
+              disabled={calculating}
+              className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-900 disabled:cursor-not-allowed text-white px-6 py-2 rounded-lg transition font-semibold"
+            >
+              {calculating ? 'Calculating...' : 'Calculate Now'}
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-neutral-800 rounded-lg p-6 border border-neutral-700">
+          <h3 className="text-lg font-semibold mb-4">Current Month Leaderboard</h3>
+
+          {loading ? (
+            <p className="text-gray-400">Loading leaderboard...</p>
+          ) : featuredArtists.length === 0 ? (
+            <p className="text-gray-400">No featured artists for this month. Click "Calculate Now" above.</p>
+          ) : (
+            <div className="space-y-3">
+              {featuredArtists.map((artist, index) => (
+                <div
+                  key={artist.id}
+                  className={`flex items-center gap-4 p-4 rounded-lg ${
+                    index === 0
+                      ? 'bg-gradient-to-r from-yellow-600/20 to-yellow-500/10 border-2 border-yellow-600'
+                      : index === 1
+                      ? 'bg-gradient-to-r from-gray-400/20 to-gray-300/10 border-2 border-gray-400'
+                      : index === 2
+                      ? 'bg-gradient-to-r from-orange-600/20 to-orange-500/10 border-2 border-orange-600'
+                      : 'bg-neutral-900 border border-neutral-700'
+                  }`}
+                >
+                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-neutral-700 font-bold text-lg">
+                    {index + 1}
+                  </div>
+
+                  {artist.artist_profiles?.image_url && (
+                    <img
+                      src={artist.artist_profiles.image_url}
+                      alt={artist.artist_profiles.stage_name}
+                      className="w-12 h-12 rounded-full object-cover"
+                    />
+                  )}
+
+                  <div className="flex-1">
+                    <h4 className="font-semibold">{artist.artist_profiles?.stage_name || 'Unknown Artist'}</h4>
+                    <p className="text-sm text-gray-400">
+                      {artist.views_count} views • {artist.bookings_count} bookings • {artist.reviews_count} reviews
+                      {artist.average_rating > 0 && ` • ${artist.average_rating.toFixed(1)}★`}
+                    </p>
+                  </div>
+
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-blue-400">{artist.score.toFixed(1)}</div>
+                    <div className="text-xs text-gray-500">score</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

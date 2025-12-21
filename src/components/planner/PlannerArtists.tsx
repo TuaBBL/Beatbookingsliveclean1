@@ -114,6 +114,10 @@ export default function PlannerArtists() {
         const country = locationParts[2] || 'Australia';
 
         const isDemo = profile.type === 'demo';
+        const subscriptions = Array.isArray(profile.subscriptions)
+          ? profile.subscriptions
+          : profile.subscriptions ? [profile.subscriptions] : [];
+        const isPremium = !isDemo && subscriptions.some((sub: any) => sub.is_active === true);
         const ratings = ratingsMap.get(profile.id);
         const artistSocials = socialsMap.get(profile.id) || {};
 
@@ -129,14 +133,16 @@ export default function PlannerArtists() {
           imageUrl: profile.image_url || profile.profiles?.image_url || '',
           socials: artistSocials,
           isDemo,
+          isPremium,
           bio: profile.bio,
           averageRating: ratings?.averageRating,
           reviewCount: ratings?.reviewCount,
         };
       });
 
-      setAllArtists(artists);
-      setFilteredArtists(artists);
+      const sortedArtists = sortArtistsByPremium(artists);
+      setAllArtists(sortedArtists);
+      setFilteredArtists(sortedArtists);
     } catch (error) {
       console.error('Error loading artists:', error);
       setAllArtists([]);
@@ -144,6 +150,14 @@ export default function PlannerArtists() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const sortArtistsByPremium = (artists: Artist[]) => {
+    return [...artists].sort((a, b) => {
+      if (a.isPremium && !b.isPremium) return -1;
+      if (!a.isPremium && b.isPremium) return 1;
+      return 0;
+    });
   };
 
   const handleFilterChange = (filters: FilterState) => {
@@ -189,6 +203,7 @@ export default function PlannerArtists() {
       results = results.filter((artist) => artist.socials?.spotify);
     }
 
+    results = sortArtistsByPremium(results);
     setFilteredArtists(results);
   };
 

@@ -6,6 +6,7 @@ import Footer from '../Footer';
 import EditArtistProfileModal from './EditArtistProfileModal';
 import AnimatedArtistHero from '../dashboard/AnimatedArtistHero';
 import SubscriptionStatusCard from './SubscriptionStatusCard';
+import ArtistAnalytics from './ArtistAnalytics';
 import NotificationsBox from '../NotificationsBox';
 import { ArtistGrid } from '../ArtistGrid';
 import EventsSection from '../EventsSection';
@@ -27,6 +28,7 @@ export default function ArtistDashboard() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [allArtists, setAllArtists] = useState<Artist[]>([]);
+  const [isPremium, setIsPremium] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -60,6 +62,14 @@ export default function ArtistDashboard() {
 
       if (artistProfileRes.data) {
         setArtistProfile(artistProfileRes.data);
+
+        const { data: subscription } = await supabase
+          .from('subscriptions')
+          .select('plan, is_active')
+          .eq('artist_id', artistProfileRes.data.id)
+          .maybeSingle();
+
+        setIsPremium(subscription?.is_active && subscription?.plan === 'premium');
 
         const [requestsRes, bookingsRes, mediaRes] = await Promise.all([
           supabase
@@ -286,6 +296,12 @@ export default function ArtistDashboard() {
               {artistProfile && (
                 <div className="mb-8">
                   <SubscriptionStatusCard artistId={artistProfile.id} />
+                </div>
+              )}
+
+              {isPremium && artistProfile && (
+                <div className="mb-8">
+                  <ArtistAnalytics artistId={artistProfile.id} />
                 </div>
               )}
 

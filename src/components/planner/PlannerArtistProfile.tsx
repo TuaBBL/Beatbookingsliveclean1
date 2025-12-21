@@ -52,8 +52,31 @@ export default function PlannerArtistProfile() {
     if (artistProfileId) {
       checkFavourite();
       loadReviews();
+      trackView();
     }
   }, [artistProfileId]);
+
+  async function trackView() {
+    if (!artistProfileId) return;
+
+    try {
+      let sessionId = sessionStorage.getItem('session_id');
+      if (!sessionId) {
+        sessionId = crypto.randomUUID();
+        sessionStorage.setItem('session_id', sessionId);
+      }
+
+      const { data: { user } } = await supabase.auth.getUser();
+
+      await supabase.rpc('track_artist_view', {
+        p_artist_id: artistProfileId,
+        p_session_id: sessionId,
+        p_viewer_id: user?.id || null,
+      });
+    } catch (error) {
+      console.error('Error tracking view:', error);
+    }
+  }
 
   async function checkAuth() {
     try {

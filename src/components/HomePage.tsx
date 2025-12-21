@@ -109,8 +109,9 @@ export default function HomePage() {
         };
       });
 
-      setAllArtists(artists);
-      setFilteredArtists(artists);
+      const sortedArtists = sortArtistsByPremium(artists);
+      setAllArtists(sortedArtists);
+      setFilteredArtists(sortedArtists);
     } catch (error) {
       console.error('Error loading artists:', error);
       setAllArtists([]);
@@ -119,6 +120,14 @@ export default function HomePage() {
       setLoading(false);
     }
   }
+
+  const sortArtistsByPremium = (artists: Artist[]) => {
+    return [...artists].sort((a, b) => {
+      if (a.isPremium && !b.isPremium) return -1;
+      if (!a.isPremium && b.isPremium) return 1;
+      return 0;
+    });
+  };
 
   const handleFilterChange = (filters: FilterState) => {
     let results = [...allArtists];
@@ -169,6 +178,7 @@ export default function HomePage() {
       results = results.filter((artist) => artist.socials?.spotify);
     }
 
+    results = sortArtistsByPremium(results);
     setFilteredArtists(results);
   };
 
