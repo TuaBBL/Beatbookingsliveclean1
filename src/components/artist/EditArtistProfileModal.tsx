@@ -917,18 +917,19 @@ export default function EditArtistProfileModal({
 
         {activeTab === 'social' && (
           <div className="p-6 space-y-4">
-            {['instagram', 'youtube', 'facebook', 'soundcloud', 'spotify', 'mixcloud', 'patreon'].map(platform => {
+            {['instagram', 'youtube', 'facebook', 'soundcloud', 'spotify', 'mixcloud', 'patreon', 'external'].map(platform => {
               const link = socialLinks.find(s => s.platform === platform);
+              const displayName = platform === 'external' ? 'External Link' : platform;
               return (
                 <div key={platform}>
                   <label className="block text-sm font-medium text-gray-300 mb-2 capitalize">
-                    {platform}
+                    {displayName}
                   </label>
                   <input
                     type="url"
                     defaultValue={link?.url || ''}
                     onBlur={(e) => handleSocialLinkUpdate(platform, e.target.value)}
-                    placeholder={`https://${platform}.com/...`}
+                    placeholder={platform === 'external' ? 'https://...' : `https://${platform}.com/...`}
                     className="w-full px-4 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
                   />
                 </div>

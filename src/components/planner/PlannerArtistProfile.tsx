@@ -6,7 +6,7 @@ import Footer from "../Footer";
 import PlannerProfileMenu from "./PlannerProfileMenu";
 import BookingRequestModal from "../artist/BookingRequestModal";
 import ReviewModal from "./ReviewModal";
-import { Music, Heart, MessageSquare, ArrowLeft, Instagram, Youtube, Facebook, Radio, Play, Star } from "lucide-react";
+import { Music, Heart, MessageSquare, ArrowLeft, Instagram, Youtube, Facebook, Radio, Play, Star, ExternalLink } from "lucide-react";
 import { mockArtists, Artist } from "../../data/mockArtists";
 
 interface MediaItem {
@@ -525,6 +525,17 @@ export default function PlannerArtistProfile() {
                   >
                     <Radio className="w-5 h-5" />
                     <span className="font-medium">SoundCloud</span>
+                  </a>
+                )}
+                {artist.socials.external && (
+                  <a
+                    href={artist.socials.external}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-4 py-2 bg-neutral-700 hover:bg-neutral-600 rounded-lg transition text-white"
+                  >
+                    <ExternalLink className="w-5 h-5" />
+                    <span className="font-medium">External Link</span>
                   </a>
                 )}
               </div>

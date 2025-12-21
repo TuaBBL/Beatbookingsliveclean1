@@ -5,7 +5,7 @@ import Header from '../Header';
 import Footer from '../Footer';
 import EditArtistProfileModal from './EditArtistProfileModal';
 import BookingRequestModal from './BookingRequestModal';
-import { MapPin, Music, Star, Award, Edit, Instagram, Youtube, Facebook, Radio, ArrowLeft, User } from 'lucide-react';
+import { MapPin, Music, Star, Award, Edit, Instagram, Youtube, Facebook, Radio, ArrowLeft, User, ExternalLink } from 'lucide-react';
 
 interface Profile {
   id: string;
@@ -320,8 +320,13 @@ export default function ArtistProfilePage() {
                           case 'facebook': return <Facebook className="w-5 h-5" />;
                           case 'soundcloud': return <Radio className="w-5 h-5" />;
                           case 'spotify': return <Music className="w-5 h-5" />;
+                          case 'external': return <ExternalLink className="w-5 h-5" />;
                           default: return <Music className="w-5 h-5" />;
                         }
+                      };
+
+                      const getDisplayName = (platform: string) => {
+                        return platform === 'external' ? 'External Link' : platform;
                       };
 
                       return (
@@ -333,7 +338,7 @@ export default function ArtistProfilePage() {
                           className="flex items-center gap-2 px-4 py-2 bg-neutral-700 hover:bg-neutral-600 rounded-lg transition-colors"
                         >
                           {getIcon(link.platform)}
-                          <span className="capitalize">{link.platform}</span>
+                          <span className="capitalize">{getDisplayName(link.platform)}</span>
                         </a>
                       );
                     })}
