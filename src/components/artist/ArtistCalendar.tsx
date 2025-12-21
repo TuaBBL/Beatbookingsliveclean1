@@ -98,6 +98,9 @@ export default function ArtistCalendar() {
         0
       );
 
+      const startDateStr = `${startOfMonth.getFullYear()}-${String(startOfMonth.getMonth() + 1).padStart(2, '0')}-${String(startOfMonth.getDate()).padStart(2, '0')}`;
+      const endDateStr = `${endOfMonth.getFullYear()}-${String(endOfMonth.getMonth() + 1).padStart(2, '0')}-${String(endOfMonth.getDate()).padStart(2, '0')}`;
+
       const [bookingsRes, eventsRes, manualRes] = await Promise.all([
         supabase
           .from('bookings')
@@ -119,8 +122,8 @@ export default function ArtistCalendar() {
           `)
           .eq('artist_id', artistProfile.id)
           .eq('status', 'accepted')
-          .gte('event_date', startOfMonth.toISOString().split('T')[0])
-          .lte('event_date', endOfMonth.toISOString().split('T')[0])
+          .gte('event_date', startDateStr)
+          .lte('event_date', endDateStr)
           .order('event_date', { ascending: true }),
         supabase
           .from('event_attendance')
@@ -135,14 +138,14 @@ export default function ArtistCalendar() {
           `)
           .eq('user_id', user.id)
           .eq('status', 'going')
-          .gte('events.event_date', startOfMonth.toISOString().split('T')[0])
-          .lte('events.event_date', endOfMonth.toISOString().split('T')[0]),
+          .gte('events.event_date', startDateStr)
+          .lte('events.event_date', endDateStr),
         supabase
           .from('artist_availability')
           .select('*')
           .eq('artist_id', artistProfile.id)
-          .gte('event_date', startOfMonth.toISOString().split('T')[0])
-          .lte('event_date', endOfMonth.toISOString().split('T')[0])
+          .gte('event_date', startDateStr)
+          .lte('event_date', endDateStr)
           .order('event_date', { ascending: true })
       ]);
 
@@ -175,8 +178,15 @@ export default function ArtistCalendar() {
     return { daysInMonth, startingDayOfWeek };
   }
 
+  function formatDateLocal(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   function getItemsForDate(date: Date) {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = formatDateLocal(date);
     const dayBookings = bookings.filter(b => b.event_date === dateStr);
     const dayEvents = attendedEvents.filter(e => e.event_date === dateStr);
     const dayManualEntries = manualEntries.filter(e => e.event_date === dateStr);
@@ -184,7 +194,7 @@ export default function ArtistCalendar() {
   }
 
   function getBookingsForDate(date: Date) {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = formatDateLocal(date);
     return bookings.filter(b => b.event_date === dateStr);
   }
 

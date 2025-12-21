@@ -67,21 +67,24 @@ export default function PlannerCalendar() {
         0
       );
 
+      const startDateStr = `${startOfMonth.getFullYear()}-${String(startOfMonth.getMonth() + 1).padStart(2, '0')}-${String(startOfMonth.getDate()).padStart(2, '0')}`;
+      const endDateStr = `${endOfMonth.getFullYear()}-${String(endOfMonth.getMonth() + 1).padStart(2, '0')}-${String(endOfMonth.getDate()).padStart(2, '0')}`;
+
       const [bookingsRes, createdEventsRes, attendingEventsRes] = await Promise.all([
         supabase
           .from("bookings")
           .select("*, artist_profiles(stage_name, user_id)")
           .eq("planner_id", user.id)
           .eq("status", "accepted")
-          .gte("event_date", startOfMonth.toISOString().split("T")[0])
-          .lte("event_date", endOfMonth.toISOString().split("T")[0]),
+          .gte("event_date", startDateStr)
+          .lte("event_date", endDateStr),
         supabase
           .from("events")
           .select("id, title, event_date, start_time, type")
           .eq("creator_id", user.id)
           .eq("status", "published")
-          .gte("event_date", startOfMonth.toISOString().split("T")[0])
-          .lte("event_date", endOfMonth.toISOString().split("T")[0]),
+          .gte("event_date", startDateStr)
+          .lte("event_date", endDateStr),
         supabase
           .from("event_attendance")
           .select(`
@@ -97,8 +100,8 @@ export default function PlannerCalendar() {
           `)
           .eq("user_id", user.id)
           .eq("status", "going")
-          .gte("events.event_date", startOfMonth.toISOString().split("T")[0])
-          .lte("events.event_date", endOfMonth.toISOString().split("T")[0]),
+          .gte("events.event_date", startDateStr)
+          .lte("events.event_date", endDateStr),
       ]);
 
       setBookings(bookingsRes.data || []);
@@ -149,8 +152,15 @@ export default function PlannerCalendar() {
     return days;
   }
 
+  function formatDateLocal(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   function getItemsForDate(date: Date) {
-    const dateStr = date.toISOString().split("T")[0];
+    const dateStr = formatDateLocal(date);
     const dayBookings = bookings.filter((b) => b.event_date === dateStr);
     const dayEvents = events.filter((e) => e.event_date === dateStr);
     return { bookings: dayBookings, events: dayEvents };
