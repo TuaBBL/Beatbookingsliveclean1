@@ -486,7 +486,7 @@ export default function PlannerArtistProfile() {
                   ? 'Check me out'
                   : userRole === 'planner'
                   ? 'Request Booking'
-                  : 'View Profile'}
+                  : 'Request a booking'}
               </button>
             </div>
           </div>
