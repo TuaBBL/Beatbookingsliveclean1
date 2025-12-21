@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import Header from './Header';
 import Hero from './Hero';
+import HomepageAnnouncements from './HomepageAnnouncements';
 import SearchFilters, { FilterState } from './SearchFilters';
 import { ArtistGrid } from './ArtistGrid';
 import EventsSection from './EventsSection';
@@ -178,6 +179,9 @@ export default function HomePage() {
 
       {/* HERO — animated background rows */}
       <Hero artists={allArtists} />
+
+      {/* ADMIN ANNOUNCEMENTS */}
+      <HomepageAnnouncements />
 
       {/* SEARCH / FILTER BAR */}
       <SearchFilters onFilterChange={handleFilterChange} />

@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import Header from './Header';
 import Footer from './Footer';
-import { Shield, Users, Calendar, DollarSign, Wrench, BarChart3, Search, MessageCircle, Trash2, ArrowLeft } from 'lucide-react';
+import { Shield, Users, Calendar, DollarSign, Wrench, BarChart3, Search, MessageCircle, Trash2, ArrowLeft, Bell } from 'lucide-react';
 
-type Tab = 'overview' | 'users' | 'events' | 'subscriptions' | 'utilities';
+type Tab = 'overview' | 'users' | 'events' | 'subscriptions' | 'announcements' | 'utilities';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -135,6 +135,13 @@ export default function AdminDashboard() {
               Subscriptions
             </TabButton>
             <TabButton
+              active={activeTab === 'announcements'}
+              onClick={() => setActiveTab('announcements')}
+              icon={<Bell className="w-4 h-4" />}
+            >
+              Announcements
+            </TabButton>
+            <TabButton
               active={activeTab === 'utilities'}
               onClick={() => setActiveTab('utilities')}
               icon={<Wrench className="w-4 h-4" />}
@@ -148,6 +155,7 @@ export default function AdminDashboard() {
             {activeTab === 'users' && <UsersTab />}
             {activeTab === 'events' && <EventsTab />}
             {activeTab === 'subscriptions' && <SubscriptionsTab />}
+            {activeTab === 'announcements' && <AnnouncementsTab />}
             {activeTab === 'utilities' && <UtilitiesTab />}
           </div>
         </div>
@@ -845,6 +853,284 @@ function SubscriptionsTab() {
           </table>
         </div>
       )}
+    </div>
+  );
+}
+
+function AnnouncementsTab() {
+  const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
+    title: '',
+    message: '',
+    is_active: true,
+    priority: 0,
+  });
+
+  useEffect(() => {
+    loadAnnouncements();
+  }, []);
+
+  const loadAnnouncements = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('admin_announcements')
+        .select('*')
+        .order('priority', { ascending: true })
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setAnnouncements(data || []);
+    } catch (err) {
+      console.error('Error loading announcements:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      if (editingId) {
+        const { error } = await supabase
+          .from('admin_announcements')
+          .update(formData)
+          .eq('id', editingId);
+
+        if (error) throw error;
+      } else {
+        const { data: { user } } = await supabase.auth.getUser();
+        const { error } = await supabase
+          .from('admin_announcements')
+          .insert({
+            ...formData,
+            created_by: user?.id,
+          });
+
+        if (error) throw error;
+      }
+
+      setFormData({ title: '', message: '', is_active: true, priority: 0 });
+      setEditingId(null);
+      setShowForm(false);
+      loadAnnouncements();
+    } catch (err) {
+      console.error('Error saving announcement:', err);
+      alert('Failed to save announcement');
+    }
+  };
+
+  const handleEdit = (announcement: any) => {
+    setEditingId(announcement.id);
+    setFormData({
+      title: announcement.title,
+      message: announcement.message,
+      is_active: announcement.is_active,
+      priority: announcement.priority,
+    });
+    setShowForm(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this announcement?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('admin_announcements')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      loadAnnouncements();
+    } catch (err) {
+      console.error('Error deleting announcement:', err);
+      alert('Failed to delete announcement');
+    }
+  };
+
+  const handleToggleActive = async (id: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('admin_announcements')
+        .update({ is_active: !currentStatus })
+        .eq('id', id);
+
+      if (error) throw error;
+      loadAnnouncements();
+    } catch (err) {
+      console.error('Error toggling announcement:', err);
+    }
+  };
+
+  const handleCancel = () => {
+    setFormData({ title: '', message: '', is_active: true, priority: 0 });
+    setEditingId(null);
+    setShowForm(false);
+  };
+
+  if (loading) {
+    return <p className="text-gray-400">Loading announcements...</p>;
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold">Homepage Announcements</h2>
+        <button
+          onClick={() => setShowForm(!showForm)}
+          className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition font-semibold"
+        >
+          {showForm ? 'Cancel' : 'New Announcement'}
+        </button>
+      </div>
+
+      {showForm && (
+        <form onSubmit={handleSubmit} className="bg-neutral-800 rounded-lg p-6 mb-6">
+          <h3 className="text-lg font-semibold mb-4">
+            {editingId ? 'Edit Announcement' : 'Create New Announcement'}
+          </h3>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Title</label>
+              <input
+                type="text"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500"
+                required
+                placeholder="e.g., New Feature Coming Soon!"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Message</label>
+              <textarea
+                value={formData.message}
+                onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500 min-h-24"
+                required
+                placeholder="Describe the upcoming feature or update..."
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Priority</label>
+                <input
+                  type="number"
+                  value={formData.priority}
+                  onChange={(e) => setFormData({ ...formData, priority: parseInt(e.target.value) })}
+                  className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500"
+                  min="0"
+                />
+                <p className="text-xs text-gray-400 mt-1">Lower numbers appear first</p>
+              </div>
+
+              <div>
+                <label className="flex items-center gap-2 cursor-pointer mt-7">
+                  <input
+                    type="checkbox"
+                    checked={formData.is_active}
+                    onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-sm font-medium">Active (visible to users)</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-3 mt-6">
+            <button
+              type="submit"
+              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition font-semibold"
+            >
+              {editingId ? 'Update' : 'Create'}
+            </button>
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="bg-neutral-700 hover:bg-neutral-600 text-white px-4 py-2 rounded-lg transition"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
+
+      <div className="space-y-4">
+        {announcements.length === 0 ? (
+          <div className="text-center py-8 text-gray-400">
+            No announcements yet. Create one to notify users about upcoming features!
+          </div>
+        ) : (
+          announcements.map((announcement) => (
+            <div
+              key={announcement.id}
+              className={`border-2 rounded-lg p-4 ${
+                announcement.is_active
+                  ? 'border-green-700 bg-green-500/5'
+                  : 'border-neutral-700 bg-neutral-800/50'
+              }`}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h3 className="font-semibold text-lg">{announcement.title}</h3>
+                    <span
+                      className={`px-2 py-1 rounded text-xs font-medium ${
+                        announcement.is_active
+                          ? 'bg-green-500/10 text-green-400'
+                          : 'bg-gray-500/10 text-gray-400'
+                      }`}
+                    >
+                      {announcement.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                    <span className="px-2 py-1 rounded text-xs font-medium bg-blue-500/10 text-blue-400">
+                      Priority: {announcement.priority}
+                    </span>
+                  </div>
+                  <p className="text-gray-300 mb-2">{announcement.message}</p>
+                  <p className="text-xs text-gray-500">
+                    Created {new Date(announcement.created_at).toLocaleDateString()} at{' '}
+                    {new Date(announcement.created_at).toLocaleTimeString()}
+                  </p>
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleToggleActive(announcement.id, announcement.is_active)}
+                    className="p-2 hover:bg-neutral-800 rounded-lg transition"
+                    title={announcement.is_active ? 'Deactivate' : 'Activate'}
+                  >
+                    <span className="text-xs text-blue-400">
+                      {announcement.is_active ? 'Hide' : 'Show'}
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => handleEdit(announcement)}
+                    className="p-2 hover:bg-neutral-800 rounded-lg transition"
+                    title="Edit"
+                  >
+                    <span className="text-xs text-purple-400">Edit</span>
+                  </button>
+                  <button
+                    onClick={() => handleDelete(announcement.id)}
+                    className="p-2 hover:bg-red-500/10 rounded-lg transition"
+                    title="Delete"
+                  >
+                    <Trash2 className="w-4 h-4 text-red-400" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 }
