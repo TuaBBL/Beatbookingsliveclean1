@@ -1,5 +1,8 @@
 import { Artist } from "../data/mockArtists";
 import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { supabase } from "../lib/supabase";
+import { Music } from "lucide-react";
 
 interface HeroProps {
   artists?: Artist[];
@@ -7,6 +10,16 @@ interface HeroProps {
 
 export default function Hero({ artists = [] }: HeroProps) {
   const navigate = useNavigate();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    setIsLoggedIn(!!user);
+  };
 
   const safeArtists = Array.isArray(artists) ? artists : [];
   const loopArtists = safeArtists.length > 0 ? [...safeArtists, ...safeArtists] : [];
@@ -102,7 +115,7 @@ export default function Hero({ artists = [] }: HeroProps) {
           Discover, book, and manage live music talent across Australia & New Zealand.
         </p>
 
-        <div className="mt-10 flex justify-center">
+        <div className="mt-10 flex justify-center gap-4">
           <button
             type="button"
             onClick={() => navigate("/login")}
@@ -110,6 +123,17 @@ export default function Hero({ artists = [] }: HeroProps) {
           >
             Check it out
           </button>
+
+          {isLoggedIn && (
+            <button
+              type="button"
+              onClick={() => navigate("/dj-music-pool")}
+              className="px-10 py-4 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold text-lg hover:scale-105 transition-all duration-300 shadow-[0_0_30px_rgba(59,130,246,0.7)] hover:shadow-[0_0_50px_rgba(59,130,246,0.9)] flex items-center gap-2"
+            >
+              <Music className="w-5 h-5" />
+              DJ Music Pool
+            </button>
+          )}
         </div>
       </div>
     </section>

@@ -391,6 +391,23 @@ export default function PlannerDashboard() {
                     </div>
                   </div>
                 </Link>
+
+                <Link
+                  to="/dj-music-pool"
+                  className="bg-neutral-900 hover:bg-neutral-800 p-8 rounded-lg border-2 border-neutral-700 hover:border-blue-500 shadow-lg hover:shadow-[0_0_20px_rgba(59,130,246,0.2)] transition-all duration-200 group"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-blue-500/10 rounded-lg">
+                      <Music className="w-8 h-8 text-blue-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold mb-1">DJ Music Pool</h3>
+                      <p className="text-gray-400">
+                        Share and discover music collections
+                      </p>
+                    </div>
+                  </div>
+                </Link>
               </div>
 
               {/* BROWSE ARTISTS SECTION */}

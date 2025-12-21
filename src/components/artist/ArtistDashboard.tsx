@@ -470,6 +470,23 @@ export default function ArtistDashboard() {
                     </div>
                   </div>
                 </Link>
+
+                <Link
+                  to="/dj-music-pool"
+                  className="bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-blue-500 p-8 rounded-lg shadow-lg hover:shadow-blue-500/50 hover:scale-105 transition-all duration-300 group"
+                >
+                  <div className="flex flex-col items-center text-center gap-3">
+                    <div className="p-3 bg-blue-500/20 rounded-lg">
+                      <Music className="w-8 h-8 text-blue-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold mb-1 text-white">DJ Music Pool</h3>
+                      <p className="text-gray-300 text-sm">
+                        Share your music collection
+                      </p>
+                    </div>
+                  </div>
+                </Link>
               </div>
 
               <section className="mt-16">

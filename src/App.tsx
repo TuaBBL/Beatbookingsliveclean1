@@ -62,6 +62,11 @@ import AdminMessages from "./components/AdminMessages";
 ====================== */
 import Subscribe from "./components/Subscribe";
 
+/* ======================
+   DJ Music Pool
+====================== */
+import DJMusicPool from "./components/DJMusicPool";
+
 export default function App() {
   const [loading, setLoading] = useState(true);
 
@@ -125,6 +130,7 @@ export default function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/events" element={<Events />} />
         <Route path="/events/:id" element={<EventDetail />} />
+        <Route path="/dj-music-pool" element={<DJMusicPool />} />
 
         {/* ======================
             Planner
