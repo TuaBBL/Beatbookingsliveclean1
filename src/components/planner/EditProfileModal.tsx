@@ -36,11 +36,13 @@ export default function EditProfileModal({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isOpen) {
       loadProfile();
+      setUploadError(null);
     }
   }, [isOpen]);
 
@@ -69,14 +71,18 @@ export default function EditProfileModal({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setUploadError(null);
+
     const validTypes = ["image/jpeg", "image/png", "image/webp"];
     if (!validTypes.includes(file.type)) {
-      console.error("Invalid file type");
+      setUploadError("Please select a valid image file (JPG, PNG, or WEBP)");
+      e.target.value = "";
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      console.error("File size too large");
+      setUploadError("Image size must be less than 5MB");
+      e.target.value = "";
       return;
     }
 
@@ -92,11 +98,12 @@ export default function EditProfileModal({
     if (!imageFile) return profile.image_url;
 
     setUploading(true);
+    setUploadError(null);
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        console.error("No authenticated user found");
-        return null;
+        throw new Error("Not authenticated. Please log in again.");
       }
 
       const fileExt = imageFile.name.split(".").pop();
@@ -114,7 +121,7 @@ export default function EditProfileModal({
 
       if (uploadError) {
         console.error("Upload error details:", uploadError);
-        throw uploadError;
+        throw new Error(`Upload failed: ${uploadError.message}`);
       }
 
       console.log("Upload successful:", uploadData);
@@ -126,8 +133,9 @@ export default function EditProfileModal({
       console.log("Public URL:", data.publicUrl);
 
       return data.publicUrl;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error uploading image:", error);
+      setUploadError(error.message || "Failed to upload image. Please try again.");
       return null;
     } finally {
       setUploading(false);
@@ -145,13 +153,12 @@ export default function EditProfileModal({
 
   async function handleSave() {
     setLoading(true);
+    setUploadError(null);
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        console.error("No authenticated user found");
-        alert("Not authenticated. Please log in again.");
-        setLoading(false);
-        return;
+        throw new Error("Not authenticated. Please log in again.");
       }
 
       let imageUrl = profile.image_url;
@@ -159,8 +166,6 @@ export default function EditProfileModal({
         console.log("Uploading image file...");
         const uploadedUrl = await uploadImage();
         if (!uploadedUrl) {
-          console.error("Image upload failed - no URL returned");
-          alert("Failed to upload image. Please try again.");
           setLoading(false);
           return;
         }
@@ -192,28 +197,21 @@ export default function EditProfileModal({
 
       if (error) {
         console.error("Profile update error:", error);
-        alert(`Failed to save profile: ${error.message}`);
-        throw error;
+        throw new Error(`Failed to save profile: ${error.message}`);
       }
 
       console.log("Profile updated successfully:", data);
-
-      if (!data || data.length === 0) {
-        console.warn("No data returned from update - this may indicate no rows were matched");
-        alert("Profile update completed but no rows were updated. Please check your profile exists.");
-      }
 
       setImageFile(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
 
-      alert("Profile saved successfully!");
       onSave();
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving profile:", error);
-      alert(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setUploadError(error.message || "Failed to save profile. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -235,6 +233,18 @@ export default function EditProfileModal({
         </div>
 
         <div className="p-6 space-y-6">
+          {uploadError && (
+            <div className="bg-red-900/30 border border-red-800 text-red-400 px-4 py-3 rounded-lg">
+              {uploadError}
+            </div>
+          )}
+
+          {uploading && (
+            <div className="bg-blue-900/30 border border-blue-800 text-blue-400 px-4 py-3 rounded-lg">
+              Uploading image...
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium mb-3">Profile Image</label>
             <div className="flex items-center gap-6">
