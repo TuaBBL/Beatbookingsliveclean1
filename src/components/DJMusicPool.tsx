@@ -35,6 +35,7 @@ export default function DJMusicPool() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [userLink, setUserLink] = useState<MusicPoolLink | null>(null);
   const [editingLink, setEditingLink] = useState<MusicPoolLink | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
     checkAuth();
@@ -54,6 +55,16 @@ export default function DJMusicPool() {
         return;
       }
       setCurrentUser(user);
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (profile) {
+        setUserRole(profile.role);
+      }
     } catch (error) {
       console.error('Error checking auth:', error);
       navigate('/login');
@@ -123,7 +134,15 @@ export default function DJMusicPool() {
       <main className="relative z-10 px-6 py-12">
         <div className="max-w-7xl mx-auto">
           <button
-            onClick={() => navigate('/dashboard')}
+            onClick={() => {
+              if (userRole === 'artist') {
+                navigate('/artist/dashboard');
+              } else if (userRole === 'planner') {
+                navigate('/planner/dashboard');
+              } else {
+                navigate('/dashboard');
+              }
+            }}
             className="inline-flex items-center gap-2 px-4 py-2 mb-8 text-gray-300 hover:text-white bg-neutral-800/50 hover:bg-neutral-800 rounded-lg transition-all duration-300 border border-neutral-700 hover:border-neutral-600"
           >
             <ArrowLeft className="w-5 h-5" />
