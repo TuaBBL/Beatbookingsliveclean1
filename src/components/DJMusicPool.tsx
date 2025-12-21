@@ -5,7 +5,7 @@ import Header from './Header';
 import Footer from './Footer';
 import SoundBarsBackground from './SoundBarsBackground';
 import AddMusicPoolLinkModal from './AddMusicPoolLinkModal';
-import { Music, ExternalLink, Plus, Edit, Trash2 } from 'lucide-react';
+import { Music, ExternalLink, Plus, Edit, Trash2, ArrowLeft } from 'lucide-react';
 
 interface MusicPoolLink {
   id: string;
@@ -122,6 +122,14 @@ export default function DJMusicPool() {
 
       <main className="relative z-10 px-6 py-12">
         <div className="max-w-7xl mx-auto">
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="inline-flex items-center gap-2 px-4 py-2 mb-8 text-gray-300 hover:text-white bg-neutral-800/50 hover:bg-neutral-800 rounded-lg transition-all duration-300 border border-neutral-700 hover:border-neutral-600"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            Back to Dashboard
+          </button>
+
           <div className="text-center mb-12">
             <div className="flex items-center justify-center gap-3 mb-4">
               <Music className="w-12 h-12 text-neon-green" />
