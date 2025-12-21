@@ -100,7 +100,7 @@ export default function ArtistProfilePage() {
                 review_text,
                 created_at,
                 planner_id,
-                profiles!artist_reviews_planner_id_fkey(name, image_url)
+                profiles:planner_id(name, image_url)
               `)
               .eq('artist_id', artistRes.data.id)
               .order('created_at', { ascending: false })

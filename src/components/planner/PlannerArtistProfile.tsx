@@ -279,7 +279,7 @@ export default function PlannerArtistProfile() {
           rating,
           review_text,
           created_at,
-          profiles!artist_reviews_planner_id_fkey (
+          profiles:planner_id (
             name,
             image_url
           )
