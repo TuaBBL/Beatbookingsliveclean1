@@ -868,6 +868,7 @@ function AnnouncementsTab() {
     is_active: true,
     priority: 0,
   });
+  const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
     loadAnnouncements();
@@ -901,6 +902,7 @@ function AnnouncementsTab() {
           .eq('id', editingId);
 
         if (error) throw error;
+        setToast('Announcement updated successfully');
       } else {
         const { data: { user } } = await supabase.auth.getUser();
         const { error } = await supabase
@@ -911,15 +913,18 @@ function AnnouncementsTab() {
           });
 
         if (error) throw error;
+        setToast('Announcement created successfully');
       }
 
       setFormData({ title: '', message: '', is_active: true, priority: 0 });
       setEditingId(null);
       setShowForm(false);
       loadAnnouncements();
-    } catch (err) {
+      setTimeout(() => setToast(null), 3000);
+    } catch (err: any) {
       console.error('Error saving announcement:', err);
-      alert('Failed to save announcement');
+      setToast(err?.message || 'Failed to save announcement');
+      setTimeout(() => setToast(null), 3000);
     }
   };
 
@@ -944,10 +949,13 @@ function AnnouncementsTab() {
         .eq('id', id);
 
       if (error) throw error;
+      setToast('Announcement deleted successfully');
+      setTimeout(() => setToast(null), 3000);
       loadAnnouncements();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error deleting announcement:', err);
-      alert('Failed to delete announcement');
+      setToast(err?.message || 'Failed to delete announcement');
+      setTimeout(() => setToast(null), 3000);
     }
   };
 
@@ -959,9 +967,13 @@ function AnnouncementsTab() {
         .eq('id', id);
 
       if (error) throw error;
+      setToast(currentStatus ? 'Announcement hidden' : 'Announcement shown');
+      setTimeout(() => setToast(null), 3000);
       loadAnnouncements();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error toggling announcement:', err);
+      setToast(err?.message || 'Failed to update announcement');
+      setTimeout(() => setToast(null), 3000);
     }
   };
 
@@ -980,7 +992,15 @@ function AnnouncementsTab() {
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold">Homepage Announcements</h2>
         <button
-          onClick={() => setShowForm(!showForm)}
+          onClick={() => {
+            if (showForm) {
+              handleCancel();
+            } else {
+              setShowForm(true);
+              setEditingId(null);
+              setFormData({ title: '', message: '', is_active: true, priority: 0 });
+            }
+          }}
           className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition font-semibold"
         >
           {showForm ? 'Cancel' : 'New Announcement'}
@@ -1131,6 +1151,12 @@ function AnnouncementsTab() {
           ))
         )}
       </div>
+
+      {toast && (
+        <div className="fixed bottom-4 right-4 bg-neutral-900 border-2 border-purple-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
+          {toast}
+        </div>
+      )}
     </div>
   );
 }
