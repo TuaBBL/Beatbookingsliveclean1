@@ -70,21 +70,32 @@ Deno.serve(async (req) => {
       return json({ error: "Invalid email" }, 400);
     }
 
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    if (!resendApiKey) {
+      console.error("RESEND_API_KEY environment variable is not set");
+      return json({
+        error: "Email service is not configured. Please contact support."
+      }, 500);
+    }
+
     const otp = generateOtp();
     const otpHash = await hashOtp(otp);
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
     const supabase = supabaseServiceClient();
 
-    // Store OTP (overwrite if exists)
-    await supabase.from("email_otps").upsert({
+    const { error: dbError } = await supabase.from("email_otps").upsert({
       email,
       otp_hash: otpHash,
       expires_at: expiresAt,
       attempts: 0,
     });
 
-    // Build sender safely (NO undefined possible)
+    if (dbError) {
+      console.error("Database error storing OTP:", dbError);
+      return json({ error: "Failed to process request" }, 500);
+    }
+
     const fromEmail =
       Deno.env.get("RESEND_FROM_EMAIL") ??
       "BeatBookingsLive <info@beatbookingslive.com>";
@@ -92,7 +103,7 @@ Deno.serve(async (req) => {
     const resendResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${Deno.env.get("RESEND_API_KEY")}`,
+        Authorization: `Bearer ${resendApiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -108,10 +119,18 @@ Deno.serve(async (req) => {
     });
 
     if (!resendResponse.ok) {
-      console.error("Resend error:", await resendResponse.text());
-      return json({ error: "Failed to send verification email" }, 500);
+      const errorText = await resendResponse.text();
+      console.error("Resend API error:", {
+        status: resendResponse.status,
+        statusText: resendResponse.statusText,
+        body: errorText,
+      });
+      return json({
+        error: "Failed to send verification email. Please try again or contact support."
+      }, 500);
     }
 
+    console.log(`OTP sent successfully to ${email}`);
     return json({ ok: true });
   } catch (err) {
     console.error("auth-request-otp error:", err);
