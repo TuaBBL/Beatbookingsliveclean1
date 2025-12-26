@@ -11,7 +11,7 @@ import {
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { Artist } from '../data/mockArtists';
+import { ArtistUI as Artist } from '../types/artist';
 
 export interface ArtistCardProps {
   artist: Artist;
