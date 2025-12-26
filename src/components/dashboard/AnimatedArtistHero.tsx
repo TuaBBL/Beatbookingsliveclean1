@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
+import { normalizeArtistFromDB } from '../../lib/normalizeArtist';
 import { Artist } from '../../data/mockArtists';
 import { Music } from 'lucide-react';
 
@@ -64,25 +65,22 @@ export default function AnimatedArtistHero({ className = '' }: AnimatedArtistHer
       });
 
       const mappedArtists: Artist[] = (artistProfiles || []).map((profile: any) => {
+        const normalized = normalizeArtistFromDB(profile);
+
         const locationParts = (profile.location || '').split(',').map((s: string) => s.trim());
         const city = locationParts[0] || '';
         const state = locationParts[1] || '';
         const country = locationParts[2] || 'Australia';
-        const isDemo = profile.type === 'demo';
         const artistSocials = socialsMap.get(profile.id) || {};
         const ratings = ratingsMap.get(profile.id);
 
         return {
+          ...normalized,
           id: profile.user_id || profile.id,
-          name: profile.stage_name || 'Unknown Artist',
-          role: profile.category || 'DJ',
-          genre: profile.genre || 'Electronic',
           city,
           state,
           country,
-          imageUrl: profile.image_url || profile.profiles?.image_url || '',
           socials: artistSocials,
-          isDemo,
           averageRating: ratings?.averageRating,
           reviewCount: ratings?.reviewCount,
         };
