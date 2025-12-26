@@ -1,3 +1,4 @@
+// This matches the artist_profiles table 1:1
 export interface ArtistDB {
   id: string;
   user_id: string;
@@ -8,5 +9,4 @@ export interface ArtistDB {
   image_url?: string | null;
   is_featured?: boolean;
   is_premium?: boolean;
-  created_at: string;
 }
