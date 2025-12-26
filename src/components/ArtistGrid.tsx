@@ -1,4 +1,4 @@
-import { Artist } from '../data/mockArtists';
+import { ArtistUI as Artist } from '../types/artist';
 import { ArtistCard } from './ArtistCard';
 
 interface ArtistGridProps {
