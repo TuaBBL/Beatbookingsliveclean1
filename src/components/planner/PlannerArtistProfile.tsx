@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
+import { normalizeArtistFromDB } from "../../lib/normalizeArtist";
 import Header from "../Header";
 import Footer from "../Footer";
 import PlannerProfileMenu from "./PlannerProfileMenu";
@@ -192,28 +193,24 @@ export default function PlannerArtistProfile() {
           value.averageRating = Math.round((value.averageRating / value.reviewCount) * 10) / 10;
         });
 
+        const normalized = normalizeArtistFromDB(artistProfile);
+
         const locationParts = (artistProfile.location || '').split(',').map((s: string) => s.trim());
         const city = locationParts[0] || '';
         const state = locationParts[1] || '';
         const country = locationParts[2] || 'Australia';
 
-        const isDemo = artistProfile.type === 'demo';
         const artistSocials = socialsMap.get(artistProfile.id) || {};
         const ratings = ratingsMap.get(artistProfile.id);
 
         setArtistProfileId(artistProfile.id);
         setArtist({
+          ...normalized,
           id: artistProfile.user_id || artistProfile.id,
-          name: artistProfile.stage_name || 'Unknown Artist',
-          role: artistProfile.category || 'DJ',
-          genre: artistProfile.genre || 'Electronic',
           city,
           state,
           country,
-          imageUrl: artistProfile.image_url || artistProfile.profiles?.image_url || '',
           socials: artistSocials,
-          isDemo,
-          bio: artistProfile.bio,
           averageRating: ratings?.averageRating,
           reviewCount: ratings?.reviewCount,
         });

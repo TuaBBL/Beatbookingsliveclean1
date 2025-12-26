@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { normalizeArtistFromDB } from "../../lib/normalizeArtist";
 import Header from "../Header";
 import Footer from "../Footer";
 import SoundBarsBackground from "../SoundBarsBackground";
@@ -108,33 +109,27 @@ export default function PlannerArtists() {
       });
 
       const artists: Artist[] = activeProfiles.map((profile: any) => {
+        const normalized = normalizeArtistFromDB(profile);
+
         const locationParts = (profile.location || '').split(',').map((s: string) => s.trim());
         const city = locationParts[0] || '';
         const state = locationParts[1] || '';
         const country = locationParts[2] || 'Australia';
 
-        const isDemo = profile.type === 'demo';
         const subscriptions = Array.isArray(profile.subscriptions)
           ? profile.subscriptions
           : profile.subscriptions ? [profile.subscriptions] : [];
-        const isPremium = !isDemo && subscriptions.some((sub: any) => sub.is_active === true);
+        const isPremium = !normalized.isDemo && subscriptions.some((sub: any) => sub.is_active === true);
         const ratings = ratingsMap.get(profile.id);
         const artistSocials = socialsMap.get(profile.id) || {};
 
         return {
-          id: profile.id,
-          userId: profile.user_id,
-          name: profile.stage_name || 'Unknown Artist',
-          role: profile.category || 'DJ',
-          genre: profile.genre || 'Electronic',
+          ...normalized,
           city,
           state,
           country,
-          imageUrl: profile.image_url || profile.profiles?.image_url || '',
-          socials: artistSocials,
-          isDemo,
           isPremium,
-          bio: profile.bio,
+          socials: artistSocials,
           averageRating: ratings?.averageRating,
           reviewCount: ratings?.reviewCount,
         };
