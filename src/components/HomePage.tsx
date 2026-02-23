@@ -92,7 +92,7 @@ export default function HomePage() {
         const ratings = ratingsMap.get(profile.id);
         const artistSocials = socialsMap.get(profile.id) || {};
 
-        return {
+        const artist = {
           ...normalized,
           city,
           state,
@@ -102,6 +102,14 @@ export default function HomePage() {
           averageRating: ratings?.averageRating,
           reviewCount: ratings?.reviewCount,
         };
+
+        console.log('HomePage Artist:', {
+          name: artist.name,
+          imageUrl: artist.imageUrl,
+          rawImageUrl: profile.image_url
+        });
+
+        return artist;
       });
 
       const sortedArtists = sortArtistsByPremium(artists);

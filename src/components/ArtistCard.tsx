@@ -30,6 +30,15 @@ export function ArtistCard({ artist, showRank = false, onFavouriteChange }: Arti
     checkAuthAndFavourite();
   }, [artist.id]);
 
+  useEffect(() => {
+    console.log('Artist Card Debug:', {
+      name: artist.name,
+      imageUrl: artist.imageUrl,
+      imageError,
+      hasImage: !!artist.imageUrl
+    });
+  }, [artist.name, artist.imageUrl, imageError]);
+
   async function checkAuthAndFavourite() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -124,7 +133,13 @@ export function ArtistCard({ artist, showRank = false, onFavouriteChange }: Arti
         <img
           src={artist.imageUrl}
           alt={artist.name}
-          onError={() => setImageError(true)}
+          onError={(e) => {
+            console.error('Image load error:', artist.name, artist.imageUrl, e);
+            setImageError(true);
+          }}
+          onLoad={() => {
+            console.log('Image loaded successfully:', artist.name, artist.imageUrl);
+          }}
           className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300"
         />
       ) : (
