@@ -34,7 +34,8 @@ export default function HomePage() {
           bio,
           type,
           image_url,
-          subscriptions!subscriptions_artist_id_fkey(is_active)
+          subscriptions!subscriptions_artist_id_fkey(is_active),
+          profiles:user_id(image_url)
         `);
 
       const { data: socialLinks } = await supabase
