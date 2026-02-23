@@ -24,6 +24,7 @@ export function ArtistCard({ artist, showRank = false, onFavouriteChange }: Arti
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isFavourite, setIsFavourite] = useState(false);
   const [isCheckingFavourite, setIsCheckingFavourite] = useState(true);
+  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
     checkAuthAndFavourite();
@@ -119,10 +120,11 @@ export function ArtistCard({ artist, showRank = false, onFavouriteChange }: Arti
         <Heart className={`w-4 h-4 ${isFavourite ? "fill-current" : ""}`} />
       </button>
 
-      {artist.imageUrl ? (
+      {artist.imageUrl && !imageError ? (
         <img
           src={artist.imageUrl}
           alt={artist.name}
+          onError={() => setImageError(true)}
           className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300"
         />
       ) : (
