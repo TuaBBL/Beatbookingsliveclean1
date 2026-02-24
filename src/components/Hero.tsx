@@ -67,9 +67,11 @@ export default function Hero({ artists = [] }: HeroProps) {
                   <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
                   <div className="absolute bottom-0 left-0 right-0 p-4">
                     <div className="text-white font-semibold text-sm">{artist.name}</div>
-                    <div className="mt-1 inline-block px-2 py-0.5 bg-neon-green/20 border border-neon-green/40 rounded text-neon-green text-xs font-bold">
-                      DEMO
-                    </div>
+                    {artist.isDemo && (
+                      <div className="mt-1 inline-block px-2 py-0.5 bg-neon-green/20 border border-neon-green/40 rounded text-neon-green text-xs font-bold">
+                        DEMO
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -92,9 +94,11 @@ export default function Hero({ artists = [] }: HeroProps) {
                   <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
                   <div className="absolute bottom-0 left-0 right-0 p-4">
                     <div className="text-white font-semibold text-sm">{artist.name}</div>
-                    <div className="mt-1 inline-block px-2 py-0.5 bg-neon-red/20 border border-neon-red/40 rounded text-neon-red text-xs font-bold">
-                      DEMO
-                    </div>
+                    {artist.isDemo && (
+                      <div className="mt-1 inline-block px-2 py-0.5 bg-neon-red/20 border border-neon-red/40 rounded text-neon-red text-xs font-bold">
+                        DEMO
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
