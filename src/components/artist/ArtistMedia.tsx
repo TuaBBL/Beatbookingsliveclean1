@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
+import { getMediaLimits, isPremiumTier, getUploadErrorMessage, getFileSizeErrorMessage } from '../../lib/mediaUploadLimits';
 import Header from '../Header';
 import Footer from '../Footer';
 import { Image, Video, Upload, Trash2, ArrowLeft } from 'lucide-react';
@@ -19,6 +20,7 @@ export default function ArtistMedia() {
   const [uploading, setUploading] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [artistProfileId, setArtistProfileId] = useState<string | null>(null);
+  const [subscription, setSubscription] = useState<any>(null);
 
   useEffect(() => {
     loadMedia();
@@ -45,14 +47,23 @@ export default function ArtistMedia() {
 
       setArtistProfileId(artistProfile.id);
 
-      const { data, error } = await supabase
-        .from('artist_media')
-        .select('*')
-        .eq('artist_id', artistProfile.id)
-        .order('created_at', { ascending: false });
+      // Load media and subscription data
+      const [mediaRes, subscriptionRes] = await Promise.all([
+        supabase
+          .from('artist_media')
+          .select('*')
+          .eq('artist_id', artistProfile.id)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('subscriptions')
+          .select('*')
+          .eq('artist_id', artistProfile.id)
+          .maybeSingle()
+      ]);
 
-      if (error) throw error;
-      setMedia(data || []);
+      if (mediaRes.error) throw mediaRes.error;
+      setMedia(mediaRes.data || []);
+      setSubscription(subscriptionRes.data);
     } catch (error) {
       console.error('Error loading media:', error);
     } finally {
@@ -65,11 +76,38 @@ export default function ArtistMedia() {
     if (!file || !artistProfileId) return;
 
     const isVideo = file.type.startsWith('video/');
-    const maxSize = isVideo ? 50 * 1024 * 1024 : 5 * 1024 * 1024;
+    const isImage = file.type.startsWith('image/');
 
-    if (file.size > maxSize) {
-      setToast(`File too large. Max size: ${isVideo ? '50MB' : '5MB'}`);
+    // Validate file type
+    if (!isImage && !isVideo) {
+      setToast('Please select a valid image or video file');
       setTimeout(() => setToast(null), 3000);
+      event.target.value = '';
+      return;
+    }
+
+    const mediaType: 'image' | 'video' = isVideo ? 'video' : 'image';
+    const limits = getMediaLimits(subscription);
+    const premium = isPremiumTier(subscription);
+
+    // Check count limit
+    const currentCount = media.filter(m => m.media_type === mediaType).length;
+    const limit = mediaType === 'image' ? limits.images : limits.videos;
+
+    if (currentCount >= limit) {
+      const errorMsg = getUploadErrorMessage(mediaType, currentCount, limit, premium);
+      setToast(errorMsg);
+      setTimeout(() => setToast(null), 5000);
+      event.target.value = '';
+      return;
+    }
+
+    // Check file size
+    const fileSizeError = getFileSizeErrorMessage(mediaType, file.size, premium);
+    if (fileSizeError) {
+      setToast(fileSizeError);
+      setTimeout(() => setToast(null), 5000);
+      event.target.value = '';
       return;
     }
 
@@ -102,11 +140,13 @@ export default function ArtistMedia() {
 
       setToast('Media uploaded successfully!');
       setTimeout(() => setToast(null), 3000);
+      event.target.value = '';
       loadMedia();
     } catch (error) {
       console.error('Error uploading media:', error);
       setToast('Failed to upload media');
       setTimeout(() => setToast(null), 3000);
+      event.target.value = '';
     } finally {
       setUploading(false);
     }

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
+import { getMediaLimits, isPremiumTier, getUploadErrorMessage, getFileSizeErrorMessage } from '../../lib/mediaUploadLimits';
 import { X, Upload, Trash2, Image as ImageIcon, Video as VideoIcon, UserCircle } from 'lucide-react';
 
 interface EditArtistProfileModalProps {
@@ -83,13 +84,6 @@ export default function EditArtistProfileModal({
     setSubscription(data);
   };
 
-  const getMediaLimits = () => {
-    const tier = subscription?.entitlement_tier || 'free';
-    if (tier === 'premium' || tier === 'free_forever') {
-      return { images: 20, videos: 10 };
-    }
-    return { images: 10, videos: 5 };
-  };
 
   if (!isOpen) return null;
 
@@ -256,12 +250,16 @@ export default function EditArtistProfileModal({
     const file = e.target.files?.[0];
     if (!file || !artistProfile?.id) return;
 
-    const limits = getMediaLimits();
+    // Get tier-specific limits
+    const limits = getMediaLimits(subscription);
     const currentCount = mediaList.filter(m => m.media_type === type).length;
     const limit = type === 'image' ? limits.images : limits.videos;
+    const premium = isPremiumTier(subscription);
 
+    // Check count limit
     if (currentCount >= limit) {
-      setUploadError(`${type === 'image' ? 'Image' : 'Video'} limit reached: ${limit} maximum`);
+      const errorMsg = getUploadErrorMessage(type, currentCount, limit, premium);
+      setUploadError(errorMsg);
       e.target.value = '';
       return;
     }
@@ -270,14 +268,16 @@ export default function EditArtistProfileModal({
     setUploadError(null);
 
     try {
+      // Validate file type
       const expectedType = type === 'image' ? 'image/' : 'video/';
       if (!file.type.startsWith(expectedType)) {
         throw new Error(`Please select a valid ${type} file`);
       }
 
-      const maxSize = type === 'image' ? 10 * 1024 * 1024 : 100 * 1024 * 1024;
-      if (file.size > maxSize) {
-        throw new Error(`${type === 'image' ? 'Image' : 'Video'} size must be less than ${type === 'image' ? '10MB' : '100MB'}`);
+      // Validate file size with tier-aware limits
+      const fileSizeError = getFileSizeErrorMessage(type, file.size, premium);
+      if (fileSizeError) {
+        throw new Error(fileSizeError);
       }
 
       const fileExt = file.name.split('.').pop();
@@ -423,7 +423,7 @@ export default function EditArtistProfileModal({
     }
   };
 
-  const limits = getMediaLimits();
+  const limits = getMediaLimits(subscription);
   const imageCount = mediaList.filter(m => m.media_type === 'image').length;
   const videoCount = mediaList.filter(m => m.media_type === 'video').length;
 
